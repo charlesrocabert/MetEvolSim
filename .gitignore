@@ -8,5 +8,12 @@ cmake/Makefile
 cmake/Config.h
 example/**
 !example/run.sh
-test/**
-!test/test.sh
+!example/ancestor
+!example/best
+!example/parameters
+!example/population
+example/ancestor/**
+example/best/*
+example/parameters/*
+example/population/*
+*test
