@@ -255,7 +255,7 @@ void Population::next_generation( void )
   {
     _tree->add_reproduction_event(_pop[i]);
   }
-  _tree->prune();
+  //_tree->prune();
   
   /*------------------------------------*/
   /* 4) Compute new fitnesses           */
@@ -379,7 +379,7 @@ void Population::write_statistic_files( void )
   _mean_s_file << _g;
   _var_s_file << _g;
   _cv_s_file << _g;
-  for (int i = 1; i <= _m; i++)
+  for (int i = 0; i < _m; i++)
   {
     _mean_s_file << " " << _mean_s[i];
     _var_s_file << " " << _var_s[i];

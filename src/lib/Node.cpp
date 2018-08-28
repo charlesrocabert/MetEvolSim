@@ -226,7 +226,7 @@ void Node::compute_evolution_rate( double* nbfix, double* evolrate )
     {
       double diff1 = fabs(node_s[i]-parent_s[i])/parent_s[i];
       double diff2 = fabs(node_s[i]-ancestor_s[i])/ancestor_s[i];
-      if (mutated && diff1 > 0.0)
+      if (mutated && diff1 > STEADY_STATE_DIFF_TH)
       {
         nbfix[i] += 1.0;
         mean[i]  += diff2;
