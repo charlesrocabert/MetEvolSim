@@ -1,39 +1,10 @@
 
-#ifndef __ComplexMetabolicNetwork__Enums__
-#define __ComplexMetabolicNetwork__Enums__
+#ifndef __Holzhutter2004__Enums__
+#define __Holzhutter2004__Enums__
 
 #include <iostream>
 #include <assert.h>
 
-
-/******************************************************************************/
-
-/**
- * \brief   Structure of metabolic network
- * \details --
- */
-enum network_struct
-{
-  LINEAR_PATHWAY     = 0, /*!< Linear pathway         */
-  RANDOM_NETWORK     = 1, /*!< Random network         */
-  SCALE_FREE_NETWORK = 2, /*!< Scale-free network     */
-  LOAD_MODEL         = 3  /*!< Load a model from file */
-};
-
-/******************************************************************************/
-
-/**
- * \brief   Type of reaction
- * \details --
- */
-enum reaction_type
-{
-  NO_REACTION           = 0, /*!< No reaction           */
-  INFLOWING_REACTION    = 1, /*!< Inflowing reaction    */
-  OUTFLOWING_REACTION   = 2, /*!< Outflowing reaction   */
-  IRREVERSIBLE_REACTION = 3, /*!< Irreversible reaction */
-  REVERSIBLE_REACTION   = 4  /*!< Reversible reaction   */
-};
 
 /******************************************************************************/
 

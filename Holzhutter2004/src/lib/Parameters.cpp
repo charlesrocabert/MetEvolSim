@@ -24,13 +24,6 @@ Parameters::Parameters( void )
   _generations = 10000;
   _n           = 1000;
   
-  /*----------------------------------------------------- METABOLIC NETWORK */
-  
-  _m                    = 20;
-  _structure            = LINEAR_PATHWAY;
-  _nb_random_iterations = 0;
-  _p_reversible         = 0.0;
-  
   /*----------------------------------------------------- MUTATIONS */
   
   _sigma = 0.1;
@@ -65,13 +58,6 @@ Parameters::Parameters( Parameters const& parameters )
   
   _generations = parameters._generations;
   _n           = parameters._n;
-  
-  /*----------------------------------------------------- METABOLIC NETWORK */
-  
-  _m                    = parameters._m;
-  _structure            = parameters._structure;
-  _nb_random_iterations = parameters._nb_random_iterations;
-  _p_reversible         = parameters._p_reversible;
   
   /*----------------------------------------------------- MUTATIONS */
   
@@ -129,13 +115,6 @@ void Parameters::print_parameters( void )
   std::cout << "> generations = " << _generations << "\n";
   std::cout << "> n = " << _n << "\n";
   
-  /*----------------------------------------------------- METABOLIC NETWORK */
-  
-  std::cout << "> m = " << _m << "\n";
-  std::cout << "> struct = " << _structure << "\n";
-  std::cout << "> nbrandomit = " << _nb_random_iterations << "\n";
-  std::cout << "> prev = " << _p_reversible << "\n";
-  
   /*----------------------------------------------------- MUTATIONS */
   
   std::cout << "> sigma = " << _sigma << "\n";
@@ -170,10 +149,6 @@ void Parameters::save_parameters( void )
   file << _seed << " ";
   file << _generations << " ";
   file << _n << " ";
-  file << _m << " ";
-  file << _structure << " ";
-  file << _nb_random_iterations << " ";
-  file << _p_reversible << " ";
   file << _sigma << " ";
   file << _mu << " ";
   file << _w << " ";

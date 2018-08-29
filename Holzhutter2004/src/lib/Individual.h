@@ -3,9 +3,10 @@
 #define __Holzhutter2004__Individual__
 
 #include <iostream>
-#include <assert.h>
 #include <fstream>
 #include <sstream>
+#include <unordered_map>
+#include <assert.h>
 
 #include "Macros.h"
 #include "Enums.h"
@@ -85,6 +86,11 @@ protected:
   /*----------------------------
    * PROTECTED METHODS
    *----------------------------*/
+  void create_met_id_to_index_map( void );
+  void create_params_id_to_index_map( void );
+  void initialize_concentrations( void );
+  void initialize_parameters( void );
+  void initialize_concentration_vector( void );
   
   /*----------------------------
    * PROTECTED ATTRIBUTES
@@ -98,12 +104,16 @@ protected:
   unsigned long long int _parent;     /*!< Parent unique identifier       */
   int                    _g;          /*!< Individual's generation        */
   
-  /*----------------------------------------------------- NETWORK STRUCTURE */
+  /*----------------------------------------------------- METABOLIC NETWORK */
   
-  int             _m;                /*!< Number of metabolites                */
-  int*            _degree;           /*!< Metabolite total degree              */
-  int*            _in_degree;        /*!< Metabolite indegree                  */
-  int*            _out_degree;       /*!< Metabolite outdegree                 */
+  int _m; /*!< Number of metabolites */
+  int _p; /*!< Number of parameters  */
+  
+  std::unordered_map<std::string, int> _met_id_to_index;    /*!< Metabolite id to index map */
+  std::unordered_map<std::string, int> _params_id_to_index; /*!< Parameter id to index map  */
+  
+  double* _initial_s;      /*!< Initial concentration values */
+  double* _initial_params; /*!< Initial parameter values     */
   
   /*----------------------------------------------------- PHENOTYPE */
   
@@ -115,14 +125,14 @@ protected:
   double  _c_opt;   /*!< Optimal sum                   */
   double  _w;       /*!< Fitness                       */
   
-  /*----------------------------------------------------- REACTION LIST */
+  /*----------------------------------------------------- ODE SOLVER */
   
-  double _dt;            /*!< Current solving dt          */
-  bool           _isStable;      /*!< Is the network stable?      */
+  double _dt;       /*!< Current solving dt     */
+  bool   _isStable; /*!< Is the network stable? */
   
   /*----------------------------------------------------- TREE MANAGEMENT */
   
-  bool _prepared_for_tree;
+  bool _prepared_for_tree; /*!< Is the individual prepared for tree saving? */
   
 };
 
@@ -197,61 +207,6 @@ inline bool Individual::isMutated( void ) const
 }
 
 /**
- * \brief    Get the reaction list
- * \details  --
- * \param    void
- * \return   \e reaction_list*
- */
-inline reaction_list* Individual::get_reaction_list( void )
-{
-  return _reaction_list;
-}
-
-/**
- * \brief    Get the ODE solver
- * \details  --
- * \param    void
- * \return   \e ODESolver*
- */
-inline ODESolver* Individual::get_ode_solver( void )
-{
-  return _ode_solver;
-}
-
-/**
- * \brief    Get the degree for metabolite i
- * \details  --
- * \param    void
- * \return   \e ODESolver*
- */
-inline int Individual::get_degree( int i ) const
-{
-  return _degree[i];
-}
-
-/**
- * \brief    Get the in degree for metabolite i
- * \details  --
- * \param    void
- * \return   \e ODESolver*
- */
-inline int Individual::get_in_degree( int i ) const
-{
-  return _in_degree[i];
-}
-
-/**
- * \brief    Get the out degree for metabolite i
- * \details  --
- * \param    void
- * \return   \e ODESolver*
- */
-inline int Individual::get_out_degree( int i ) const
-{
-  return _out_degree[i];
-}
-
-/**
  * \brief    Get concentration for metabolite i
  * \details  --
  * \param    void
@@ -260,7 +215,7 @@ inline int Individual::get_out_degree( int i ) const
 inline double Individual::get_s( int i ) const
 {
   assert(i >= 0);
-  assert(i < _parameters->get_m());
+  assert(i < _m);
   return _s[i];
 }
 

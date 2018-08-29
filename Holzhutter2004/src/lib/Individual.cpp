@@ -25,83 +25,23 @@ Individual::Individual( Parameters* parameters )
   
   /*----------------------------------------------------- NETWORK STRUCTURE */
   
-  /*** Set m and Sdim ***/
-  _m    = _parameters->get_m();
-  _Sdim = _m+2;
-  
-  /*** Allocate S memory ***/
-  _S             = NULL;
-  _influx_index  = _m;
-  _outflux_index = _m+1;
-  create_stoichiometric_matrix();
-  
-  /*** Allocate degree memory ***/
-  _degree           = NULL;
-  _in_degree        = NULL;
-  _out_degree       = NULL;
-  _mean_km_f        = NULL;
-  _mean_vmax_f      = NULL;
-  _mean_km_b        = NULL;
-  _mean_vmax_b      = NULL;
-  _in_mean_km_f     = NULL;
-  _in_mean_vmax_f   = NULL;
-  _in_mean_km_b     = NULL;
-  _in_mean_vmax_b   = NULL;
-  _out_mean_km_f    = NULL;
-  _out_mean_vmax_f  = NULL;
-  _out_mean_km_b    = NULL;
-  _out_mean_vmax_b  = NULL;
-  _degree           = new int[_m];
-  _in_degree        = new int[_m];
-  _out_degree       = new int[_m];
-  _mean_km_f        = new double[_m];
-  _mean_vmax_f      = new double[_m];
-  _mean_km_b        = new double[_m];
-  _mean_vmax_b      = new double[_m];
-  _mean_counter     = new int[_m];
-  _in_mean_km_f     = new double[_m];
-  _in_mean_vmax_f   = new double[_m];
-  _in_mean_km_b     = new double[_m];
-  _in_mean_vmax_b   = new double[_m];
-  _in_mean_counter  = new int[_m];
-  _out_mean_km_f    = new double[_m];
-  _out_mean_vmax_f  = new double[_m];
-  _out_mean_km_b    = new double[_m];
-  _out_mean_vmax_b  = new double[_m];
-  _out_mean_counter = new int[_m];
-  for (int i = 0; i < _m; i++)
-  {
-    _degree[i]           = 0;
-    _in_degree[i]        = 0;
-    _out_degree[i]       = 0;
-    _mean_km_f[i]        = 0.0;
-    _mean_vmax_f[i]      = 0.0;
-    _mean_km_b[i]        = 0.0;
-    _mean_vmax_b[i]      = 0.0;
-    _mean_counter[i]     = 0;
-    _in_mean_km_f[i]     = 0.0;
-    _in_mean_vmax_f[i]   = 0.0;
-    _in_mean_km_b[i]     = 0.0;
-    _in_mean_vmax_b[i]   = 0.0;
-    _in_mean_counter[i]  = 0;
-    _out_mean_km_f[i]    = 0.0;
-    _out_mean_vmax_f[i]  = 0.0;
-    _out_mean_km_b[i]    = 0.0;
-    _out_mean_vmax_b[i]  = 0.0;
-    _out_mean_counter[i] = 0;
-  }
+  _m = 40;
+  _p = 171;
+  create_met_id_to_index_map();
+  create_params_id_to_index_map();
+  initialize_concentrations();
+  initialize_parameters();
   
   /*----------------------------------------------------- PHENOTYPE */
   
   _mutated = false;
-  /*** Allocate concentration memory ***/
-  _s     = NULL;
-  _old_s = NULL;
-  _s     = new double[_m];
-  _old_s = new double[_m];
+  _s       = NULL;
+  _old_s   = NULL;
+  _s       = new double[_m];
+  _old_s   = new double[_m];
+  initialize_concentration_vector();
   for (int i = 0; i < _m; i++)
   {
-    _s[i]     = 0.0;
     _old_s[i] = 0.0;
   }
   _c     = 0.0;
@@ -109,14 +49,10 @@ Individual::Individual( Parameters* parameters )
   _c_opt = 0.0;
   _w     = 0.0;
   
-  /*----------------------------------------------------- REACTION LIST */
+  /*----------------------------------------------------- ODE SOLVER */
   
-  /*** Allocate reaction list and ODE solver memory ***/
-  _reaction_list = NULL;
-  create_reaction_list();
-  _ode_solver    = NULL;
-  _dt            = DT_INIT;
-  _isStable      = false;
+  _dt       = DT_INIT;
+  _isStable = false;
   
   /*----------------------------------------------------- TREE MANAGEMENT */
   
@@ -141,77 +77,20 @@ Individual::Individual( const Individual& individual )
   
   /*----------------------------------------------------- NETWORK STRUCTURE */
 
-  /*** Set m and Sdim ***/
-  _m    = individual._m;
-  _Sdim = individual._Sdim;
-  
-  /*** Allocate S memory ***/
-  _S             = NULL;
-  _influx_index  = individual._influx_index;
-  _outflux_index = individual._outflux_index;
-  copy_stoichiometric_matrix(individual._S);
-  
-  /*** Allocate degree memory ***/
-  _degree           = NULL;
-  _in_degree        = NULL;
-  _out_degree       = NULL;
-  _mean_km_f        = NULL;
-  _mean_vmax_f      = NULL;
-  _mean_km_b        = NULL;
-  _mean_vmax_b      = NULL;
-  _in_mean_km_f     = NULL;
-  _in_mean_vmax_f   = NULL;
-  _in_mean_km_b     = NULL;
-  _in_mean_vmax_b   = NULL;
-  _out_mean_km_f    = NULL;
-  _out_mean_vmax_f  = NULL;
-  _out_mean_km_b    = NULL;
-  _out_mean_vmax_b  = NULL;
-  _degree           = new int[_m];
-  _in_degree        = new int[_m];
-  _out_degree       = new int[_m];
-  _mean_km_f        = new double[_m];
-  _mean_vmax_f      = new double[_m];
-  _mean_km_b        = new double[_m];
-  _mean_vmax_b      = new double[_m];
-  _mean_counter     = new int[_m];
-  _in_mean_km_f     = new double[_m];
-  _in_mean_vmax_f   = new double[_m];
-  _in_mean_km_b     = new double[_m];
-  _in_mean_vmax_b   = new double[_m];
-  _in_mean_counter  = new int[_m];
-  _out_mean_km_f    = new double[_m];
-  _out_mean_vmax_f  = new double[_m];
-  _out_mean_km_b    = new double[_m];
-  _out_mean_vmax_b  = new double[_m];
-  _out_mean_counter = new int[_m];
-  memcpy(_degree, individual._degree, sizeof(int)*_m);
-  memcpy(_in_degree, individual._in_degree, sizeof(int)*_m);
-  memcpy(_out_degree, individual._out_degree, sizeof(int)*_m);
-  memcpy(_mean_km_f, individual._mean_km_f, sizeof(int)*_m);
-  memcpy(_mean_vmax_f, individual._mean_vmax_f, sizeof(int)*_m);
-  memcpy(_mean_km_b, individual._mean_km_b, sizeof(double)*_m);
-  memcpy(_mean_vmax_b, individual._mean_vmax_b, sizeof(double)*_m);
-  memcpy(_mean_counter, individual._mean_counter, sizeof(int)*_m);
-  memcpy(_in_mean_km_f, individual._in_mean_km_f, sizeof(double)*_m);
-  memcpy(_in_mean_vmax_f, individual._in_mean_vmax_f, sizeof(double)*_m);
-  memcpy(_in_mean_km_b, individual._in_mean_km_b, sizeof(double)*_m);
-  memcpy(_in_mean_vmax_b, individual._in_mean_vmax_b, sizeof(double)*_m);
-  memcpy(_in_mean_counter, individual._in_mean_counter, sizeof(int)*_m);
-  memcpy(_out_mean_km_f, individual._out_mean_km_f, sizeof(double)*_m);
-  memcpy(_out_mean_vmax_f, individual._out_mean_vmax_f, sizeof(double)*_m);
-  memcpy(_out_mean_km_b, individual._out_mean_km_b, sizeof(double)*_m);
-  memcpy(_out_mean_vmax_b, individual._out_mean_vmax_b, sizeof(double)*_m);
-  memcpy(_out_mean_counter, individual._out_mean_counter, sizeof(int)*_m);
+  _m = 40;
+  _p = 171;
+  create_met_id_to_index_map();
+  create_params_id_to_index_map();
+  memcpy(_initial_s, individual._initial_s, sizeof(double)*_m);
+  memcpy(_initial_params, individual._initial_params, sizeof(double)*_p);
   
   /*----------------------------------------------------- PHENOTYPE */
   
   _mutated = individual._mutated;
-  /*** Allocate concentration memory ***/
-  _s     = NULL;
-  _old_s = NULL;
-  _s     = new double[_m];
-  _old_s = new double[_m];
+  _s       = NULL;
+  _old_s   = NULL;
+  _s       = new double[_m];
+  _old_s   = new double[_m];
   memcpy(_s, individual._s, sizeof(double)*_m);
   memcpy(_old_s, individual._old_s, sizeof(double)*_m);
   _c     = individual._c;
@@ -219,13 +98,8 @@ Individual::Individual( const Individual& individual )
   _c_opt = individual._c_opt;
   _w     = individual._w;
   
-  /*----------------------------------------------------- REACTION LIST */
+  /*----------------------------------------------------- ODE SOLVER */
   
-  /*** Allocate reaction list and ODE solver memory ***/
-  _reaction_list = NULL;
-  _ode_solver    = NULL;
-  copy_reaction_list(individual._reaction_list);
-  create_ode_solver();
   _dt       = individual._dt;
   _isStable = individual._isStable;
   
@@ -255,43 +129,7 @@ Individual::~Individual( void )
   
   if (!_prepared_for_tree)
   {
-    delete_stoichiometric_matrix();
-    delete[] _degree;
-    _degree = NULL;
-    delete[] _in_degree;
-    _in_degree = NULL;
-    delete[] _out_degree;
-    _out_degree = NULL;
-    delete[] _mean_km_f;
-    _mean_km_f = NULL;
-    delete[] _mean_vmax_f;
-    _mean_vmax_f = NULL;
-    delete[] _mean_km_b;
-    _mean_km_b = NULL;
-    delete[] _mean_vmax_b;
-    _mean_vmax_b = NULL;
-    delete[] _mean_counter;
-    _mean_counter = NULL;
-    delete[] _in_mean_km_f;
-    _in_mean_km_f = NULL;
-    delete[] _in_mean_vmax_f;
-    _in_mean_vmax_f = NULL;
-    delete[] _in_mean_km_b;
-    _in_mean_km_b = NULL;
-    delete[] _in_mean_vmax_b;
-    _in_mean_vmax_b = NULL;
-    delete[] _in_mean_counter;
-    _in_mean_counter = NULL;
-    delete[] _out_mean_km_f;
-    _out_mean_km_f = NULL;
-    delete[] _out_mean_vmax_f;
-    _out_mean_vmax_f = NULL;
-    delete[] _out_mean_km_b;
-    _out_mean_km_b = NULL;
-    delete[] _out_mean_vmax_b;
-    _out_mean_vmax_b = NULL;
-    delete[] _out_mean_counter;
-    _out_mean_counter = NULL;
+    /* TODO */
   }
   
   /*----------------------------------------------------- PHENOTYPE */
@@ -302,14 +140,6 @@ Individual::~Individual( void )
   {
     delete[] _old_s;
     _old_s = NULL;
-  }
-  
-  /*----------------------------------------------------- REACTION LIST */
-  
-  delete_reaction_list();
-  if (!_prepared_for_tree)
-  {
-    delete_ode_solver();
   }
 }
 
@@ -325,34 +155,7 @@ Individual::~Individual( void )
  */
 void Individual::initialize( void )
 {
-  /*----------------------------------------------------- NETWORK STRUCTURE */
   
-  /*** Generate linear pathway ***/
-  if (_parameters->get_structure() == LINEAR_PATHWAY)
-  {
-    generate_linear_pathway_matrix();
-  }
-  /*** Or generate basic random network ***/
-  else if (_parameters->get_structure() == RANDOM_NETWORK)
-  {
-    generate_random_network_matrix();
-  }
-  /*** Or generate scale-free network ***/
-  else if (_parameters->get_structure() == SCALE_FREE_NETWORK)
-  {
-    generate_scale_free_network_matrix();
-  }
-  save_stoichiometric_matrix("ancestor/ancestor_stoichiometric_matrix.txt");
-  
-  /*----------------------------------------------------- REACTION LIST */
-  
-  /*** Generate reaction list (no allocation) ***/
-  generate_random_reaction_list();
-  save_reaction_list("ancestor/ancestor_reaction_list.txt", "ancestor/ancestor_adjacency_list.txt");
-  
-  /*** Initialize the ODE solver ***/
-  create_ode_solver();
-  initialize_concentration_vector();
   
   /*----------------------------------------------------- PHENOTYPE */
   
@@ -374,86 +177,7 @@ void Individual::initialize( void )
 void Individual::mutate( double sigma, double mu )
 {
   _mutated = false;
-  for (int i = 0; i < _reaction_list->r; i++)
-  {
-    /*------------------------------*/
-    /* 1) Mutate forward parameters */
-    /*------------------------------*/
-    if (_reaction_list->type[i] == OUTFLOWING_REACTION || _reaction_list->type[i] == IRREVERSIBLE_REACTION || _reaction_list->type[i] == REVERSIBLE_REACTION)
-    {
-      /*** Mutate KM_F ***/
-      if (_prng->uniform() < mu)
-      {
-        double log_km  = log10(_reaction_list->km_f[i]);
-        double new_val = pow(10.0, _prng->gaussian(log_km, sigma));
-        if (new_val < KM_F_MIN)
-        {
-          new_val = KM_F_MIN;
-        }
-        else if (new_val > KM_F_MAX)
-        {
-          new_val = KM_F_MAX;
-        }
-        _reaction_list->km_f[i] = new_val;
-        _mutated                = true;
-      }
-      /*** Mutate Vmax_F ***/
-      if (_prng->uniform() < mu)
-      {
-        double log_vmax = log10(_reaction_list->vmax_f[i]);
-        double new_val  = pow(10.0, _prng->gaussian(log_vmax, sigma));
-        if (new_val < VMAX_F_MIN)
-        {
-          new_val = VMAX_F_MIN;
-        }
-        else if (new_val > VMAX_F_MAX)
-        {
-          new_val = VMAX_F_MAX;
-        }
-        _reaction_list->vmax_f[i] = new_val;
-        _mutated                  = true;
-      }
-    }
-    
-    /*-------------------------------*/
-    /* 2) Mutate backward parameters */
-    /*-------------------------------*/
-    if (_reaction_list->type[i] == REVERSIBLE_REACTION)
-    {
-      /*** Mutate KM_B ***/
-      if (_prng->uniform() < mu)
-      {
-        double log_km  = log10(_reaction_list->km_b[i]);
-        double new_val = pow(10.0, _prng->gaussian(log_km, sigma));
-        if (new_val < KM_B_MIN)
-        {
-          new_val = KM_B_MIN;
-        }
-        else if (new_val > KM_B_MAX)
-        {
-          new_val = KM_B_MAX;
-        }
-        _reaction_list->km_b[i] = new_val;
-        _mutated                = true;
-      }
-      /*** Mutate Vmax_B ***/
-      if (_prng->uniform() < mu)
-      {
-        double log_vmax = log10(_reaction_list->vmax_b[i]);
-        double new_val  = pow(10.0, _prng->gaussian(log_vmax, sigma));
-        if (new_val < _reaction_list->vmax_f[i])
-        {
-          new_val = _reaction_list->vmax_f[i];
-        }
-        else if (new_val > VMAX_B_MAX)
-        {
-          new_val = VMAX_B_MAX;
-        }
-        _reaction_list->vmax_b[i] = new_val;
-        _mutated                  = true;
-      }
-    }
-  }
+  
 }
 
 /**
@@ -609,693 +333,6 @@ void Individual::compute_fitness( void )
 }
 
 /**
- * \brief    Create the stoichiometric matrix
- * \details  --
- * \param    void
- * \return   \e void
- */
-void Individual::create_stoichiometric_matrix( void )
-{
-  assert(_S == NULL);
-  _S = new reaction_type*[_Sdim];
-  for (int i = 0; i < _Sdim; i++)
-  {
-    _S[i] = new reaction_type[_Sdim];
-    for (int j = 0; j < _Sdim; j++)
-    {
-      _S[i][j] = NO_REACTION;
-    }
-  }
-}
-
-/**
- * \brief    Create and copy the stoichiometric matrix
- * \details  --
- * \param    reaction_type** S
- * \return   \e void
- */
-void Individual::copy_stoichiometric_matrix( reaction_type** S )
-{
-  assert(_S == NULL);
-  _S = new reaction_type*[_Sdim];
-  for (int i = 0; i < _Sdim; i++)
-  {
-    _S[i] = new reaction_type[_Sdim];
-    for (int j = 0; j < _Sdim; j++)
-    {
-      _S[i][j] = S[i][j];
-    }
-  }
-}
-
-/**
- * \brief    Print the stoichiometric matrix
- * \details  --
- * \param    void
- * \return   \e void
- */
-void Individual::print_stoichiometric_matrix( void )
-{
-  std::cout << "====== STOICHIOMETRIC MATRIX ======\n";
-  
-  for (int i = 0; i < _Sdim; i++)
-  {
-    if (i < _m)
-    {
-      std::cout << i+1 << "\t";
-    }
-    else if (i == _m)
-    {
-      std::cout << "in\t";
-    }
-    else if (i == _m+1)
-    {
-      std::cout << "out\t";
-    }
-    for (int j = 0; j < _Sdim; j++)
-    {
-      std::cout << _S[i][j] << " ";
-    }
-    std::cout << "\n";
-  }
-  std::cout << "- - - - - - - - - - - - - - - - - -\n";
-  std::cout << "m  Degree In-degree Out-degree\n";
-  for (int i = 0; i < _m; i++)
-  {
-    std::cout << i+1 << "\t" << _degree[i] << "\t" << _in_degree[i] << "\t" << _out_degree[i] << "\n";
-  }
-  std::cout << "===================================\n\n";
-}
-
-/**
- * \brief    Save the stoichiometric matrix in a file
- * \details  --
- * \param    std::string filename
- * \return   \e void
- */
-void Individual::save_stoichiometric_matrix( std::string filename )
-{
-  /*-------------------------------*/
-  /* 1) Save stoichiometric matrix */
-  /*-------------------------------*/
-  std::ofstream file(filename, std::ios::out | std::ios::trunc);
-  for (int i = 0; i < _Sdim; i++)
-  {
-    for (int j = 0; j < _Sdim; j++)
-    {
-      if (j < _Sdim-1)
-      {
-        if (_S[i][j] != NO_REACTION)
-        {
-          file << "1 ";
-        }
-        else
-        {
-          file << "0 ";
-        }
-      }
-      else
-      {
-        if (_S[i][j] != NO_REACTION)
-        {
-          file << "1\n";
-        }
-        else
-        {
-          file << "0\n";
-        }
-      }
-    }
-  }
-  file.close();
-}
-
-/**
- * \brief    Delete the stoichiometric matrix
- * \details  --
- * \param    void
- * \return   \e void
- */
-void Individual::delete_stoichiometric_matrix( void )
-{
-  for (int i = 0; i < _Sdim; i++)
-  {
-    delete[] _S[i];
-    _S[i] = NULL;
-  }
-  delete[] _S;
-  _S = NULL;
-}
-
-/**
- * \brief    Generate a linear pathway stoichiometric matrix
- * \details  --
- * \param    void
- * \return   \e void
- */
-void Individual::generate_linear_pathway_matrix( void )
-{
-  /*----------------------------------------*/
-  /* 1) Influx and outflux are irreversible */
-  /*----------------------------------------*/
-  _S[_influx_index][0] = INFLOWING_REACTION;
-  _in_degree[0]++;
-  _degree[0]++;
-  
-  _S[_m-1][_outflux_index] = OUTFLOWING_REACTION;
-  _out_degree[_m-1]++;
-  _degree[_m-1]++;
-  
-  /*----------------------------------------*/
-  /* 2) Create links, reversible or not     */
-  /*----------------------------------------*/
-  for (int i = 0; i < _m-1; i++)
-  {
-    if (_prng->uniform() < _parameters->get_p_reversible())
-    {
-      _S[i][i+1] = REVERSIBLE_REACTION;
-      _out_degree[i]++;
-      _degree[i]++;
-      _in_degree[i+1]++;
-      _degree[i+1]++;
-    }
-    else
-    {
-      _S[i][i+1] = IRREVERSIBLE_REACTION;
-      _out_degree[i]++;
-      _degree[i]++;
-      _in_degree[i+1]++;
-      _degree[i+1]++;
-    }
-  }
-}
-
-/**
- * \brief    Generate a random stoichiometric matrix
- * \details  --
- * \param    void
- * \return   \e void
- */
-void Individual::generate_random_network_matrix( void )
-{
-  bool connected = false;
-  while (!connected)
-  {
-    /*----------------------------------------*/
-    /* 1) Initialize the network              */
-    /*----------------------------------------*/
-    for (int i = 0; i < _Sdim; i++)
-    {
-      for (int j = 0; j < _Sdim; j++)
-      {
-        _S[i][j] = NO_REACTION;
-      }
-    }
-    for (int i = 0; i < _m; i++)
-    {
-      _degree[i]     = 0;
-      _in_degree[i]  = 0;
-      _out_degree[i] = 0;
-    }
-    
-    /*----------------------------------------*/
-    /* 2) Influx and outflux are irreversible */
-    /*----------------------------------------*/
-    _S[_influx_index][0] = INFLOWING_REACTION;
-    _in_degree[0]++;
-    _degree[0]++;
-    
-    _S[_m-1][_outflux_index] = OUTFLOWING_REACTION;
-    _out_degree[_m-1]++;
-    _degree[_m-1]++;
-    
-    /*----------------------------------------*/
-    /* 3) Create links, reversible or not     */
-    /*----------------------------------------*/
-    for (int iter = 0; iter < _parameters->get_nb_random_iterations(); iter++)
-    {
-      int s = _prng->uniform(0, _m-1);
-      int p = _prng->uniform(0, _m-1);
-      while (s == p)
-      {
-        p = _prng->uniform(0, _m-1);
-      }
-      if (_S[s][p] == NO_REACTION)
-      {
-        if (_prng->uniform() < _parameters->get_p_reversible())
-        {
-          _S[s][p] = REVERSIBLE_REACTION;
-          _out_degree[s]++;
-          _degree[s]++;
-          _in_degree[p]++;
-          _degree[p]++;
-        }
-        else
-        {
-          _S[s][p] = IRREVERSIBLE_REACTION;
-          _out_degree[s]++;
-          _degree[s]++;
-          _in_degree[p]++;
-          _degree[p]++;
-        }
-      }
-    }
-    
-    /*----------------------------------------*/
-    /* 4) Test the network's connectivity     */
-    /*----------------------------------------*/
-    connected    = true;
-    int* reached = new int[_m];
-    for (int i = 0; i < _m; i++)
-    {
-      for (int j = 0; j < _m; j++)
-      {
-        reached[j] = 0;
-      }
-      reached[i] = 1;
-      DFS(i, reached);
-      if (reached[_m-1] == 0)
-      {
-        connected = false;
-      }
-      if (i == 0)
-      {
-        for (int j = 0; j < _m; j++)
-        {
-          if (reached[j] == 0)
-          {
-            connected = false;
-          }
-        }
-      }
-    }
-    delete[] reached;
-    reached = NULL;
-  }
-}
-
-void Individual::generate_scale_free_network_matrix( void )
-{
-  /* TODO */
-}
-
-/**
- * \brief    Run a depth first search algorithm
- * \details  --
- * \param    int i
- * \return   \e void
- */
-void Individual::DFS( int i, int* reached )
-{
-  for (int j = 0; j < _m; j++)
-  {
-    if (reached[j] == 0 && (_S[i][j] == IRREVERSIBLE_REACTION || _S[i][j] == REVERSIBLE_REACTION))
-    {
-      reached[j] = 1;
-      DFS(j, reached);
-    }
-  }
-}
-
-/**
- * \brief    Create the reaction list
- * \details  --
- * \param    void
- * \return   \e void
- */
-void Individual::create_reaction_list( void )
-{
-  assert(_reaction_list == NULL);
-  _reaction_list = new reaction_list;
-}
-
-/**
- * \brief    Create and copy the reaction list
- * \details  --
- * \param    reaction_list* list
- * \return   \e void
- */
-void Individual::copy_reaction_list( reaction_list* list )
-{
-  assert(_reaction_list == NULL);
-  _reaction_list         = new reaction_list;
-  _reaction_list->s      = list->s;
-  _reaction_list->p      = list->p;
-  _reaction_list->type   = list->type;
-  _reaction_list->km_f   = list->km_f;
-  _reaction_list->vmax_f = list->vmax_f;
-  _reaction_list->km_b   = list->km_b;
-  _reaction_list->vmax_b = list->vmax_b;
-  _reaction_list->m      = list->m;
-  _reaction_list->r      = list->r;
-}
-
-/**
- * \brief    Print the reaction list
- * \details  --
- * \param    void
- * \return   \e void
- */
-void Individual::print_reaction_list( void )
-{
-  std::cout << "====== REACTION LIST ======\n";
-  std::cout << "Nb metabolites = " << _reaction_list->m << "\n";
-  std::cout << "Nb reactions = " << _reaction_list->r << "\n";
-  std::cout << "- - - - - - - - - - - - - -\n";
-  for (int i = 0; i < _reaction_list->r; i++)
-  {
-    std::cout << "s=" << _reaction_list->s[i];
-    std::cout << ", p=" << _reaction_list->p[i];
-    std::cout << ", type=" << _reaction_list->type[i];
-    std::cout << ", kmF=" << _reaction_list->km_f[i];
-    std::cout << ", vmaxF=" << _reaction_list->vmax_f[i];
-    std::cout << ", kmB=" << _reaction_list->km_b[i];
-    std::cout << ", vmaxB=" << _reaction_list->vmax_b[i] << "\n";
-  }
-  std::cout << "===========================\n\n";
-}
-
-/**
- * \brief    Save the reaction list in a file
- * \details  --
- * \param    std::string reaction_list_filename
- * \param    std::string adjacency_list_filename
- * \return   \e void
- */
-void Individual::save_reaction_list( std::string reaction_list_filename, std::string adjacency_list_filename )
-{
-  /*----------------------------*/
-  /* 1) Save full reaction list */
-  /*----------------------------*/
-  std::ofstream file(reaction_list_filename, std::ios::out | std::ios::trunc);
-  file << "substrate product reaction_type km_f vmax_f km_b vmax_b\n";
-  for (int i = 0; i < _reaction_list->r; i++)
-  {
-    file << _reaction_list->s[i] << " ";
-    file << _reaction_list->p[i] << " ";
-    file << _reaction_list->type[i] << " ";
-    file << _reaction_list->km_f[i] << " ";
-    file << _reaction_list->vmax_f[i] << " ";
-    file << _reaction_list->km_b[i] << " ";
-    file << _reaction_list->vmax_b[i] << "\n";
-  }
-  file.close();
-  
-  /*----------------------------*/
-  /* 2) Save adjacency list     */
-  /*----------------------------*/
-  file.open(adjacency_list_filename, std::ios::out | std::ios::trunc);
-  for (int i = 0; i < _reaction_list->r; i++)
-  {
-    if (_reaction_list->type[i] == INFLOWING_REACTION)
-    {
-      file << "IN" << " " << _reaction_list->p[i] << "\n";
-    }
-    else if (_reaction_list->type[i] == OUTFLOWING_REACTION)
-    {
-      file << _reaction_list->s[i] << " " << "OUT" << "\n";
-    }
-    else if (_reaction_list->type[i] == IRREVERSIBLE_REACTION)
-    {
-      file << _reaction_list->s[i] << " " << _reaction_list->p[i] << "\n";
-    }
-    else if (_reaction_list->type[i] == REVERSIBLE_REACTION)
-    {
-      file << _reaction_list->s[i] << " " << _reaction_list->p[i] << "\n";
-      file << _reaction_list->p[i] << " " << _reaction_list->s[i] << "\n";
-    }
-  }
-  file.close();
-}
-
-/**
- * \brief    Delete the reaction list
- * \details  --
- * \param    void
- * \return   \e void
- */
-void Individual::delete_reaction_list( void )
-{
-  delete _reaction_list;
-  _reaction_list = NULL;
-}
-
-/**
- * \brief    Create the ODE solver
- * \details  --
- * \param    void
- * \return   \e void
- */
-void Individual::create_ode_solver( void )
-{
-  assert(_ode_solver == NULL);
-  _ode_solver = new ODESolver(_reaction_list, _s);
-}
-
-/**
- * \brief    Delete the ODE solver
- * \details  --
- * \param    void
- * \return   \e void
- */
-void Individual::delete_ode_solver( void )
-{
-  delete _ode_solver;
-  _ode_solver = NULL;
-}
-
-/**
- * \brief    Add a reaction to the reaction list
- * \details  --
- * \param    int s
- * \param    int p
- * \param    reaction_type rtype
- * \param    double km_f
- * \param    double vmax_f
- * \param    double km_b
- * \param    double vmax_b
- * \return   \e void
- */
-void Individual::add_reaction( int s, int p, reaction_type rtype, double km_f, double vmax_f, double km_b, double vmax_b )
-{
-  /*------------------------------------------*/
-  /* 1) Check consistency                     */
-  /*------------------------------------------*/
-  assert(s >= 0);
-  assert(s < _Sdim);
-  assert(p >= 0);
-  assert(p < _Sdim);
-  assert(rtype == NO_REACTION || rtype == INFLOWING_REACTION || rtype == OUTFLOWING_REACTION || rtype == IRREVERSIBLE_REACTION || rtype == REVERSIBLE_REACTION);
-  if (rtype == OUTFLOWING_REACTION || rtype == IRREVERSIBLE_REACTION || rtype == REVERSIBLE_REACTION)
-  {
-    assert(km_f >= KM_F_MIN);
-    assert(km_f <= KM_F_MAX);
-    assert(vmax_f >= VMAX_F_MIN);
-    assert(vmax_f <= VMAX_F_MAX);
-    if (rtype == REVERSIBLE_REACTION)
-    {
-      assert(km_b >= KM_B_MIN);
-      assert(km_b <= KM_B_MAX);
-      assert(vmax_b >= VMAX_B_MIN);
-      assert(vmax_b <= VMAX_B_MAX);
-    }
-    else
-    {
-      assert(km_b == 0.0);
-      assert(vmax_b == 0.0);
-    }
-  }
-  else
-  {
-    assert(km_f == 0.0);
-    assert(vmax_f == 0.0);
-    assert(km_b == 0.0);
-    assert(vmax_b == 0.0);
-  }
-  
-  /*------------------------------------------*/
-  /* 2) Add the reaction to the reaction list */
-  /*------------------------------------------*/
-  _reaction_list->s.push_back(s);
-  _reaction_list->p.push_back(p);
-  _reaction_list->type.push_back(rtype);
-  _reaction_list->km_f.push_back(km_f);
-  _reaction_list->vmax_f.push_back(vmax_f);
-  _reaction_list->km_b.push_back(km_b);
-  _reaction_list->vmax_b.push_back(vmax_b);
-  
-  /*------------------------------------------*/
-  /* 3) Save kinetic parameter values         */
-  /*------------------------------------------*/
-  if (rtype == OUTFLOWING_REACTION || rtype == IRREVERSIBLE_REACTION || rtype == REVERSIBLE_REACTION)
-  {
-    _mean_km_f[s]       += km_f;
-    _mean_vmax_f[s]     += vmax_f;
-    _mean_km_b[s]       += km_b;
-    _mean_vmax_b[s]     += vmax_b;
-    _mean_counter[s]++;
-    _out_mean_km_f[s]   += km_f;
-    _out_mean_vmax_f[s] += vmax_f;
-    _out_mean_km_b[s]   += km_b;
-    _out_mean_vmax_b[s] += vmax_b;
-    _out_mean_counter[s]++;
-    if (rtype != OUTFLOWING_REACTION)
-    {
-      _mean_km_f[p]   += km_f;
-      _mean_vmax_f[p] += vmax_f;
-      _mean_km_b[p]   += km_b;
-      _mean_vmax_b[p] += vmax_b;
-      _mean_counter[p]++;
-      _in_mean_km_f[p]   += km_f;
-      _in_mean_vmax_f[p] += vmax_f;
-      _in_mean_km_b[p]   += km_b;
-      _in_mean_vmax_b[p] += vmax_b;
-      _in_mean_counter[p]++;
-    }
-  }
-}
-
-/**
- * \brief    Generate a random reaction list
- * \details  --
- * \param    void
- * \return   \e void
- */
-void Individual::generate_random_reaction_list( void )
-{
-  /*-----------------------------------------------*/
-  /* 1) Generate the reaction list                 */
-  /*-----------------------------------------------*/
-  double log_km_f_min   = log10(KM_F_MIN);
-  double log_km_f_max   = log10(KM_F_MAX);
-  double log_vmax_f_min = log10(VMAX_F_MIN);
-  double log_vmax_f_max = log10(VMAX_F_MAX);
-  //double log_km_b_min   = log10(KM_B_MIN);
-  double log_km_b_max   = log10(KM_B_MAX);
-  double log_vmax_b_min = log10(VMAX_B_MIN);
-  //double log_vmax_b_max = log10(VMAX_B_MAX);
-  int    nb_reactions   = 0;
-  for (int i = 0; i < _Sdim; i++)
-  {
-    for (int j = 0; j < _Sdim; j++)
-    {
-      /*-----------------------------------------------------*/
-      /* 1.1) If the reaction is an inflowing reaction       */
-      /*-----------------------------------------------------*/
-      if (_S[i][j] == INFLOWING_REACTION && i == _influx_index && j < _influx_index)
-      {
-        add_reaction(i, j, INFLOWING_REACTION, 0.0, 0.0, 0.0, 0.0);
-        nb_reactions++;
-      }
-      /*-----------------------------------------------------*/
-      /* 1.2) Else if the reaction is an outflowing reaction */
-      /*-----------------------------------------------------*/
-      else if (_S[i][j] == OUTFLOWING_REACTION && i < _influx_index && j == _outflux_index)
-      {
-        double log_km_f   = _prng->uniform()*(log_km_f_max-log_km_f_min)+log_km_f_min;
-        double log_vmax_f = _prng->uniform()*(log_vmax_f_max-log_vmax_f_min)+log_vmax_f_min;
-        double km_f       = pow(10.0, log_km_f);
-        double vmax_f     = pow(10.0, log_vmax_f);
-        add_reaction(i, j, OUTFLOWING_REACTION, km_f, vmax_f, 0.0, 0.0);
-        nb_reactions++;
-      }
-      /*-----------------------------------------------------*/
-      /* 1.3) Else if the reaction is irreversible           */
-      /*-----------------------------------------------------*/
-      else if (_S[i][j] == IRREVERSIBLE_REACTION && i < _influx_index && j < _influx_index)
-      {
-        double log_km_f   = _prng->uniform()*(log_km_f_max-log_km_f_min)+log_km_f_min;
-        double log_vmax_f = _prng->uniform()*(log_vmax_f_max-log_vmax_f_min)+log_vmax_f_min;
-        double km_f       = pow(10.0, log_km_f);
-        double vmax_f     = pow(10.0, log_vmax_f);
-        add_reaction(i, j, IRREVERSIBLE_REACTION, km_f, vmax_f, 0.0, 0.0);
-        nb_reactions++;
-      }
-      /*-----------------------------------------------------*/
-      /* 1.4) Else if the reaction is reversible             */
-      /*-----------------------------------------------------*/
-      else if (_S[i][j] == REVERSIBLE_REACTION && i < _influx_index && j < _influx_index)
-      {
-        double log_km_f   = _prng->uniform()*(log_km_f_max-log_km_f_min)+log_km_f_min;
-        double log_vmax_f = _prng->uniform()*(log_vmax_f_max-log_vmax_f_min)+log_vmax_f_min;
-        double log_km_b   = _prng->uniform()*(log_km_b_max-log_km_f)+log_km_f;
-        double log_vmax_b = _prng->uniform()*(log_vmax_f-log_vmax_b_min)+log_vmax_b_min;
-        double km_f       = pow(10.0, log_km_f);
-        double vmax_f     = pow(10.0, log_vmax_f);
-        double km_b       = pow(10.0, log_km_b);
-        double vmax_b     = pow(10.0, log_vmax_b);
-        add_reaction(i, j, REVERSIBLE_REACTION, km_f, vmax_f, km_b, vmax_b);
-        nb_reactions++;
-      }
-      else
-      {
-        if (_S[i][j] != NO_REACTION)
-        {
-          std::cout << "Incorrect reaction scheme in Individual::generate_reaction_list(). Exit.\n";
-          exit(EXIT_FAILURE);
-        }
-        
-      }
-    }
-  }
-  _reaction_list->m = _m;
-  _reaction_list->r = nb_reactions;
-  
-  /*-----------------------------------------------*/
-  /* 2) Compute mean kinetic values per metabolite */
-  /*-----------------------------------------------*/
-  for (int i = 0; i < _m; i++)
-  {
-    if (_mean_counter[i] > 0)
-    {
-      _mean_km_f[i]       /= (double)_mean_counter[i];
-      _mean_vmax_f[i]     /= (double)_mean_counter[i];
-      _mean_km_b[i]       /= (double)_mean_counter[i];
-      _mean_vmax_b[i]     /= (double)_mean_counter[i];
-    }
-    if (_in_mean_counter[i] > 0)
-    {
-      _in_mean_km_f[i]    /= (double)_in_mean_counter[i];
-      _in_mean_vmax_f[i]  /= (double)_in_mean_counter[i];
-      _in_mean_km_b[i]    /= (double)_in_mean_counter[i];
-      _in_mean_vmax_b[i]  /= (double)_in_mean_counter[i];
-    }
-    if (_out_mean_counter[i] > 0)
-    {
-      _out_mean_km_f[i]   /= (double)_out_mean_counter[i];
-      _out_mean_vmax_f[i] /= (double)_out_mean_counter[i];
-      _out_mean_km_b[i]   /= (double)_out_mean_counter[i];
-      _out_mean_vmax_b[i] /= (double)_out_mean_counter[i];
-    }
-  }
-}
-
-/**
- * \brief    Initialize the concentration vector
- * \details  --
- * \param    void
- * \return   \e void
- */
-void Individual::initialize_concentration_vector( void )
-{
-  if (_parameters->get_structure() == LINEAR_PATHWAY)
-  {
-    for (int i = 0; i < _m; i++)
-    {
-      _s[i] = (_reaction_list->km_f[i]*INFLUX)/(_reaction_list->vmax_f[i]-INFLUX);
-    }
-  }
-  else
-  {
-    for (int i = 0; i < _m; i++)
-    {
-      _s[i] = 100.0;
-    }
-  }
-  
-}
-
-/**
  * \brief    Save the current individual state
  * \details  --
  * \param    std::string filename
@@ -1304,28 +341,7 @@ void Individual::initialize_concentration_vector( void )
 void Individual::save_indidivual_state( std::string filename )
 {
   std::ofstream file(filename, std::ios::out | std::ios::trunc);
-  file << "met s copt mean_km_f mean_vmax_f mean_km_b mean_vmax_b in_mean_km_f in_mean_vmax_f in_mean_km_b in_mean_vmax_b out_mean_km_f out_mean_vmax_f out_mean_km_b out_mean_vmax_b degree in_degree out_degree\n";
-  for (int i = 0; i < _m; i++)
-  {
-    file << i+1 << " ";
-    file << _s[i] << " ";
-    file << _c_opt << " ";
-    file << _mean_km_f[i] << " ";
-    file << _mean_vmax_f[i] << " ";
-    file << _mean_km_b[i] << " ";
-    file << _mean_vmax_b[i] << " ";
-    file << _in_mean_km_f[i] << " ";
-    file << _in_mean_vmax_f[i] << " ";
-    file << _in_mean_km_b[i] << " ";
-    file << _in_mean_vmax_b[i] << " ";
-    file << _out_mean_km_f[i] << " ";
-    file << _out_mean_vmax_f[i] << " ";
-    file << _out_mean_km_b[i] << " ";
-    file << _out_mean_vmax_b[i] << " ";
-    file << _degree[i] << " ";
-    file << _in_degree[i] << " ";
-    file << _out_degree[i] << "\n";
-  }
+  /* TODO */
   file.close();
 }
 
@@ -1344,52 +360,12 @@ void Individual::prepare_for_tree( void )
   
   /*----------------------------------------------------- NETWORK STRUCTURE */
   
-  delete_stoichiometric_matrix();
-  delete[] _degree;
-  _degree = NULL;
-  delete[] _in_degree;
-  _in_degree = NULL;
-  delete[] _out_degree;
-  _out_degree = NULL;
-  delete[] _mean_km_f;
-  _mean_km_f = NULL;
-  delete[] _mean_vmax_f;
-  _mean_vmax_f = NULL;
-  delete[] _mean_km_b;
-  _mean_km_b = NULL;
-  delete[] _mean_vmax_b;
-  _mean_vmax_b = NULL;
-  delete[] _mean_counter;
-  _mean_counter = NULL;
-  delete[] _in_mean_km_f;
-  _in_mean_km_f = NULL;
-  delete[] _in_mean_vmax_f;
-  _in_mean_vmax_f = NULL;
-  delete[] _in_mean_km_b;
-  _in_mean_km_b = NULL;
-  delete[] _in_mean_vmax_b;
-  _in_mean_vmax_b = NULL;
-  delete[] _in_mean_counter;
-  _in_mean_counter = NULL;
-  delete[] _out_mean_km_f;
-  _out_mean_km_f = NULL;
-  delete[] _out_mean_vmax_f;
-  _out_mean_vmax_f = NULL;
-  delete[] _out_mean_km_b;
-  _out_mean_km_b = NULL;
-  delete[] _out_mean_vmax_b;
-  _out_mean_vmax_b = NULL;
-  delete[] _out_mean_counter;
-  _out_mean_counter = NULL;
+  /* TODO */
   
   /*----------------------------------------------------- PHENOTYPE */
   
   delete[] _old_s;
   _old_s = NULL;
-  
-  /*----------------------------------------------------- REACTION LIST */
-  
-  delete_ode_solver();
   
   /*----------------------------------------------------- TREE MANAGEMENT */
   
@@ -1399,4 +375,483 @@ void Individual::prepare_for_tree( void )
 /*----------------------------
  * PROTECTED METHODS
  *----------------------------*/
+
+/**
+ * \brief    Create the metabolite id to index map
+ * \details  --
+ * \param    void
+ * \return   \e void
+ */
+void Individual::create_met_id_to_index_map( void )
+{
+  _met_id_to_index.clear();
+  _met_id_to_index["ADPf"]      = 0;
+  _met_id_to_index["AMPf"]      = 1;
+  _met_id_to_index["ATPf"]      = 2;
+  _met_id_to_index["DHAP"]      = 3;
+  _met_id_to_index["E4P"]       = 4;
+  _met_id_to_index["Fru16P2"]   = 5;
+  _met_id_to_index["Fru6P"]     = 6;
+  _met_id_to_index["GSH"]       = 7;
+  _met_id_to_index["GSSG"]      = 8;
+  _met_id_to_index["Glc6P"]     = 9;
+  _met_id_to_index["GlcA6P"]    = 10;
+  _met_id_to_index["Glcin"]     = 11;
+  _met_id_to_index["GraP"]      = 12;
+  _met_id_to_index["Gri13P2"]   = 13;
+  _met_id_to_index["Gri23P2f"]  = 14;
+  _met_id_to_index["Gri2P"]     = 15;
+  _met_id_to_index["Gri3P"]     = 16;
+  _met_id_to_index["Lac"]       = 17;
+  _met_id_to_index["MgADP"]     = 18;
+  _met_id_to_index["MgAMP"]     = 19;
+  _met_id_to_index["MgATP"]     = 20;
+  _met_id_to_index["MgGri23P2"] = 21;
+  _met_id_to_index["Mgf"]       = 22;
+  _met_id_to_index["NAD"]       = 23;
+  _met_id_to_index["NADH"]      = 24;
+  _met_id_to_index["NADPHf"]    = 25;
+  _met_id_to_index["NADPf"]     = 26;
+  _met_id_to_index["P1NADP"]    = 27;
+  _met_id_to_index["P1NADPH"]   = 28;
+  _met_id_to_index["P1f"]       = 29;
+  _met_id_to_index["P2NADP"]    = 30;
+  _met_id_to_index["P2NADPH"]   = 31;
+  _met_id_to_index["P2f"]       = 32;
+  _met_id_to_index["PEP"]       = 33;
+  _met_id_to_index["Phi"]       = 34;
+  _met_id_to_index["Pyr"]       = 35;
+  _met_id_to_index["Rib5P"]     = 36;
+  _met_id_to_index["Rul5P"]     = 37;
+  _met_id_to_index["Sed7P"]     = 38;
+  _met_id_to_index["Xul5P"]     = 39;
+}
+
+/**
+ * \brief    Create the parameter id to index map
+ * \details  --
+ * \param    void
+ * \return   \e void
+ */
+void Individual::create_params_id_to_index_map( void )
+{
+  _params_id_to_index.clear();
+  _params_id_to_index["Atot"]        = 0;
+  _params_id_to_index["EqMult"]      = 1;
+  _params_id_to_index["GStotal"]     = 2;
+  _params_id_to_index["Inhibv1"]     = 3;
+  _params_id_to_index["K13P2Gv6"]    = 4;
+  _params_id_to_index["K13P2Gv7"]    = 5;
+  _params_id_to_index["K1v23"]       = 6;
+  _params_id_to_index["K1v24"]       = 7;
+  _params_id_to_index["K1v26"]       = 8;
+  _params_id_to_index["K23P2Gv1"]    = 9;
+  _params_id_to_index["K23P2Gv8"]    = 10;
+  _params_id_to_index["K23P2Gv9"]    = 11;
+  _params_id_to_index["K2PGv10"]     = 12;
+  _params_id_to_index["K2PGv11"]     = 13;
+  _params_id_to_index["K2v23"]       = 14;
+  _params_id_to_index["K2v24"]       = 15;
+  _params_id_to_index["K2v26"]       = 16;
+  _params_id_to_index["K3PGv10"]     = 17;
+  _params_id_to_index["K3PGv7"]      = 18;
+  _params_id_to_index["K3v23"]       = 19;
+  _params_id_to_index["K3v24"]       = 20;
+  _params_id_to_index["K3v26"]       = 21;
+  _params_id_to_index["K4v23"]       = 22;
+  _params_id_to_index["K4v24"]       = 23;
+  _params_id_to_index["K4v26"]       = 24;
+  _params_id_to_index["K5v23"]       = 25;
+  _params_id_to_index["K5v24"]       = 26;
+  _params_id_to_index["K5v26"]       = 27;
+  _params_id_to_index["K6PG1v18"]    = 28;
+  _params_id_to_index["K6PG2v18"]    = 29;
+  _params_id_to_index["K6v23"]       = 30;
+  _params_id_to_index["K6v24"]       = 31;
+  _params_id_to_index["K6v26"]       = 32;
+  _params_id_to_index["K7v23"]       = 33;
+  _params_id_to_index["K7v24"]       = 34;
+  _params_id_to_index["K7v26"]       = 35;
+  _params_id_to_index["KADPv16"]     = 36;
+  _params_id_to_index["KAMPv16"]     = 37;
+  _params_id_to_index["KAMPv3"]      = 38;
+  _params_id_to_index["KATPv12"]     = 39;
+  _params_id_to_index["KATPv16"]     = 40;
+  _params_id_to_index["KATPv17"]     = 41;
+  _params_id_to_index["KATPv18"]     = 42;
+  _params_id_to_index["KATPv25"]     = 43;
+  _params_id_to_index["KATPv3"]      = 44;
+  _params_id_to_index["KDHAPv4"]     = 45;
+  _params_id_to_index["KDHAPv5"]     = 46;
+  _params_id_to_index["KFru16P2v12"] = 47;
+  _params_id_to_index["KFru16P2v4"]  = 48;
+  _params_id_to_index["KFru6Pv2"]    = 49;
+  _params_id_to_index["KFru6Pv3"]    = 50;
+  _params_id_to_index["KG6Pv17"]     = 51;
+  _params_id_to_index["KGSHv19"]     = 52;
+  _params_id_to_index["KGSSGv19"]    = 53;
+  _params_id_to_index["KGlc6Pv1"]    = 54;
+  _params_id_to_index["KGlc6Pv2"]    = 55;
+  _params_id_to_index["KGraPv4"]     = 56;
+  _params_id_to_index["KGraPv5"]     = 57;
+  _params_id_to_index["KGraPv6"]     = 58;
+  _params_id_to_index["KMGlcv1"]     = 59;
+  _params_id_to_index["KMg23P2Gv1"]  = 60;
+  _params_id_to_index["KMgADPv12"]   = 61;
+  _params_id_to_index["KMgADPv7"]    = 62;
+  _params_id_to_index["KMgATPMgv1"]  = 63;
+  _params_id_to_index["KMgATPv1"]    = 64;
+  _params_id_to_index["KMgATPv3"]    = 65;
+  _params_id_to_index["KMgATPv7"]    = 66;
+  _params_id_to_index["KMgv1"]       = 67;
+  _params_id_to_index["KMgv3"]       = 68;
+  _params_id_to_index["KMinv0"]      = 69;
+  _params_id_to_index["KMoutv0"]     = 70;
+  _params_id_to_index["KNADHv6"]     = 71;
+  _params_id_to_index["KNADPHv17"]   = 72;
+  _params_id_to_index["KNADPHv18"]   = 73;
+  _params_id_to_index["KNADPHv19"]   = 74;
+  _params_id_to_index["KNADPv17"]    = 75;
+  _params_id_to_index["KNADPv18"]    = 76;
+  _params_id_to_index["KNADPv19"]    = 77;
+  _params_id_to_index["KNADv6"]      = 78;
+  _params_id_to_index["KPEPv11"]     = 79;
+  _params_id_to_index["KPEPv12"]     = 80;
+  _params_id_to_index["KPGA23v17"]   = 81;
+  _params_id_to_index["KPGA23v18"]   = 82;
+  _params_id_to_index["KPv6"]        = 83;
+  _params_id_to_index["KR5Pv22"]     = 84;
+  _params_id_to_index["KR5Pv25"]     = 85;
+  _params_id_to_index["KRu5Pv21"]    = 86;
+  _params_id_to_index["KRu5Pv22"]    = 87;
+  _params_id_to_index["KX5Pv21"]     = 88;
+  _params_id_to_index["Kd1"]         = 89;
+  _params_id_to_index["Kd2"]         = 90;
+  _params_id_to_index["Kd23P2G"]     = 91;
+  _params_id_to_index["Kd3"]         = 92;
+  _params_id_to_index["Kd4"]         = 93;
+  _params_id_to_index["KdADP"]       = 94;
+  _params_id_to_index["KdAMP"]       = 95;
+  _params_id_to_index["KdATP"]       = 96;
+  _params_id_to_index["Keqv0"]       = 97;
+  _params_id_to_index["Keqv1"]       = 98;
+  _params_id_to_index["Keqv10"]      = 99;
+  _params_id_to_index["Keqv11"]      = 100;
+  _params_id_to_index["Keqv12"]      = 101;
+  _params_id_to_index["Keqv13"]      = 102;
+  _params_id_to_index["Keqv14"]      = 103;
+  _params_id_to_index["Keqv16"]      = 104;
+  _params_id_to_index["Keqv17"]      = 105;
+  _params_id_to_index["Keqv18"]      = 106;
+  _params_id_to_index["Keqv19"]      = 107;
+  _params_id_to_index["Keqv2"]       = 108;
+  _params_id_to_index["Keqv21"]      = 109;
+  _params_id_to_index["Keqv22"]      = 110;
+  _params_id_to_index["Keqv23"]      = 111;
+  _params_id_to_index["Keqv24"]      = 112;
+  _params_id_to_index["Keqv25"]      = 113;
+  _params_id_to_index["Keqv26"]      = 114;
+  _params_id_to_index["Keqv27"]      = 115;
+  _params_id_to_index["Keqv28"]      = 116;
+  _params_id_to_index["Keqv29"]      = 117;
+  _params_id_to_index["Keqv3"]       = 118;
+  _params_id_to_index["Keqv4"]       = 119;
+  _params_id_to_index["Keqv5"]       = 120;
+  _params_id_to_index["Keqv6"]       = 121;
+  _params_id_to_index["Keqv7"]       = 122;
+  _params_id_to_index["Keqv8"]       = 123;
+  _params_id_to_index["Keqv9"]       = 124;
+  _params_id_to_index["KiGraPv4"]    = 125;
+  _params_id_to_index["KiiGraPv4"]   = 126;
+  _params_id_to_index["Kv20"]        = 127;
+  _params_id_to_index["L0v12"]       = 128;
+  _params_id_to_index["L0v3"]        = 129;
+  _params_id_to_index["Mgtot"]       = 130;
+  _params_id_to_index["NADPtot"]     = 131;
+  _params_id_to_index["NADtot"]      = 132;
+  _params_id_to_index["Vmax1v1"]     = 133;
+  _params_id_to_index["Vmax2v1"]     = 134;
+  _params_id_to_index["Vmaxv0"]      = 135;
+  _params_id_to_index["Vmaxv10"]     = 136;
+  _params_id_to_index["Vmaxv11"]     = 137;
+  _params_id_to_index["Vmaxv12"]     = 138;
+  _params_id_to_index["Vmaxv13"]     = 139;
+  _params_id_to_index["Vmaxv16"]     = 140;
+  _params_id_to_index["Vmaxv17"]     = 141;
+  _params_id_to_index["Vmaxv18"]     = 142;
+  _params_id_to_index["Vmaxv19"]     = 143;
+  _params_id_to_index["Vmaxv2"]      = 144;
+  _params_id_to_index["Vmaxv21"]     = 145;
+  _params_id_to_index["Vmaxv22"]     = 146;
+  _params_id_to_index["Vmaxv23"]     = 147;
+  _params_id_to_index["Vmaxv24"]     = 148;
+  _params_id_to_index["Vmaxv25"]     = 149;
+  _params_id_to_index["Vmaxv26"]     = 150;
+  _params_id_to_index["Vmaxv27"]     = 151;
+  _params_id_to_index["Vmaxv28"]     = 152;
+  _params_id_to_index["Vmaxv29"]     = 153;
+  _params_id_to_index["Vmaxv3"]      = 154;
+  _params_id_to_index["Vmaxv4"]      = 155;
+  _params_id_to_index["Vmaxv5"]      = 156;
+  _params_id_to_index["Vmaxv6"]      = 157;
+  _params_id_to_index["Vmaxv7"]      = 158;
+  _params_id_to_index["Vmaxv9"]      = 159;
+  _params_id_to_index["alfav0"]      = 160;
+  _params_id_to_index["kATPasev15"]  = 161;
+  _params_id_to_index["kDPGMv8"]     = 162;
+  _params_id_to_index["kLDHv14"]     = 163;
+  _params_id_to_index["protein1"]    = 164;
+  _params_id_to_index["protein2"]    = 165;
+  _params_id_to_index["Glcout"]      = 166;
+  _params_id_to_index["Lacex"]       = 167;
+  _params_id_to_index["PRPP"]        = 168;
+  _params_id_to_index["Phiex"]       = 169;
+  _params_id_to_index["Pyrex"]       = 170;
+}
+
+/**
+ * \brief    Initialize concentration values
+ * \details  --
+ * \param    void
+ * \return   \e void
+ */
+void Individual::initialize_concentrations( void )
+{
+  assert(_initial_s == NULL);
+  _initial_s = new double[_m];
+  _initial_s[_met_id_to_index["ADPf"]]      = 0.25;
+  _initial_s[_met_id_to_index["AMPf"]]      = 0.0;
+  _initial_s[_met_id_to_index["ATPf"]]      = 0.25;
+  _initial_s[_met_id_to_index["DHAP"]]      = 0.1492;
+  _initial_s[_met_id_to_index["E4P"]]       = 0.0063;
+  _initial_s[_met_id_to_index["Fru16P2"]]   = 0.0097;
+  _initial_s[_met_id_to_index["Fru6P"]]     = 0.0153;
+  _initial_s[_met_id_to_index["GSH"]]       = 3.1136;
+  _initial_s[_met_id_to_index["GSSG"]]      = 0.0004;
+  _initial_s[_met_id_to_index["Glc6P"]]     = 0.0394;
+  _initial_s[_met_id_to_index["GlcA6P"]]    = 0.025;
+  _initial_s[_met_id_to_index["Glcin"]]     = 4.5663;
+  _initial_s[_met_id_to_index["GraP"]]      = 0.0061;
+  _initial_s[_met_id_to_index["Gri13P2"]]   = 0.0005;
+  _initial_s[_met_id_to_index["Gri23P2f"]]  = 2.0601;
+  _initial_s[_met_id_to_index["Gri2P"]]     = 0.0084;
+  _initial_s[_met_id_to_index["Gri3P"]]     = 0.0658;
+  _initial_s[_met_id_to_index["Lac"]]       = 1.6803;
+  _initial_s[_met_id_to_index["MgADP"]]     = 0.1;
+  _initial_s[_met_id_to_index["MgAMP"]]     = 0.0;
+  _initial_s[_met_id_to_index["MgATP"]]     = 1.4;
+  _initial_s[_met_id_to_index["MgGri23P2"]] = 0.5;
+  _initial_s[_met_id_to_index["Mgf"]]       = 0.8;
+  _initial_s[_met_id_to_index["NAD"]]       = 0.0653;
+  _initial_s[_met_id_to_index["NADH"]]      = 0.0002;
+  _initial_s[_met_id_to_index["NADPHf"]]    = 0.004;
+  _initial_s[_met_id_to_index["NADPf"]]     = 0.0;
+  _initial_s[_met_id_to_index["P1NADP"]]    = 0.0;
+  _initial_s[_met_id_to_index["P1NADPH"]]   = 0.024;
+  _initial_s[_met_id_to_index["P1f"]]       = 0.0;
+  _initial_s[_met_id_to_index["P2NADP"]]    = 0.0;
+  _initial_s[_met_id_to_index["P2NADPH"]]   = 0.024;
+  _initial_s[_met_id_to_index["P2f"]]       = 0.0;
+  _initial_s[_met_id_to_index["PEP"]]       = 0.0109;
+  _initial_s[_met_id_to_index["Phi"]]       = 0.9992;
+  _initial_s[_met_id_to_index["Pyr"]]       = 0.084;
+  _initial_s[_met_id_to_index["Rib5P"]]     = 0.014;
+  _initial_s[_met_id_to_index["Rul5P"]]     = 0.0047;
+  _initial_s[_met_id_to_index["Sed7P"]]     = 0.0154;
+  _initial_s[_met_id_to_index["Xul5P"]]     = 0.0127;
+}
+
+/**
+ * \brief    Initialize parameter values
+ * \details  --
+ * \param    void
+ * \return   \e void
+ */
+void Individual::initialize_parameters( void )
+{
+  assert(_initial_params == NULL);
+  _initial_params = new double[_p];
+  _initial_params[_params_id_to_index["Atot"]]        = 2.0;
+  _initial_params[_params_id_to_index["EqMult"]]      = 1000.0;
+  _initial_params[_params_id_to_index["GStotal"]]     = 3.114;
+  _initial_params[_params_id_to_index["Inhibv1"]]     = 1.0;
+  _initial_params[_params_id_to_index["K13P2Gv6"]]    = 0.0035;
+  _initial_params[_params_id_to_index["K13P2Gv7"]]    = 0.002;
+  _initial_params[_params_id_to_index["K1v23"]]       = 0.4177;
+  _initial_params[_params_id_to_index["K1v24"]]       = 0.00823;
+  _initial_params[_params_id_to_index["K1v26"]]       = 0.00184;
+  _initial_params[_params_id_to_index["K23P2Gv1"]]    = 2.7;
+  _initial_params[_params_id_to_index["K23P2Gv8"]]    = 0.04;
+  _initial_params[_params_id_to_index["K23P2Gv9"]]    = 0.2;
+  _initial_params[_params_id_to_index["K2PGv10"]]     = 1.0;
+  _initial_params[_params_id_to_index["K2PGv11"]]     = 1.0;
+  _initial_params[_params_id_to_index["K2v23"]]       = 0.3055;
+  _initial_params[_params_id_to_index["K2v24"]]       = 0.04765;
+  _initial_params[_params_id_to_index["K2v26"]]       = 0.3055;
+  _initial_params[_params_id_to_index["K3PGv10"]]     = 5.0;
+  _initial_params[_params_id_to_index["K3PGv7"]]      = 1.2;
+  _initial_params[_params_id_to_index["K3v23"]]       = 12.432;
+  _initial_params[_params_id_to_index["K3v24"]]       = 0.1733;
+  _initial_params[_params_id_to_index["K3v26"]]       = 0.0548;
+  _initial_params[_params_id_to_index["K4v23"]]       = 0.00496;
+  _initial_params[_params_id_to_index["K4v24"]]       = 0.006095;
+  _initial_params[_params_id_to_index["K4v26"]]       = 0.0003;
+  _initial_params[_params_id_to_index["K5v23"]]       = 0.41139;
+  _initial_params[_params_id_to_index["K5v24"]]       = 0.8683;
+  _initial_params[_params_id_to_index["K5v26"]]       = 0.0287;
+  _initial_params[_params_id_to_index["K6PG1v18"]]    = 0.01;
+  _initial_params[_params_id_to_index["K6PG2v18"]]    = 0.058;
+  _initial_params[_params_id_to_index["K6v23"]]       = 0.00774;
+  _initial_params[_params_id_to_index["K6v24"]]       = 0.4653;
+  _initial_params[_params_id_to_index["K6v26"]]       = 0.122;
+  _initial_params[_params_id_to_index["K7v23"]]       = 48.8;
+  _initial_params[_params_id_to_index["K7v24"]]       = 2.524;
+  _initial_params[_params_id_to_index["K7v26"]]       = 0.215;
+  _initial_params[_params_id_to_index["KADPv16"]]     = 0.11;
+  _initial_params[_params_id_to_index["KAMPv16"]]     = 0.08;
+  _initial_params[_params_id_to_index["KAMPv3"]]      = 0.033;
+  _initial_params[_params_id_to_index["KATPv12"]]     = 3.39;
+  _initial_params[_params_id_to_index["KATPv16"]]     = 0.09;
+  _initial_params[_params_id_to_index["KATPv17"]]     = 0.749;
+  _initial_params[_params_id_to_index["KATPv18"]]     = 0.154;
+  _initial_params[_params_id_to_index["KATPv25"]]     = 0.03;
+  _initial_params[_params_id_to_index["KATPv3"]]      = 0.01;
+  _initial_params[_params_id_to_index["KDHAPv4"]]     = 0.0364;
+  _initial_params[_params_id_to_index["KDHAPv5"]]     = 0.838;
+  _initial_params[_params_id_to_index["KFru16P2v12"]] = 0.005;
+  _initial_params[_params_id_to_index["KFru16P2v4"]]  = 0.0071;
+  _initial_params[_params_id_to_index["KFru6Pv2"]]    = 0.071;
+  _initial_params[_params_id_to_index["KFru6Pv3"]]    = 0.1;
+  _initial_params[_params_id_to_index["KG6Pv17"]]     = 0.0667;
+  _initial_params[_params_id_to_index["KGSHv19"]]     = 20.0;
+  _initial_params[_params_id_to_index["KGSSGv19"]]    = 0.0652;
+  _initial_params[_params_id_to_index["KGlc6Pv1"]]    = 0.0045;
+  _initial_params[_params_id_to_index["KGlc6Pv2"]]    = 0.182;
+  _initial_params[_params_id_to_index["KGraPv4"]]     = 0.1906;
+  _initial_params[_params_id_to_index["KGraPv5"]]     = 0.428;
+  _initial_params[_params_id_to_index["KGraPv6"]]     = 0.005;
+  _initial_params[_params_id_to_index["KMGlcv1"]]     = 0.1;
+  _initial_params[_params_id_to_index["KMg23P2Gv1"]]  = 3.44;
+  _initial_params[_params_id_to_index["KMgADPv12"]]   = 0.474;
+  _initial_params[_params_id_to_index["KMgADPv7"]]    = 0.35;
+  _initial_params[_params_id_to_index["KMgATPMgv1"]]  = 1.14;
+  _initial_params[_params_id_to_index["KMgATPv1"]]    = 1.44;
+  _initial_params[_params_id_to_index["KMgATPv3"]]    = 0.068;
+  _initial_params[_params_id_to_index["KMgATPv7"]]    = 0.48;
+  _initial_params[_params_id_to_index["KMgv1"]]       = 1.03;
+  _initial_params[_params_id_to_index["KMgv3"]]       = 0.44;
+  _initial_params[_params_id_to_index["KMinv0"]]      = 6.9;
+  _initial_params[_params_id_to_index["KMoutv0"]]     = 1.7;
+  _initial_params[_params_id_to_index["KNADHv6"]]     = 0.0083;
+  _initial_params[_params_id_to_index["KNADPHv17"]]   = 0.00312;
+  _initial_params[_params_id_to_index["KNADPHv18"]]   = 0.0045;
+  _initial_params[_params_id_to_index["KNADPHv19"]]   = 0.00852;
+  _initial_params[_params_id_to_index["KNADPv17"]]    = 0.00367;
+  _initial_params[_params_id_to_index["KNADPv18"]]    = 0.018;
+  _initial_params[_params_id_to_index["KNADPv19"]]    = 0.07;
+  _initial_params[_params_id_to_index["KNADv6"]]      = 0.05;
+  _initial_params[_params_id_to_index["KPEPv11"]]     = 1.0;
+  _initial_params[_params_id_to_index["KPEPv12"]]     = 0.225;
+  _initial_params[_params_id_to_index["KPGA23v17"]]   = 2.289;
+  _initial_params[_params_id_to_index["KPGA23v18"]]   = 0.12;
+  _initial_params[_params_id_to_index["KPv6"]]        = 3.9;
+  _initial_params[_params_id_to_index["KR5Pv22"]]     = 2.2;
+  _initial_params[_params_id_to_index["KR5Pv25"]]     = 0.57;
+  _initial_params[_params_id_to_index["KRu5Pv21"]]    = 0.19;
+  _initial_params[_params_id_to_index["KRu5Pv22"]]    = 0.78;
+  _initial_params[_params_id_to_index["KX5Pv21"]]     = 0.5;
+  _initial_params[_params_id_to_index["Kd1"]]         = 0.0002;
+  _initial_params[_params_id_to_index["Kd2"]]         = 1e-05;
+  _initial_params[_params_id_to_index["Kd23P2G"]]     = 1.667;
+  _initial_params[_params_id_to_index["Kd3"]]         = 1e-05;
+  _initial_params[_params_id_to_index["Kd4"]]         = 0.0002;
+  _initial_params[_params_id_to_index["KdADP"]]       = 0.76;
+  _initial_params[_params_id_to_index["KdAMP"]]       = 16.64;
+  _initial_params[_params_id_to_index["KdATP"]]       = 0.072;
+  _initial_params[_params_id_to_index["Keqv0"]]       = 1.0;
+  _initial_params[_params_id_to_index["Keqv1"]]       = 3900.0;
+  _initial_params[_params_id_to_index["Keqv10"]]      = 0.145;
+  _initial_params[_params_id_to_index["Keqv11"]]      = 1.7;
+  _initial_params[_params_id_to_index["Keqv12"]]      = 13790.0;
+  _initial_params[_params_id_to_index["Keqv13"]]      = 9090.0;
+  _initial_params[_params_id_to_index["Keqv14"]]      = 14181.8;
+  _initial_params[_params_id_to_index["Keqv16"]]      = 0.25;
+  _initial_params[_params_id_to_index["Keqv17"]]      = 2000.0;
+  _initial_params[_params_id_to_index["Keqv18"]]      = 141.7;
+  _initial_params[_params_id_to_index["Keqv19"]]      = 1.04;
+  _initial_params[_params_id_to_index["Keqv2"]]       = 0.3925;
+  _initial_params[_params_id_to_index["Keqv21"]]      = 2.7;
+  _initial_params[_params_id_to_index["Keqv22"]]      = 3.0;
+  _initial_params[_params_id_to_index["Keqv23"]]      = 1.05;
+  _initial_params[_params_id_to_index["Keqv24"]]      = 1.05;
+  _initial_params[_params_id_to_index["Keqv25"]]      = 100000.0;
+  _initial_params[_params_id_to_index["Keqv26"]]      = 1.2;
+  _initial_params[_params_id_to_index["Keqv27"]]      = 1.0;
+  _initial_params[_params_id_to_index["Keqv28"]]      = 1.0;
+  _initial_params[_params_id_to_index["Keqv29"]]      = 1.0;
+  _initial_params[_params_id_to_index["Keqv3"]]       = 100000.0;
+  _initial_params[_params_id_to_index["Keqv4"]]       = 0.114;
+  _initial_params[_params_id_to_index["Keqv5"]]       = 0.0407;
+  _initial_params[_params_id_to_index["Keqv6"]]       = 0.000192;
+  _initial_params[_params_id_to_index["Keqv7"]]       = 1455.0;
+  _initial_params[_params_id_to_index["Keqv8"]]       = 100000.0;
+  _initial_params[_params_id_to_index["Keqv9"]]       = 100000.0;
+  _initial_params[_params_id_to_index["KiGraPv4"]]    = 0.0572;
+  _initial_params[_params_id_to_index["KiiGraPv4"]]   = 0.176;
+  _initial_params[_params_id_to_index["Kv20"]]        = 0.03;
+  _initial_params[_params_id_to_index["L0v12"]]       = 19.0;
+  _initial_params[_params_id_to_index["L0v3"]]        = 0.001072;
+  _initial_params[_params_id_to_index["Mgtot"]]       = 2.8;
+  _initial_params[_params_id_to_index["NADPtot"]]     = 0.052;
+  _initial_params[_params_id_to_index["NADtot"]]      = 0.0655;
+  _initial_params[_params_id_to_index["Vmax1v1"]]     = 15.8;
+  _initial_params[_params_id_to_index["Vmax2v1"]]     = 33.2;
+  _initial_params[_params_id_to_index["Vmaxv0"]]      = 33.6;
+  _initial_params[_params_id_to_index["Vmaxv10"]]     = 2000.0;
+  _initial_params[_params_id_to_index["Vmaxv11"]]     = 1500.0;
+  _initial_params[_params_id_to_index["Vmaxv12"]]     = 570.0;
+  _initial_params[_params_id_to_index["Vmaxv13"]]     = 2800000.0;
+  _initial_params[_params_id_to_index["Vmaxv16"]]     = 1380.0;
+  _initial_params[_params_id_to_index["Vmaxv17"]]     = 162.0;
+  _initial_params[_params_id_to_index["Vmaxv18"]]     = 1575.0;
+  _initial_params[_params_id_to_index["Vmaxv19"]]     = 90.0;
+  _initial_params[_params_id_to_index["Vmaxv2"]]      = 935.0;
+  _initial_params[_params_id_to_index["Vmaxv21"]]     = 4634.0;
+  _initial_params[_params_id_to_index["Vmaxv22"]]     = 730.0;
+  _initial_params[_params_id_to_index["Vmaxv23"]]     = 23.5;
+  _initial_params[_params_id_to_index["Vmaxv24"]]     = 27.2;
+  _initial_params[_params_id_to_index["Vmaxv25"]]     = 1.1;
+  _initial_params[_params_id_to_index["Vmaxv26"]]     = 23.5;
+  _initial_params[_params_id_to_index["Vmaxv27"]]     = 100.0;
+  _initial_params[_params_id_to_index["Vmaxv28"]]     = 10000.0;
+  _initial_params[_params_id_to_index["Vmaxv29"]]     = 10000.0;
+  _initial_params[_params_id_to_index["Vmaxv3"]]      = 239.0;
+  _initial_params[_params_id_to_index["Vmaxv4"]]      = 98.91000366;
+  _initial_params[_params_id_to_index["Vmaxv5"]]      = 5456.600098;
+  _initial_params[_params_id_to_index["Vmaxv6"]]      = 4300.0;
+  _initial_params[_params_id_to_index["Vmaxv7"]]      = 5000.0;
+  _initial_params[_params_id_to_index["Vmaxv9"]]      = 0.53;
+  _initial_params[_params_id_to_index["alfav0"]]      = 0.54;
+  _initial_params[_params_id_to_index["kATPasev15"]]  = 1.68;
+  _initial_params[_params_id_to_index["kDPGMv8"]]     = 76000.0;
+  _initial_params[_params_id_to_index["kLDHv14"]]     = 243.4;
+  _initial_params[_params_id_to_index["protein1"]]    = 0.024;
+  _initial_params[_params_id_to_index["protein2"]]    = 0.024;
+  _initial_params[_params_id_to_index["Glcout"]]      = 5.0;
+  _initial_params[_params_id_to_index["Lacex"]]       = 1.68;
+  _initial_params[_params_id_to_index["PRPP"]]        = 1.0;
+  _initial_params[_params_id_to_index["Phiex"]]       = 1.0;
+  _initial_params[_params_id_to_index["Pyrex"]]       = 0.084;
+}
+
+/**
+ * \brief    Initialize the concentration vector
+ * \details  --
+ * \param    void
+ * \return   \e void
+ */
+void Individual::initialize_concentration_vector( void )
+{
+  memcpy(_s, _initial_s, sizeof(double)*_m);
+}
 

@@ -1,6 +1,6 @@
 
-#ifndef __ComplexMetabolicNetwork__Parameters__
-#define __ComplexMetabolicNetwork__Parameters__
+#ifndef __Holzhutter2004__Parameters__
+#define __Holzhutter2004__Parameters__
 
 #include <iostream>
 #include <fstream>
@@ -42,13 +42,6 @@ public:
   inline int get_generations( void ) const;
   inline int get_n( void ) const;
   
-  /*----------------------------------------------------- METABOLIC NETWORK */
-  
-  inline int            get_m( void ) const;
-  inline network_struct get_structure( void ) const;
-  inline int            get_nb_random_iterations( void ) const;
-  inline double         get_p_reversible( void ) const;
-  
   /*----------------------------------------------------- MUTATIONS */
   
   inline double get_sigma( void ) const;
@@ -78,13 +71,6 @@ public:
   
   inline void set_generations( int generations );
   inline void set_n( int n );
-  
-  /*----------------------------------------------------- METABOLIC NETWORK */
-  
-  inline void set_m( int m );
-  inline void set_structure( network_struct structure );
-  inline void set_nb_random_iterations( int nb_random_iterations );
-  inline void set_p_reversible( double p_reversible );
   
   /*----------------------------------------------------- MUTATIONS */
   
@@ -131,13 +117,6 @@ protected:
   
   double _generations; /*!< Number of generations */
   double _n;           /*!< Population size       */
-  
-  /*----------------------------------------------------- METABOLIC NETWORK */
-  
-  double         _m;                    /*!< Number of metabolites                               */
-  network_struct _structure;            /*!< Structure of the metabolic network                  */
-  int            _nb_random_iterations; /*!< Number of iterations to generate the random network */
-  double         _p_reversible;         /*!< Reversibility probability                           */
   
   /*----------------------------------------------------- MUTATIONS */
   
@@ -203,50 +182,6 @@ inline int Parameters::get_generations( void ) const
 inline int Parameters::get_n( void ) const
 {
   return _n;
-}
-
-/**
- * \brief    Get the number of metabolites
- * \details  --
- * \param    void
- * \return   \e int
- */
-inline int Parameters::get_m( void ) const
-{
-  return _m;
-}
-
-/**
- * \brief    Get the netork structure
- * \details  --
- * \param    void
- * \return   \e network_struct
- */
-inline network_struct Parameters::get_structure( void ) const
-{
-  return _structure;
-}
-
-/**
- * \brief    Get the number of iterations used to generate the random network
- * \details  --
- * \param    void
- * \return   \e int
- */
-inline int Parameters::get_nb_random_iterations( void ) const
-{
-  return _nb_random_iterations;
-}
-
-/**
- * \brief    Get the reversibility probability
- * \details  --
- * \param    void
- * \return   \e double
- */
-inline double Parameters::get_p_reversible( void ) const
-{
-  return _p_reversible;
 }
 
 /**
@@ -370,55 +305,6 @@ inline void Parameters::set_n( int n )
 }
 
 /**
- * \brief    Set the number of metabolites
- * \details  --
- * \param    int m
- * \return   \e void
- */
-inline void Parameters::set_m( int m )
-{
-  assert(m > 0);
-  _m = m;
-}
-
-/**
- * \brief    Set the structure of the metabolic network
- * \details  --
- * \param    double p_reversible
- * \return   \e void
- */
-inline void Parameters::set_structure( network_struct structure )
-{
-  _structure = structure;
-}
-
-/**
- * \brief    Set the number of iterations used to generate the random network
- * \details  --
- * \param    int nb_random_iterations
- * \return   \e void
- */
-inline void Parameters::set_nb_random_iterations( int nb_random_iterations )
-{
-  assert(nb_random_iterations >= 0);
-  _nb_random_iterations = nb_random_iterations;
-}
-
-/**
- * \brief    Set the probability to be a reversible reaction
- * \details  --
- * \param    double p_reversible
- * \return   \e void
- */
-inline void Parameters::set_p_reversible( double p_reversible )
-{
-  assert(p_reversible >= 0.0);
-  assert(p_reversible <= 1.0);
-  _p_reversible = p_reversible;
-  
-}
-
-/**
  * \brief    Set sigma
  * \details  --
  * \param    double sigma
@@ -504,4 +390,4 @@ inline void Parameters::set_parallel_computing( bool PC )
 }
 
 
-#endif /* defined(__ComplexMetabolicNetwork__Parameters__) */
+#endif /* defined(__Holzhutter2004__Parameters__) */

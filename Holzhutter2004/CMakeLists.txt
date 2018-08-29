@@ -84,8 +84,6 @@ add_library(
   src/lib/Prng.cpp
   src/lib/Parameters.h
   src/lib/Parameters.cpp
-  src/lib/ODESolver.h
-  src/lib/ODESolver.cpp
   src/lib/Individual.h
   src/lib/Individual.cpp
   src/lib/Node.h

@@ -1,6 +1,6 @@
 
-#ifndef __ComplexMetabolicNetwork__Prng__
-#define __ComplexMetabolicNetwork__Prng__
+#ifndef __Holzhutter2004__Prng__
+#define __Holzhutter2004__Prng__
 
 #include <iostream>
 #include <assert.h>
@@ -89,4 +89,4 @@ inline void Prng::set_seed( unsigned long int seed )
 }
 
 
-#endif /* defined(__ComplexMetabolicNetwork__Prng__) */
+#endif /* defined(__Holzhutter2004__Prng__) */
