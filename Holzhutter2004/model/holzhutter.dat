@@ -1,0 +1,397 @@
+begin name
+holzhutter
+end name
+
+begin reactions
+v1 {1.0}$Glcout = {1.0}Glcin
+v10 {1.0}Gri23P2f = {1.0}Gri3P + {1.0}Phi
+v11 {1.0}Gri3P = {1.0}Gri2P
+v12 {1.0}Gri2P = {1.0}PEP
+v13 {1.0}PEP + {1.0}MgADP = {1.0}Pyr + {1.0}MgATP
+v14 {1.0}Pyr + {1.0}NADH = {1.0}Lac + {1.0}NAD
+v15 {1.0}Pyr + {1.0}NADPHf = {1.0}Lac + {1.0}NADPf
+v16 {1.0}MgATP = {1.0}MgADP + {1.0}Phi
+v17 {1.0}MgATP + {1.0}AMPf = {1.0}MgADP + {1.0}ADPf
+v18 {1.0}Glc6P + {1.0}NADPf = {1.0}GlcA6P + {1.0}NADPHf
+v19 {1.0}GlcA6P + {1.0}NADPf = {1.0}Rul5P + {1.0}NADPHf
+v2 {1.0}Glcin + {1.0}MgATP = {1.0}Glc6P + {1.0}MgADP
+v20 {1.0}GSSG + {1.0}NADPHf = {2.0}GSH + {1.0}NADPf
+v21 {2.0}GSH = {1.0}GSSG
+v22 {1.0}Rul5P = {1.0}Xul5P
+v23 {1.0}Rul5P = {1.0}Rib5P
+v24 {1.0}Rib5P + {1.0}Xul5P = {1.0}GraP + {1.0}Sed7P
+v25 {1.0}Sed7P + {1.0}GraP = {1.0}E4P + {1.0}Fru6P
+v26 {1.0}Rib5P + {1.0}MgATP = {1.0}$PRPP + {1.0}MgAMP
+v27 {1.0}E4P + {1.0}Xul5P = {1.0}GraP + {1.0}Fru6P
+v28 {1.0}$Phiex = {1.0}Phi
+v29 {1.0}$Lacex = {1.0}Lac
+v3 {1.0}Glc6P = {1.0}Fru6P
+v30 {1.0}$Pyrex = {1.0}Pyr
+v31 {1.0}MgATP = {1.0}ATPf + {1.0}Mgf
+v32 {1.0}MgADP = {1.0}ADPf + {1.0}Mgf
+v33 {1.0}MgAMP = {1.0}AMPf + {1.0}Mgf
+v34 {1.0}MgGri23P2 = {1.0}Gri23P2f + {1.0}Mgf
+v35 {1.0}P1NADP = {1.0}P1f + {1.0}NADPf
+v36 {1.0}P1NADPH = {1.0}P1f + {1.0}NADPHf
+v37 {1.0}P2NADP = {1.0}P2f + {1.0}NADPf
+v38 {1.0}P2NADPH = {1.0}P2f + {1.0}NADPHf
+v4 {1.0}Fru6P + {1.0}MgATP = {1.0}Fru16P2 + {1.0}MgADP
+v5 {1.0}Fru16P2 = {1.0}GraP + {1.0}DHAP
+v6 {1.0}DHAP = {1.0}GraP
+v7 {1.0}GraP + {1.0}Phi + {1.0}NAD = {1.0}Gri13P2 + {1.0}NADH
+v8 {1.0}Gri13P2 + {1.0}MgADP = {1.0}Gri3P + {1.0}MgATP
+v9 {1.0}Gri13P2 = {1.0}Gri23P2f
+end reactions
+
+begin rate equations
+v1 = (Vmaxv0*(Glcout - Glcin[t]/Keqv0))/(KMoutv0*(1 + Glcout/KMoutv0 + Glcin[t]/KMinv0 + (alfav0*Glcout*Glcin[t])/(KMinv0*KMoutv0)))
+v10 = (Vmaxv9*(Gri23P2f[t] - Gri3P[t]/Keqv9 + MgGri23P2[t]))/(K23P2Gv9 + Gri23P2f[t] + MgGri23P2[t])
+v11 = (Vmaxv10*(-(Gri2P[t]/Keqv10) + Gri3P[t]))/(K3PGv10*(1 + Gri2P[t]/K2PGv10) + Gri3P[t])
+v12 = (Vmaxv11*(Gri2P[t] - PEP[t]/Keqv11))/(Gri2P[t] + K2PGv11*(1 + PEP[t]/KPEPv11))
+v13 = (Vmaxv12*(MgADP[t]*PEP[t] - (MgATP[t]*Pyr[t])/Keqv12))/((KMgADPv12 + MgADP[t])*(KPEPv12 + PEP[t])*(1 + (L0v12*(1 + (ATPf[t] + MgATP[t])/KATPv12)^4)/((1 + Fru16P2[t]/KFru16P2v12)^4*(1 + PEP[t]/KPEPv12)^4)))
+v14 = Vmaxv13*(-((Lac[t]*NAD[t])/Keqv13) + NADH[t]*Pyr[t])
+v15 = kLDHv14*(-((Lac[t]*NADPf[t])/Keqv14) + NADPHf[t]*Pyr[t])
+v16 = kATPasev15*MgATP[t]
+v17 = (Vmaxv16*(-((ADPf[t]*MgADP[t])/Keqv16) + AMPf[t]*MgATP[t]))/(KAMPv16*KATPv16*((ADPf[t]*MgADP[t])/KADPv16^2 + (ADPf[t] + MgADP[t])/KADPv16 + (1 + AMPf[t]/KAMPv16)*(1 + MgATP[t]/KATPv16)))
+v18 = (Vmaxv17*(Glc6P[t]*NADPf[t] - (GlcA6P[t]*NADPHf[t])/Keqv17))/(KG6Pv17*KNADPv17*(1 + (ATPf[t] + MgATP[t])/KATPv17 + (Gri23P2f[t] + MgGri23P2[t])/KPGA23v17 + ((1 + Glc6P[t]/KG6Pv17)*NADPf[t])/KNADPv17 + NADPHf[t]/KNADPHv17))
+v19 = (Vmaxv18*(GlcA6P[t]*NADPf[t] - (NADPHf[t]*Rul5P[t])/Keqv18))/(K6PG1v18*KNADPv18*((ATPf[t] + MgATP[t])/KATPv18 + (1 + GlcA6P[t]/K6PG1v18 + (Gri23P2f[t] + MgGri23P2[t])/KPGA23v18)*(1 + NADPf[t]/KNADPv18) + ((1 + GlcA6P[t]/K6PG2v18)*NADPHf[t])/KNADPHv18))
+v2 = (Inhibv1*Vmax1v1*Glcin[t]*(-((Glc6P[t]*MgADP[t])/Keqv1) + MgATP[t] + (Vmax2v1*MgATP[t]*Mgf[t])/(KMgATPMgv1*Vmax1v1)))/(KMgATPv1*(KMGlcv1 + Glcin[t])*(1 + Mgf[t]/KMgv1 + (MgATP[t]*(1 + Mgf[t]/KMgATPMgv1))/KMgATPv1 + (1.55 + Glc6P[t]/KGlc6Pv1)*(1 + Mgf[t]/KMgv1) + (Gri23P2f[t] + MgGri23P2[t])/K23P2Gv1 + (Mgf[t]*(Gri23P2f[t] + MgGri23P2[t]))/(KMg23P2Gv1*KMgv1)))
+v20 = (Vmaxv19*(-((GSH[t]^2*NADPf[t])/(Keqv19*KGSHv19^2*KNADPv19)) + (GSSG[t]*NADPHf[t])/(KGSSGv19*KNADPHv19)))/(1 + ((1 + (GSH[t]*(1 + GSH[t]/KGSHv19))/KGSHv19)*NADPf[t])/KNADPv19 + ((1 + GSSG[t]/KGSSGv19)*NADPHf[t])/KNADPHv19)
+v21 = Kv20*GSH[t]
+v22 = (Vmaxv21*(Rul5P[t] - Xul5P[t]/Keqv21))/(Rul5P[t] + KRu5Pv21*(1 + Xul5P[t]/KX5Pv21))
+v23 = (Vmaxv22*(-(Rib5P[t]/Keqv22) + Rul5P[t]))/(KRu5Pv22*(1 + Rib5P[t]/KR5Pv22) + Rul5P[t])
+v24 = (Vmaxv23*(-((GraP[t]*Sed7P[t])/Keqv23) + Rib5P[t]*Xul5P[t]))/(K4v23*Sed7P[t] + GraP[t]*(K3v23 + K5v23*Sed7P[t]) + Rib5P[t]*(K2v23 + K6v23*Sed7P[t]) + K7v23*GraP[t]*Xul5P[t] + (K1v23 + Rib5P[t])*Xul5P[t])
+v25 = (Vmaxv24*(-((E4P[t]*Fru6P[t])/Keqv24) + GraP[t]*Sed7P[t]))/(K4v24*Fru6P[t] + E4P[t]*(K3v24 + K5v24*Fru6P[t]) + (K2v24 + K6v24*Fru6P[t])*GraP[t] + K7v24*E4P[t]*Sed7P[t] + (K1v24 + GraP[t])*Sed7P[t])
+v26 = (Vmaxv25*(-((PRPP*MgAMP[t])/Keqv25) + MgATP[t]*Rib5P[t]))/((KATPv25 + MgATP[t])*(KR5Pv25 + Rib5P[t]))
+v27 = (Vmaxv26*(-((Fru6P[t]*GraP[t])/Keqv26) + E4P[t]*Xul5P[t]))/(K4v26*Fru6P[t] + E4P[t]*(K2v26 + K6v26*Fru6P[t]) + (K3v26 + K5v26*Fru6P[t])*GraP[t] + (K1v26 + E4P[t])*Xul5P[t] + K7v26*GraP[t]*Xul5P[t])
+v28 = Vmaxv27*(Phiex - Phi[t]/Keqv27)
+v29 = Vmaxv28*(Lacex - Lac[t]/Keqv28)
+v3 = (Vmaxv2*(-(Fru6P[t]/Keqv2) + Glc6P[t]))/(KGlc6Pv2*(1 + Fru6P[t]/KFru6Pv2) + Glc6P[t])
+v30 = Vmaxv29*(Pyrex - Pyr[t]/Keqv29)
+v31 = EqMult*(MgATP[t] - (ATPf[t]*Mgf[t])/KdATP)
+v32 = EqMult*(MgADP[t] - (ADPf[t]*Mgf[t])/KdADP)
+v33 = EqMult*(MgAMP[t] - (AMPf[t]*Mgf[t])/KdAMP)
+v34 = EqMult*(-((Gri23P2f[t]*Mgf[t])/Kd23P2G) + MgGri23P2[t])
+v35 = EqMult*(-((NADPf[t]*P1f[t])/Kd1) + P1NADP[t])
+v36 = EqMult*(-((NADPHf[t]*P1f[t])/Kd3) + P1NADPH[t])
+v37 = EqMult*(-((NADPf[t]*P2f[t])/Kd2) + P2NADP[t])
+v38 = EqMult*(-((NADPHf[t]*P2f[t])/Kd4) + P2NADPH[t])
+v4 = (Vmaxv3*(-((Fru16P2[t]*MgADP[t])/Keqv3) + Fru6P[t]*MgATP[t]))/((KFru6Pv3 + Fru6P[t])*(KMgATPv3 + MgATP[t])*(1 + (L0v3*(1 + ATPf[t]/KATPv3)^4*(1 + Mgf[t]/KMgv3)^4)/((1 + Fru6P[t]/KFru6Pv3)^4*(1 + (AMPf[t] + MgAMP[t])/KAMPv3)^4)))
+v5 = (Vmaxv4*(Fru16P2[t] - (DHAP[t]*GraP[t])/Keqv4))/(KFru16P2v4*(1 + Fru16P2[t]/KFru16P2v4 + GraP[t]/KiGraPv4 + (Fru16P2[t]*GraP[t])/(KFru16P2v4*KiiGraPv4) + (DHAP[t]*(KGraPv4 + GraP[t]))/(KDHAPv4*KiGraPv4)))
+v6 = (Vmaxv5*(DHAP[t] - GraP[t]/Keqv5))/(DHAP[t] + KDHAPv5*(1 + GraP[t]/KGraPv5))
+v7 = (Vmaxv6*(-((Gri13P2[t]*NADH[t])/Keqv6) + GraP[t]*NAD[t]*Phi[t]))/(KGraPv6*KNADv6*KPv6*(-1 + (1 + Gri13P2[t]/K13P2Gv6)*(1 + NADH[t]/KNADHv6) + (1 + GraP[t]/KGraPv6)*(1 + NAD[t]/KNADv6)*(1 + Phi[t]/KPv6)))
+v8 = (Vmaxv7*(Gri13P2[t]*MgADP[t] - (Gri3P[t]*MgATP[t])/Keqv7))/(K13P2Gv7*KMgADPv7*(-1 + (1 + Gri13P2[t]/K13P2Gv7)*(1 + MgADP[t]/KMgADPv7) + (1 + Gri3P[t]/K3PGv7)*(1 + MgATP[t]/KMgATPv7)))
+v9 = (kDPGMv8*(Gri13P2[t] - (Gri23P2f[t] + MgGri23P2[t])/Keqv8))/(1 + (Gri23P2f[t] + MgGri23P2[t])/K23P2Gv8)
+end rate equations
+
+begin parameters
+Atot = 2.0
+EqMult = 1000.0
+GStotal = 3.114
+Inhibv1 = 1.0
+K13P2Gv6 = 0.0035
+K13P2Gv7 = 0.002
+K1v23 = 0.4177
+K1v24 = 0.00823
+K1v26 = 0.00184
+K23P2Gv1 = 2.7
+K23P2Gv8 = 0.04
+K23P2Gv9 = 0.2
+K2PGv10 = 1.0
+K2PGv11 = 1.0
+K2v23 = 0.3055
+K2v24 = 0.04765
+K2v26 = 0.3055
+K3PGv10 = 5.0
+K3PGv7 = 1.2
+K3v23 = 12.432
+K3v24 = 0.1733
+K3v26 = 0.0548
+K4v23 = 0.00496
+K4v24 = 0.006095
+K4v26 = 0.0003
+K5v23 = 0.41139
+K5v24 = 0.8683
+K5v26 = 0.0287
+K6PG1v18 = 0.01
+K6PG2v18 = 0.058
+K6v23 = 0.00774
+K6v24 = 0.4653
+K6v26 = 0.122
+K7v23 = 48.8
+K7v24 = 2.524
+K7v26 = 0.215
+KADPv16 = 0.11
+KAMPv16 = 0.08
+KAMPv3 = 0.033
+KATPv12 = 3.39
+KATPv16 = 0.09
+KATPv17 = 0.749
+KATPv18 = 0.154
+KATPv25 = 0.03
+KATPv3 = 0.01
+KDHAPv4 = 0.0364
+KDHAPv5 = 0.838
+KFru16P2v12 = 0.005
+KFru16P2v4 = 0.0071
+KFru6Pv2 = 0.071
+KFru6Pv3 = 0.1
+KG6Pv17 = 0.0667
+KGSHv19 = 20.0
+KGSSGv19 = 0.0652
+KGlc6Pv1 = 0.0045
+KGlc6Pv2 = 0.182
+KGraPv4 = 0.1906
+KGraPv5 = 0.428
+KGraPv6 = 0.005
+KMGlcv1 = 0.1
+KMg23P2Gv1 = 3.44
+KMgADPv12 = 0.474
+KMgADPv7 = 0.35
+KMgATPMgv1 = 1.14
+KMgATPv1 = 1.44
+KMgATPv3 = 0.068
+KMgATPv7 = 0.48
+KMgv1 = 1.03
+KMgv3 = 0.44
+KMinv0 = 6.9
+KMoutv0 = 1.7
+KNADHv6 = 0.0083
+KNADPHv17 = 0.00312
+KNADPHv18 = 0.0045
+KNADPHv19 = 0.00852
+KNADPv17 = 0.00367
+KNADPv18 = 0.018
+KNADPv19 = 0.07
+KNADv6 = 0.05
+KPEPv11 = 1.0
+KPEPv12 = 0.225
+KPGA23v17 = 2.289
+KPGA23v18 = 0.12
+KPv6 = 3.9
+KR5Pv22 = 2.2
+KR5Pv25 = 0.57
+KRu5Pv21 = 0.19
+KRu5Pv22 = 0.78
+KX5Pv21 = 0.5
+Kd1 = 0.0002
+Kd2 = "1e-05"
+Kd23P2G = 1.667
+Kd3 = "1e-05"
+Kd4 = 0.0002
+KdADP = 0.76
+KdAMP = 16.64
+KdATP = 0.072
+Keqv0 = 1.0
+Keqv1 = 3900.0
+Keqv10 = 0.145
+Keqv11 = 1.7
+Keqv12 = 13790.0
+Keqv13 = 9090.0
+Keqv14 = 14181.8
+Keqv16 = 0.25
+Keqv17 = 2000.0
+Keqv18 = 141.7
+Keqv19 = 1.04
+Keqv2 = 0.3925
+Keqv21 = 2.7
+Keqv22 = 3.0
+Keqv23 = 1.05
+Keqv24 = 1.05
+Keqv25 = 100000.0
+Keqv26 = 1.2
+Keqv27 = 1.0
+Keqv28 = 1.0
+Keqv29 = 1.0
+Keqv3 = 100000.0
+Keqv4 = 0.114
+Keqv5 = 0.0407
+Keqv6 = 0.000192
+Keqv7 = 1455.0
+Keqv8 = 100000.0
+Keqv9 = 100000.0
+KiGraPv4 = 0.0572
+KiiGraPv4 = 0.176
+Kv20 = 0.03
+L0v12 = 19.0
+L0v3 = 0.001072
+Mgtot = 2.8
+NADPtot = 0.052
+NADtot = 0.0655
+Vmax1v1 = 15.8
+Vmax2v1 = 33.2
+Vmaxv0 = 33.6
+Vmaxv10 = 2000.0
+Vmaxv11 = 1500.0
+Vmaxv12 = 570.0
+Vmaxv13 = 2800000.0
+Vmaxv16 = 1380.0
+Vmaxv17 = 162.0
+Vmaxv18 = 1575.0
+Vmaxv19 = 90.0
+Vmaxv2 = 935.0
+Vmaxv21 = 4634.0
+Vmaxv22 = 730.0
+Vmaxv23 = 23.5
+Vmaxv24 = 27.2
+Vmaxv25 = 1.1
+Vmaxv26 = 23.5
+Vmaxv27 = 100.0
+Vmaxv28 = 10000.0
+Vmaxv29 = 10000.0
+Vmaxv3 = 239.0
+Vmaxv4 = 98.91000366
+Vmaxv5 = 5456.600098
+Vmaxv6 = 4300.0
+Vmaxv7 = 5000.0
+Vmaxv9 = 0.53
+alfav0 = 0.54
+kATPasev15 = 1.68
+kDPGMv8 = 76000.0
+kLDHv14 = 243.4
+protein1 = 0.024
+protein2 = 0.024
+Glcout = 5.0
+Lacex = 1.68
+PRPP = 1.0
+Phiex = 1.0
+Pyrex = 0.084
+end parameters
+
+begin initial conditions
+ADPf[0] = ADPfi
+AMPf[0] = AMPfi
+ATPf[0] = ATPfi
+DHAP[0] = DHAPi
+E4P[0] = E4Pi
+Fru16P2[0] = Fru16P2i
+Fru6P[0] = Fru6Pi
+GSH[0] = GSHi
+GSSG[0] = GSSGi
+Glc6P[0] = Glc6Pi
+GlcA6P[0] = GlcA6Pi
+Glcin[0] = Glcini
+GraP[0] = GraPi
+Gri13P2[0] = Gri13P2i
+Gri23P2f[0] = Gri23P2fi
+Gri2P[0] = Gri2Pi
+Gri3P[0] = Gri3Pi
+Lac[0] = Laci
+MgADP[0] = MgADPi
+MgAMP[0] = MgAMPi
+MgATP[0] = MgATPi
+MgGri23P2[0] = MgGri23P2i
+Mgf[0] = Mgfi
+NAD[0] = NADi
+NADH[0] = NADHi
+NADPHf[0] = NADPHfi
+NADPf[0] = NADPfi
+P1NADP[0] = P1NADPi
+P1NADPH[0] = P1NADPHi
+P1f[0] = P1fi
+P2NADP[0] = P2NADPi
+P2NADPH[0] = P2NADPHi
+P2f[0] = P2fi
+PEP[0] = PEPi
+Phi[0] = Phii
+Pyr[0] = Pyri
+Rib5P[0] = Rib5Pi
+Rul5P[0] = Rul5Pi
+Sed7P[0] = Sed7Pi
+Xul5P[0] = Xul5Pi
+end initial conditions
+
+begin initial values
+ADPfi = 0.25
+AMPfi = 0.0
+ATPfi = 0.25
+DHAPi = 0.1492
+E4Pi = 0.0063
+Fru16P2i = 0.0097
+Fru6Pi = 0.0153
+GSHi = 3.1136
+GSSGi = 0.0004
+Glc6Pi = 0.0394
+GlcA6Pi = 0.025
+Glcini = 4.5663
+GraPi = 0.0061
+Gri13P2i = 0.0005
+Gri23P2fi = 2.0601
+Gri2Pi = 0.0084
+Gri3Pi = 0.0658
+Laci = 1.6803
+MgADPi = 0.1
+MgAMPi = 0.0
+MgATPi = 1.4
+MgGri23P2i = 0.5
+Mgfi = 0.8
+NADi = 0.0653
+NADHi = 0.0002
+NADPHfi = 0.004
+NADPfi = 0.0
+P1NADPi = 0.0
+P1NADPHi = 0.024
+P1fi = 0.0
+P2NADPi = 0.0
+P2NADPHi = 0.024
+P2fi = 0.0
+PEPi = 0.0109
+Phii = 0.9992
+Pyri = 0.084
+Rib5Pi = 0.014
+Rul5Pi = 0.0047
+Sed7Pi = 0.0154
+Xul5Pi = 0.0127
+end initial values
+
+begin assignment rules
+end assignment rules
+
+begin function definitions
+end function definitions
+
+begin events
+end events
+
+begin process annotations
+end process annotations
+
+begin species annotations
+ADPf http://identifiers.org/kegg.compound/C00008
+AMPf http://identifiers.org/kegg.compound/C00020
+ATPf http://identifiers.org/kegg.compound/C00002
+DHAP http://identifiers.org/kegg.compound/C00111
+E4P http://identifiers.org/kegg.compound/C00279
+Fru16P2 http://identifiers.org/kegg.compound/C00354
+Fru6P http://identifiers.org/kegg.compound/C00085
+GSH http://identifiers.org/kegg.compound/C00051
+GSSG http://identifiers.org/kegg.compound/C00127
+Glc6P http://identifiers.org/kegg.compound/C00092
+Glcin http://identifiers.org/kegg.compound/C00092
+Glcout http://identifiers.org/kegg.compound/C00293
+Gri13P2 http://identifiers.org/kegg.compound/C00236
+Gri23P2f http://identifiers.org/kegg.compound/C01159
+Gri2P http://identifiers.org/kegg.compound/C00631
+Gri3P http://identifiers.org/kegg.compound/C00197
+Lac http://identifiers.org/kegg.compound/C01432
+Lacex http://identifiers.org/kegg.compound/C01432
+Mgf http://identifiers.org/kegg.compound/C00305
+NAD http://identifiers.org/kegg.compound/C00003
+NADH http://identifiers.org/kegg.compound/C00004
+NADPHf http://identifiers.org/kegg.compound/C00005
+NADPf http://identifiers.org/kegg.compound/C00006
+P1NADP http://identifiers.org/kegg.compound/C00006
+P1NADPH http://identifiers.org/kegg.compound/C00005
+P2NADP http://identifiers.org/kegg.compound/C00006
+P2NADPH http://identifiers.org/kegg.compound/C00005
+PEP http://identifiers.org/kegg.compound/C00074
+Pyr http://identifiers.org/kegg.compound/C00022
+Pyrex http://identifiers.org/kegg.compound/C00022
+Rib5P http://identifiers.org/kegg.compound/C00117
+Rul5P http://identifiers.org/kegg.compound/C00199
+Sed7P http://identifiers.org/kegg.compound/C05382
+Xul5P http://identifiers.org/kegg.compound/C03291
+end species annotations
+
+begin units
+end units
