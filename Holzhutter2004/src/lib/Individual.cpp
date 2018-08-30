@@ -247,10 +247,17 @@ void Individual::initialize( void )
  */
 void Individual::mutate( double sigma, double mu )
 {
-  std::cout << "Gérer la fonction mutate !\n";
-  exit(EXIT_FAILURE);
   _mutated = false;
-  
+  for (int i = 0; i < _p_mutable; i++)
+  {
+    if (_prng->uniform() < mu)
+    {
+      double log_param = log10(_mutable_params[i]);
+      double new_param = pow(10.0, _prng->gaussian(log_param, sigma));
+      _mutable_params[i] = new_param;
+      _mutated           = true;
+    }
+  }
 }
 
 /**
