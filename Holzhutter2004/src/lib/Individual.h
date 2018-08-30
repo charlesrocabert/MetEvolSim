@@ -68,7 +68,7 @@ public:
   
   /*----------------------------------------------------- PHENOTYPE */
   
-  void save_indidivual_state( std::string filename );
+  void save_indidivual_state( std::string params_filename, std::string met_filename );
   
   /*----------------------------------------------------- TREE MANAGEMENT */
   

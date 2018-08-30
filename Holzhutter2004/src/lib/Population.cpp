@@ -117,29 +117,14 @@ void Population::initialize( void )
   _mean_w   = 0.0;
   _var_w    = 0.0;
   
-  /*** Create initial individual ***/
-  std::cout << "> Looking for a stable ancestor\n";
-  Individual* ancestor = NULL;
-  bool stable_network  = false;
-  int  counter         = 1;
-  while (!stable_network)
-  {
-    std::cout << "    • test new ancestor (iteration " << counter << ")...\n";
-    delete ancestor;
-    ancestor = NULL;
-    ancestor = new Individual(_parameters);
-    ancestor->initialize();
-    stable_network = ancestor->isStable();
-    counter++;
-  }
-  std::cout << "    • found an ancestor at iteration " << counter << ".\n";
+  Individual* ancestor = new Individual(_parameters);
+  ancestor->initialize();
   
   /*** Generate the initial population ***/
-  std::cout << "> Generate the initial population\n";
   for (int i = 0; i < _n; i++)
   {
-    /*** Copy the ancestor ***/
-    _pop[i]   = new Individual(*ancestor);
+    /*** Create new individual ***/
+    _pop[i] = new Individual(*ancestor);
     _pop[i]->set_identifier(_id);
     _id++;
     _pop[i]->set_parent(0);
@@ -420,7 +405,7 @@ void Population::close_statistic_files( void )
  */
 void Population::write_best_individual( void )
 {
-  _pop[_best_pos]->save_indidivual_state("best/best_individual.txt");
+  _pop[_best_pos]->save_indidivual_state("best/best_params.txt", "best/best_conc.txt");
 }
 
 /*----------------------------

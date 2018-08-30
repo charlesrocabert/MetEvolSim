@@ -23,6 +23,7 @@ Parameters::Parameters( void )
   
   _generations = 10000;
   _n           = 1000;
+  _m           = 40; /*** !!! To set for each new model */
   
   /*----------------------------------------------------- MUTATIONS */
   
@@ -58,6 +59,7 @@ Parameters::Parameters( Parameters const& parameters )
   
   _generations = parameters._generations;
   _n           = parameters._n;
+  _m           = parameters._m;
   
   /*----------------------------------------------------- MUTATIONS */
   
@@ -114,6 +116,7 @@ void Parameters::print_parameters( void )
   
   std::cout << "> generations = " << _generations << "\n";
   std::cout << "> n = " << _n << "\n";
+  std::cout << "> m = " << _m << "\n";
   
   /*----------------------------------------------------- MUTATIONS */
   
@@ -145,10 +148,11 @@ void Parameters::print_parameters( void )
 void Parameters::save_parameters( void )
 {
   std::ofstream file("parameters/parameters.txt", std::ios::out | std::ios::trunc);
-  file << "seed nb_g n m struct nbrandomit prev sigma mu w alpha beta Q PC\n";
+  file << "seed nb_g n m sigma mu w alpha beta Q PC\n";
   file << _seed << " ";
   file << _generations << " ";
   file << _n << " ";
+  file << _m << " ";
   file << _sigma << " ";
   file << _mu << " ";
   file << _w << " ";

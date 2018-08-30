@@ -159,29 +159,25 @@ Individual::Individual( const Individual& individual )
  */
 Individual::~Individual( void )
 {
-  /*----------------------------------------------------- MAIN PARAMETERS */
-  
-  _parameters = NULL;
-  _prng       = NULL;
-  
   /*----------------------------------------------------- NETWORK STRUCTURE */
   
-  std::cout << "Gérer l'option _prepared_for_tree !\n";
-  exit(EXIT_FAILURE);
-  
-  if (!_prepared_for_tree)
-  {
-    /* TODO */
-  }
   _fixed_param_to_index.clear();
   _mutable_param_to_index.clear();
   _met_to_index.clear();
-  delete[] _initial_fixed_params;
-  _initial_fixed_params = NULL;
-  delete[] _initial_mutable_params;
-  _initial_mutable_params = NULL;
-  delete[] _initial_s;
-  _initial_s = NULL;
+  
+  if (!_prepared_for_tree)
+  {
+    delete[] _initial_fixed_params;
+    _initial_fixed_params = NULL;
+    delete[] _initial_mutable_params;
+    _initial_mutable_params = NULL;
+    delete[] _initial_s;
+    _initial_s = NULL;
+    delete[] _fixed_params;
+    _fixed_params = NULL;
+  }
+  delete[] _mutable_params;
+  _mutable_params = NULL;
   delete[] _s;
   _s = NULL;
   
@@ -232,7 +228,7 @@ void Individual::initialize( void )
   
   /*** Compute steady-state and fitness ***/
   compute_steady_state(true);
-  save_indidivual_state("ancestor/ancestor_individual.txt");
+  save_indidivual_state("ancestor/ancestor_params.txt", "ancestor/ancestor_conc.txt");
   compute_c();
   _c_opt = _c;
   compute_fitness();
@@ -416,16 +412,32 @@ void Individual::compute_fitness( void )
 /**
  * \brief    Save the current individual state
  * \details  --
- * \param    std::string filename
+ * \param    std::string params_filename
+ * \param    std::string met_filename
  * \return   \e void
  */
-void Individual::save_indidivual_state( std::string filename )
+void Individual::save_indidivual_state( std::string params_filename, std::string met_filename )
 {
-  std::cout << "Gérer la fonction save_indidivual_state!\n";
-  exit(EXIT_FAILURE);
+  /*-------------------------*/
+  /* 1) Write parameters     */
+  /*-------------------------*/
+  std::ofstream file(params_filename, std::ios::out | std::ios::trunc);
+  file << "name ancestor val\n";
+  for (std::unordered_map<std::string, int>::iterator it = _mutable_param_to_index.begin(); it != _mutable_param_to_index.end(); ++it)
+  {
+    file << it->first << " " << _initial_mutable_params[it->second] << " " << _mutable_params[it->second] << "\n";
+  }
+  file.close();
   
-  std::ofstream file(filename, std::ios::out | std::ios::trunc);
-  /* TODO */
+  /*-------------------------*/
+  /* 2) Write concentrations */
+  /*-------------------------*/
+  file.open(met_filename, std::ios::out | std::ios::trunc);
+  file << "name ancestor val\n";
+  for (std::unordered_map<std::string, int>::iterator it = _met_to_index.begin(); it != _met_to_index.end(); ++it)
+  {
+    file << it->first << " " << _initial_s[it->second] << " " << _initial_s[it->second] << "\n";
+  }
   file.close();
 }
 
@@ -437,17 +449,21 @@ void Individual::save_indidivual_state( std::string filename )
  */
 void Individual::prepare_for_tree( void )
 {
-  std::cout << "Gérer l'option _prepared_for_tree !\n";
-  exit(EXIT_FAILURE);
+  /*----------------------------------------------------- METABOLIC NETWORK */
   
-  /*----------------------------------------------------- MAIN PARAMETERS */
+  _fixed_param_to_index.clear();
+  _mutable_param_to_index.clear();
+  _met_to_index.clear();
   
-  _parameters = NULL;
-  _prng       = NULL;
+  delete[] _initial_fixed_params;
+  _initial_fixed_params = NULL;
+  delete[] _initial_mutable_params;
+  _initial_mutable_params = NULL;
+  delete[] _initial_s;
+  _initial_s = NULL;
   
-  /*----------------------------------------------------- NETWORK STRUCTURE */
-  
-  /* TODO */
+  delete[] _fixed_params;
+  _fixed_params = NULL;
   
   /*----------------------------------------------------- PHENOTYPE */
   

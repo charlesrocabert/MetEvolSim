@@ -87,10 +87,6 @@ void readArgs( int argc, char const** argv, Parameters* parameters )
   options["seed"]        = false;
   options["generations"] = false;
   options["n"]           = false;
-  options["struct"]      = false;
-  options["m"]           = false;
-  options["nbrandomit"]  = false;
-  options["prev"]        = false;
   options["sigma"]       = false;
   options["mu"]          = false;
   options["w"]           = false;
@@ -146,80 +142,6 @@ void readArgs( int argc, char const** argv, Parameters* parameters )
       {
         parameters->set_n(atoi(argv[i+1]));
         options["n"] = true;
-      }
-    }
-    if (strcmp(argv[i], "-struct") == 0 || strcmp(argv[i], "--struct") == 0)
-    {
-      if (i+1 == argc)
-      {
-        std::cout << "Error: --struct parameter value is missing.\n";
-        exit(EXIT_FAILURE);
-      }
-      else
-      {
-        if (strcmp(argv[i+1], "LINEAR_PATHWAY") == 0)
-        {
-          parameters->set_structure(LINEAR_PATHWAY);
-        }
-        else if (strcmp(argv[i+1], "RANDOM_NETWORK") == 0)
-        {
-          parameters->set_structure(RANDOM_NETWORK);
-        }
-        else if (strcmp(argv[i+1], "SCALE_FREE_NETWORK") == 0)
-        {
-          parameters->set_structure(SCALE_FREE_NETWORK);
-        }
-        else if (strcmp(argv[i+1], "LOAD_MODEL") == 0)
-        {
-          parameters->set_structure(LOAD_MODEL);
-        }
-        else
-        {
-          std::cout << "Error : --struct wrong parameter value at line:\n " << argv[i+1] << ".\n\n";
-          exit(EXIT_FAILURE);
-        }
-      }
-      
-      
-        options["struct"] = true;
-      }
-    if (strcmp(argv[i], "-m") == 0 || strcmp(argv[i], "--m") == 0)
-    {
-      if (i+1 == argc)
-      {
-        std::cout << "Error: --m parameter value is missing.\n";
-        exit(EXIT_FAILURE);
-      }
-      else
-      {
-        parameters->set_m(atoi(argv[i+1]));
-        options["m"] = true;
-      }
-    }
-    if (strcmp(argv[i], "-nbrandomit") == 0 || strcmp(argv[i], "--nbrandomit") == 0)
-    {
-      if (i+1 == argc)
-      {
-        std::cout << "Error: --nbrandomit parameter value is missing.\n";
-        exit(EXIT_FAILURE);
-      }
-      else
-      {
-        parameters->set_nb_random_iterations(atoi(argv[i+1]));
-        options["nbrandomit"] = true;
-      }
-    }
-    if (strcmp(argv[i], "-prev") == 0 || strcmp(argv[i], "--prev") == 0)
-    {
-      if (i+1 == argc)
-      {
-        std::cout << "Error: --prev parameter value is missing.\n";
-        exit(EXIT_FAILURE);
-      }
-      else
-      {
-        parameters->set_p_reversible(atof(argv[i+1]));
-        options["prev"] = true;
       }
     }
     if (strcmp(argv[i], "-sigma") == 0 || strcmp(argv[i], "--sigma") == 0)
@@ -328,7 +250,7 @@ void readArgs( int argc, char const** argv, Parameters* parameters )
  */
 void printUsage( void )
 {
-  std::cout << "*************** ComplexMetabolicNetwork ***************\n";
+  std::cout << "*************** Holzhutter2004 ***************\n";
   std::cout << "Usage: run -h or --help\n";
   std::cout << "   or: run [options]\n";
   std::cout << "Options are:\n";
@@ -342,14 +264,6 @@ void printUsage( void )
   std::cout << "        specify the number of generations (mandatory)\n";
   std::cout << "  -n, --n\n";
   std::cout << "        specify the population size (mandatory)\n";
-  std::cout << "  -struct, --struct\n";
-  std::cout << "        specify the metabolic network structure (mandatory)\n";
-  std::cout << "  -m, --m\n";
-  std::cout << "        specify the number of metabolites (mandatory)\n";
-  std::cout << "  -nbrandomit, --nbrandomit\n";
-  std::cout << "        specify the number of iterations used to generate the random network (mandatory)\n";
-  std::cout << "  -prev, --prev\n";
-  std::cout << "        specify the probability for a reaction to be reversible (mandatory)\n";
   std::cout << "  -w, --w\n";
   std::cout << "        specify the standard deviation of the fitness function (mandatory)\n";
   std::cout << "  -sigma, --sigma\n";
@@ -375,6 +289,6 @@ void printUsage( void )
  */
 void printHeader( void )
 {
-  std::cout << "*************** ComplexMetabolicNetwork ***************\n";
+  std::cout << "*************** Holzhutter2004 ***************\n";
 }
 

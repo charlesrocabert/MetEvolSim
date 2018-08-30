@@ -1,6 +1,6 @@
 
-#ifndef __ComplexMetabolicNetwork__Node__
-#define __ComplexMetabolicNetwork__Node__
+#ifndef __Holzhutter2004__Node__
+#define __Holzhutter2004__Node__
 
 #include <iostream>
 #include <vector>
@@ -367,4 +367,4 @@ inline void Node::set_dead( void )
 }
 
 
-#endif /* defined(__ComplexMetabolicNetwork__Node__) */
+#endif /* defined(__Holzhutter2004__Node__) */

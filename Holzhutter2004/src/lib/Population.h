@@ -1,6 +1,6 @@
 
-#ifndef __ComplexMetabolicNetwork__Population__
-#define __ComplexMetabolicNetwork__Population__
+#ifndef __Holzhutter2004__Population__
+#define __Holzhutter2004__Population__
 
 #include <iostream>
 #include <assert.h>
@@ -140,4 +140,4 @@ inline Tree* Population::get_tree( void )
  *----------------------------*/
 
 
-#endif /* defined(__ComplexMetabolicNetwork__Population__) */
+#endif /* defined(__Holzhutter2004__Population__) */

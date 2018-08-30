@@ -41,6 +41,7 @@ public:
   
   inline int get_generations( void ) const;
   inline int get_n( void ) const;
+  inline int get_m( void ) const;
   
   /*----------------------------------------------------- MUTATIONS */
   
@@ -71,6 +72,7 @@ public:
   
   inline void set_generations( int generations );
   inline void set_n( int n );
+  inline void set_m( int m );
   
   /*----------------------------------------------------- MUTATIONS */
   
@@ -117,6 +119,7 @@ protected:
   
   double _generations; /*!< Number of generations */
   double _n;           /*!< Population size       */
+  double _m;           /*!< Number of metabolites */
   
   /*----------------------------------------------------- MUTATIONS */
   
@@ -182,6 +185,17 @@ inline int Parameters::get_generations( void ) const
 inline int Parameters::get_n( void ) const
 {
   return _n;
+}
+
+/**
+ * \brief    Get the number of metabolites
+ * \details  --
+ * \param    void
+ * \return   \e int
+ */
+inline int Parameters::get_m( void ) const
+{
+  return _m;
 }
 
 /**
@@ -302,6 +316,18 @@ inline void Parameters::set_n( int n )
 {
   assert(n > 0);
   _n = n;
+}
+
+/**
+ * \brief    Set the number of metabolites
+ * \details  --
+ * \param    int m
+ * \return   \e voi
+ */
+inline void Parameters::set_m( int m )
+{
+  assert(m > 0);
+  _m = m;
 }
 
 /**

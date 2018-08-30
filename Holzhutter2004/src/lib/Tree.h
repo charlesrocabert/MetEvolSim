@@ -1,6 +1,6 @@
 
-#ifndef __ComplexMetabolicNetwork__Tree__
-#define __ComplexMetabolicNetwork__Tree__
+#ifndef __Holzhutter2004__Tree__
+#define __Holzhutter2004__Tree__
 
 #include <iostream>
 #include <vector>
@@ -205,4 +205,4 @@ inline void Tree::untag_tree()
 }
 
 
-#endif /* defined(__ComplexMetabolicNetwork__Tree__) */
+#endif /* defined(__Holzhutter2004__Tree__) */
