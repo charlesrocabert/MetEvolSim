@@ -41,9 +41,8 @@ public:
   inline int                    get_m( void ) const;
   inline bool                   isStable( void ) const;
   inline bool                   isMutated( void ) const;
-  inline int                    get_degree( int i ) const;
-  inline int                    get_in_degree( int i ) const;
-  inline int                    get_out_degree( int i ) const;
+  inline double                 get_params( int i ) const;
+  inline double*                get_params( void );
   inline double                 get_s( int i ) const;
   inline double*                get_s( void );
   inline double                 get_c_opt( void ) const;
@@ -86,11 +85,17 @@ protected:
   /*----------------------------
    * PROTECTED METHODS
    *----------------------------*/
-  void create_met_id_to_index_map( void );
   void create_params_id_to_index_map( void );
-  void initialize_concentrations( void );
+  void create_met_id_to_index_map( void );
+  
   void initialize_parameters( void );
+  void initialize_concentrations( void );
+  
+  void initialize_parameters_vector( void );
   void initialize_concentration_vector( void );
+  
+  void solve( void );
+  void ODE_system( const double* s, double* dsdt );
   
   /*----------------------------
    * PROTECTED ATTRIBUTES
@@ -106,19 +111,21 @@ protected:
   
   /*----------------------------------------------------- METABOLIC NETWORK */
   
-  int _m; /*!< Number of metabolites */
   int _p; /*!< Number of parameters  */
+  int _m; /*!< Number of metabolites */
   
-  std::unordered_map<std::string, int> _met_id_to_index;    /*!< Metabolite id to index map */
   std::unordered_map<std::string, int> _params_id_to_index; /*!< Parameter id to index map  */
+  std::unordered_map<std::string, int> _met_id_to_index;    /*!< Metabolite id to index map */
   
-  double* _initial_s;      /*!< Initial concentration values */
   double* _initial_params; /*!< Initial parameter values     */
+  double* _initial_s;      /*!< Initial concentration values */
+  
+  double* _params; /*!< Parameters vector    */
+  double* _s;      /*!< Concentration vector */
   
   /*----------------------------------------------------- PHENOTYPE */
   
   bool    _mutated; /*!< Is the network mutated?       */
-  double* _s;       /*!< Concentration vector          */
   double* _old_s;   /*!< Previous concentration vector */
   double  _c;       /*!< Current sum                   */
   double  _old_c;   /*!< Previous sum                  */
@@ -127,8 +134,10 @@ protected:
   
   /*----------------------------------------------------- ODE SOLVER */
   
-  double _dt;       /*!< Current solving dt     */
-  bool   _isStable; /*!< Is the network stable? */
+  double _dt;       /*!< Current solving dt       */
+  double _t;        /*!< Current integration time */
+  double _timestep; /*!< Current ODE timestep     */
+  bool   _isStable; /*!< Is the network stable?   */
   
   /*----------------------------------------------------- TREE MANAGEMENT */
   
@@ -204,6 +213,30 @@ inline bool Individual::isStable( void ) const
 inline bool Individual::isMutated( void ) const
 {
   return _mutated;
+}
+
+/**
+ * \brief    Get parameter i
+ * \details  --
+ * \param    void
+ * \return   \e double
+ */
+inline double Individual::get_params( int i ) const
+{
+  assert(i >= 0);
+  assert(i < _p);
+  return _params[i];
+}
+
+/**
+ * \brief    Get parameters vector
+ * \details  --
+ * \param    void
+ * \return   \e double
+ */
+inline double* Individual::get_params( void )
+{
+  return _params;
 }
 
 /**
