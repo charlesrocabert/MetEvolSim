@@ -41,8 +41,6 @@ public:
   inline int                    get_m( void ) const;
   inline bool                   isStable( void ) const;
   inline bool                   isMutated( void ) const;
-  inline double                 get_params( int i ) const;
-  inline double*                get_params( void );
   inline double                 get_s( int i ) const;
   inline double*                get_s( void );
   inline double                 get_c_opt( void ) const;
@@ -85,13 +83,16 @@ protected:
   /*----------------------------
    * PROTECTED METHODS
    *----------------------------*/
-  void create_params_id_to_index_map( void );
-  void create_met_id_to_index_map( void );
+  void create_fixed_param_to_index_map( void );
+  void create_mutable_param_to_index_map( void );
+  void create_met_to_index_map( void );
   
-  void initialize_parameters( void );
+  void initialize_fixed_parameters( void );
+  void initialize_mutable_parameters( void );
   void initialize_concentrations( void );
   
-  void initialize_parameters_vector( void );
+  void initialize_fixed_parameters_vector( void );
+  void initialize_mutable_parameters_vector( void );
   void initialize_concentration_vector( void );
   
   void solve( void );
@@ -111,17 +112,21 @@ protected:
   
   /*----------------------------------------------------- METABOLIC NETWORK */
   
-  int _p; /*!< Number of parameters  */
-  int _m; /*!< Number of metabolites */
+  int _p_fixed;   /*!< Number of fixed parameters   */
+  int _p_mutable; /*!< Number of mutable parameters */
+  int _m;         /*!< Number of metabolites        */
   
-  std::unordered_map<std::string, int> _params_id_to_index; /*!< Parameter id to index map  */
-  std::unordered_map<std::string, int> _met_id_to_index;    /*!< Metabolite id to index map */
+  std::unordered_map<std::string, int> _fixed_param_to_index;   /*!< Fixed parameter to index map */
+  std::unordered_map<std::string, int> _mutable_param_to_index; /*!< Fixed parameter to index map */
+  std::unordered_map<std::string, int> _met_to_index;           /*!< Metabolite to index map      */
   
-  double* _initial_params; /*!< Initial parameter values     */
-  double* _initial_s;      /*!< Initial concentration values */
+  double* _initial_fixed_params;   /*!< Initial fixed parameter values   */
+  double* _initial_mutable_params; /*!< Initial mutable parameter values */
+  double* _initial_s;              /*!< Initial concentration values     */
   
-  double* _params; /*!< Parameters vector    */
-  double* _s;      /*!< Concentration vector */
+  double* _fixed_params;   /*!< Fixed parameters vector   */
+  double* _mutable_params; /*!< Mutable parameters vector */
+  double* _s;              /*!< Concentration vector      */
   
   /*----------------------------------------------------- PHENOTYPE */
   
@@ -213,30 +218,6 @@ inline bool Individual::isStable( void ) const
 inline bool Individual::isMutated( void ) const
 {
   return _mutated;
-}
-
-/**
- * \brief    Get parameter i
- * \details  --
- * \param    void
- * \return   \e double
- */
-inline double Individual::get_params( int i ) const
-{
-  assert(i >= 0);
-  assert(i < _p);
-  return _params[i];
-}
-
-/**
- * \brief    Get parameters vector
- * \details  --
- * \param    void
- * \return   \e double
- */
-inline double* Individual::get_params( void )
-{
-  return _params;
 }
 
 /**
