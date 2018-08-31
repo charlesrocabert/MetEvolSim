@@ -62,6 +62,13 @@ add_executable(${TESTS_EXECUTABLE} src/tests.cpp)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # Find and link external libraries                                             #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+find_package(ZLIB REQUIRED)
+if(ZLIB_FOUND)
+  include_directories(${ZLIB_INCLUDE_DIR})
+  target_link_libraries(${RUN_EXECUTABLE} ${ZLIB_LIBRARIES})
+  target_link_libraries(${TESTS_EXECUTABLE} ${ZLIB_LIBRARIES})
+endif(ZLIB_FOUND)
+
 find_package(GSL REQUIRED)
 if(GSL_FOUND)
   include_directories(${GSL_INCLUDE_DIR})
@@ -99,7 +106,7 @@ add_library(
   src/lib/Population.cpp
 )
 
-target_link_libraries(Holzhutter2004 tbb gsl gslcblas)
+target_link_libraries(Holzhutter2004 z tbb gsl gslcblas )
 target_link_libraries(${RUN_EXECUTABLE} Holzhutter2004)
 target_link_libraries(${TESTS_EXECUTABLE} Holzhutter2004)
 

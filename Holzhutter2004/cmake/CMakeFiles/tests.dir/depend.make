@@ -152,4 +152,6 @@ CMakeFiles/tests.dir/src/tests.cpp.o: /opt/local/include/tbb/tbb_profiling.h
 CMakeFiles/tests.dir/src/tests.cpp.o: /opt/local/include/tbb/tbb_stddef.h
 CMakeFiles/tests.dir/src/tests.cpp.o: /opt/local/include/tbb/tbb_thread.h
 CMakeFiles/tests.dir/src/tests.cpp.o: /opt/local/include/tbb/tick_count.h
+CMakeFiles/tests.dir/src/tests.cpp.o: /opt/local/include/zconf.h
+CMakeFiles/tests.dir/src/tests.cpp.o: /opt/local/include/zlib.h
 

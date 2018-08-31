@@ -208,7 +208,7 @@ GSL_INCLUDE_DIR:STRING=/opt/local/include
 Holzhutter2004_BINARY_DIR:STATIC=/Users/charlesrocabert/git/MetEvolSim/Holzhutter2004/cmake
 
 //Dependencies for the target
-Holzhutter2004_LIB_DEPENDS:STATIC=general;tbb;general;gsl;general;gslcblas;
+Holzhutter2004_LIB_DEPENDS:STATIC=general;z;general;tbb;general;gsl;general;gslcblas;
 
 //Value Computed by CMake
 Holzhutter2004_SOURCE_DIR:STATIC=/Users/charlesrocabert/git/MetEvolSim/Holzhutter2004
@@ -239,6 +239,15 @@ TBB_MALLOC_LIBRARY:FILEPATH=/opt/local/lib/libtbbmalloc.dylib
 
 //Path to a library.
 TBB_MALLOC_LIBRARY_DEBUG:FILEPATH=TBB_MALLOC_LIBRARY_DEBUG-NOTFOUND
+
+//Path to a file.
+ZLIB_INCLUDE_DIR:PATH=/usr/include
+
+//Path to a library.
+ZLIB_LIBRARY_DEBUG:FILEPATH=ZLIB_LIBRARY_DEBUG-NOTFOUND
+
+//Path to a library.
+ZLIB_LIBRARY_RELEASE:FILEPATH=/usr/lib/libz.dylib
 
 
 ########################
@@ -376,6 +385,8 @@ CMAKE_STRIP-ADVANCED:INTERNAL=1
 CMAKE_UNAME:INTERNAL=/usr/bin/uname
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
+//Details about finding ZLIB
+FIND_PACKAGE_MESSAGE_DETAILS_ZLIB:INTERNAL=[/usr/lib/libz.dylib][/usr/include][v1.2.5()]
 //ADVANCED property for variable: GSL_INCLUDE_DIR
 GSL_INCLUDE_DIR-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: TBB_DEBUG_LIBRARY_DIRS
@@ -396,4 +407,10 @@ TBB_LIBRARY_DIRS-ADVANCED:INTERNAL=1
 TBB_MALLOC_LIBRARY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: TBB_MALLOC_LIBRARY_DEBUG
 TBB_MALLOC_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: ZLIB_INCLUDE_DIR
+ZLIB_INCLUDE_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: ZLIB_LIBRARY_DEBUG
+ZLIB_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: ZLIB_LIBRARY_RELEASE
+ZLIB_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
 

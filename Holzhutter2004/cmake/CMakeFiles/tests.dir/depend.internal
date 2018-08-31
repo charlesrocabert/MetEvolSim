@@ -153,3 +153,5 @@ CMakeFiles/tests.dir/src/tests.cpp.o
  /opt/local/include/tbb/tbb_stddef.h
  /opt/local/include/tbb/tbb_thread.h
  /opt/local/include/tbb/tick_count.h
+ /opt/local/include/zconf.h
+ /opt/local/include/zlib.h

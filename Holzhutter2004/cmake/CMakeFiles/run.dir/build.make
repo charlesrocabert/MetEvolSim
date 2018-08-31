@@ -79,6 +79,7 @@ run_EXTERNAL_OBJECTS =
 
 ../build/bin/run: CMakeFiles/run.dir/src/run.cpp.o
 ../build/bin/run: CMakeFiles/run.dir/build.make
+../build/bin/run: /usr/lib/libz.dylib
 ../build/bin/run: /opt/local/lib/libtbb.dylib
 ../build/bin/run: /opt/local/lib/libtbbmalloc.dylib
 ../build/bin/run: libHolzhutter2004.a

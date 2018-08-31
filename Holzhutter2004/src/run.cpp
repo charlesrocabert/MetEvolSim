@@ -62,7 +62,6 @@ int main( int argc, char const** argv )
       pop->get_tree()->compute_best_evolution_rate("best/best_evolrate.txt");
       pop->get_tree()->compute_mean_evolution_rate("best/mean_evolrate.txt");
       system("Rscript EVOLUTION_RATE.R > /dev/null &");
-      system("Rscript POPULATION.R > /dev/null &");
     }
   }
   pop->close_statistic_files();

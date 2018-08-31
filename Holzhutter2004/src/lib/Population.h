@@ -3,12 +3,12 @@
 #define __Holzhutter2004__Population__
 
 #include <iostream>
-#include <assert.h>
 #include <cmath>
 #include <cstring>
 #include <sstream>
 #include <unordered_map>
 #include <tbb/tbb.h>
+#include <assert.h>
 
 #include "Macros.h"
 #include "Enums.h"

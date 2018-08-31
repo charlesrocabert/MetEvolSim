@@ -79,6 +79,7 @@ tests_EXTERNAL_OBJECTS =
 
 ../build/bin/tests: CMakeFiles/tests.dir/src/tests.cpp.o
 ../build/bin/tests: CMakeFiles/tests.dir/build.make
+../build/bin/tests: /usr/lib/libz.dylib
 ../build/bin/tests: /opt/local/lib/libtbb.dylib
 ../build/bin/tests: /opt/local/lib/libtbbmalloc.dylib
 ../build/bin/tests: libHolzhutter2004.a

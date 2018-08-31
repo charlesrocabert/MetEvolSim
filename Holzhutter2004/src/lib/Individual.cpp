@@ -49,12 +49,18 @@ Individual::Individual( Parameters* parameters )
     _mutable_params[i]         = 0.0;
   }
   
-  _initial_s = new double[_m];
-  _s         = new double[_m];
+  _initial_s    = new double[_m];
+  _s            = new double[_m];
+  _total_degree = new int[_m];
+  _in_degree    = new int[_m];
+  _out_degree   = new int[_m];
   for (int i = 0; i < _m; i++)
   {
-    _initial_s[i] = 0.0;
-    _s[i]         = 0.0;
+    _initial_s[i]    = 0.0;
+    _s[i]            = 0.0;
+    _total_degree[i] = 0;
+    _in_degree[i]    = 0;
+    _out_degree[i]   = 0;
   }
   
   /*----------------------------------------------------- PHENOTYPE */
@@ -81,6 +87,100 @@ Individual::Individual( Parameters* parameters )
   /*----------------------------------------------------- TREE MANAGEMENT */
   
   _prepared_for_tree = false;
+}
+
+/**
+ * \brief    Constructor from backup
+ * \details  --
+ * \param    Parameters* parameters
+ * \param    gzFile backup_file
+ * \return   \e void
+ */
+Individual::Individual( Parameters* parameters, gzFile backup_file )
+{
+  /*----------------------------------------------------- MAIN PARAMETERS */
+  
+  assert(parameters != NULL);
+  _parameters = parameters;
+  _prng       = _parameters->get_prng();
+  gzread(backup_file, &_identifier, sizeof(_identifier));
+  gzread(backup_file, &_parent, sizeof(_parent));
+  gzread(backup_file, &_g, sizeof(_g));
+  
+  /*----------------------------------------------------- METABOLIC NETWORK */
+  
+  /*** Set the number of variables ***/
+  gzread(backup_file, &_p_fixed, sizeof(_p_fixed));
+  gzread(backup_file, &_p_mutable, sizeof(_p_mutable));
+  gzread(backup_file, &_m, sizeof(_m));
+  
+  /*** Create the indexes ***/
+  create_fixed_param_to_index_map();
+  create_mutable_param_to_index_map();
+  create_met_to_index_map();
+  
+  /*** Initialize parameter values ***/
+  _initial_fixed_params   = new double[_p_fixed];
+  _initial_mutable_params = new double[_p_mutable];
+  _initial_s              = new double[_m];
+  initialize_fixed_parameters();
+  initialize_mutable_parameters();
+  initialize_concentrations();
+  
+  /*** Set parameter vectors ***/
+  _fixed_params   = new double[_p_fixed];
+  _mutable_params = new double[_p_mutable];
+  _s              = new double[_m];
+  _total_degree   = new int[_m];
+  _in_degree      = new int[_m];
+  _out_degree     = new int[_m];
+  initialize_fixed_parameters_vector();
+  for (int i = 0; i < _p_mutable; i++)
+  {
+    gzread(backup_file, &_mutable_params[i], sizeof(_mutable_params[i]));
+  }
+  for (int i = 0; i < _m; i++)
+  {
+    gzread(backup_file, &_s[i], sizeof(_s[i]));
+  }
+  for (int i = 0; i < _m; i++)
+  {
+    _total_degree[i] = 0;
+    _in_degree[i]    = 0;
+    _out_degree[i]   = 0;
+  }
+  create_degree_map();
+  
+  /*----------------------------------------------------- TREE MANAGEMENT */
+  
+  gzread(backup_file, &_prepared_for_tree, sizeof(_prepared_for_tree));
+  
+  /*----------------------------------------------------- PHENOTYPE */
+  
+  gzread(backup_file, &_mutated, sizeof(_mutated));
+  _old_s = new double[_m];
+  for (int i = 0; i < _m; i++)
+  {
+    _old_s[i] = 0.0;
+  }
+  if (!_prepared_for_tree)
+  {
+    for (int i = 0; i < _m; i++)
+    {
+      gzread(backup_file, &_old_s[i], sizeof(_old_s[i]));
+    }
+  }
+  gzread(backup_file, &_c, sizeof(_c));
+  gzread(backup_file, &_old_c, sizeof(_old_c));
+  gzread(backup_file, &_c_opt, sizeof(_c_opt));
+  gzread(backup_file, &_w, sizeof(_w));
+  
+  /*----------------------------------------------------- ODE SOLVER */
+  
+  gzread(backup_file, &_dt, sizeof(_dt));
+  gzread(backup_file, &_t, sizeof(_t));
+  gzread(backup_file, &_timestep, sizeof(_timestep));
+  gzread(backup_file, &_isStable, sizeof(_isStable));
 }
 
 /**
@@ -123,6 +223,13 @@ Individual::Individual( const Individual& individual )
   _s         = new double[_m];
   memcpy(_initial_s, individual._initial_s, sizeof(double)*_m);
   memcpy(_s, individual._s, sizeof(double)*_m);
+  
+  _total_degree = new int[_m];
+  _in_degree    = new int[_m];
+  _out_degree   = new int[_m];
+  memcpy(_total_degree, individual._total_degree, sizeof(int)*_m);
+  memcpy(_in_degree, individual._in_degree, sizeof(int)*_m);
+  memcpy(_out_degree, individual._out_degree, sizeof(int)*_m);
   
   /*----------------------------------------------------- PHENOTYPE */
   
@@ -180,6 +287,12 @@ Individual::~Individual( void )
   _mutable_params = NULL;
   delete[] _s;
   _s = NULL;
+  delete[] _total_degree;
+  _total_degree = NULL;
+  delete[] _in_degree;
+  _in_degree = NULL;
+  delete[] _out_degree;
+  _out_degree = NULL;
   
   /*----------------------------------------------------- PHENOTYPE */
   
@@ -219,10 +332,11 @@ void Individual::initialize( void )
   initialize_mutable_parameters();
   initialize_concentrations();
   
-  /*** Set parameter evolvable vectors ***/
+  /*** Set parameter vectors ***/
   initialize_fixed_parameters_vector();
   initialize_mutable_parameters_vector();
   initialize_concentration_vector();
+  create_degree_map();
   
   /*----------------------------------------------------- PHENOTYPE */
   
@@ -311,7 +425,6 @@ void Individual::compute_steady_state( bool ancestor )
     
     while (!endOfSolving)
     {
-      std::cout << ">  steady-state iteration " << counter << "\n";
       bool stable   = false;
       bool too_low  = false;
       bool too_high = false;
@@ -381,7 +494,6 @@ void Individual::compute_steady_state( bool ancestor )
       file.close();
     }
     /********/
-    
   }
 }
 
@@ -444,10 +556,10 @@ void Individual::save_indidivual_state( std::string params_filename, std::string
   /* 2) Write concentrations */
   /*-------------------------*/
   file.open(met_filename, std::ios::out | std::ios::trunc);
-  file << "name ancestor val\n";
+  file << "name ancestor val total_degree in_degree out_degree\n";
   for (std::unordered_map<std::string, int>::iterator it = _met_to_index.begin(); it != _met_to_index.end(); ++it)
   {
-    file << it->first << " " << _initial_s[it->second] << " " << _initial_s[it->second] << "\n";
+    file << it->first << " " << _initial_s[it->second] << " " << _initial_s[it->second] << " " << _total_degree[it->second] << " " << _in_degree[it->second] << " " << _out_degree[it->second] << "\n";
   }
   file.close();
 }
@@ -735,6 +847,390 @@ void Individual::create_met_to_index_map( void )
 }
 
 /**
+ * \brief    Create the degree map
+ * \details  --
+ * \param    void
+ * \return   \e void
+ */
+void Individual::create_degree_map( void )
+{
+  /* v1 {1.0}$Glcout = {1.0}Glcin */
+  _total_degree[_met_to_index["Glcin"]] += 1;
+  
+  _in_degree[_met_to_index["Glcin"]] += 1;
+  
+  
+  /* v2 {1.0}Glcin + {1.0}MgATP = {1.0}Glc6P + {1.0}MgADP */
+  _total_degree[_met_to_index["Glcin"]] += 1;
+  _total_degree[_met_to_index["MgATP"]] += 1;
+  _total_degree[_met_to_index["Glc6P"]] += 1;
+  _total_degree[_met_to_index["MgADP"]] += 1;
+  
+  _out_degree[_met_to_index["Glcin"]] += 1;
+  _out_degree[_met_to_index["MgATP"]] += 1;
+  
+  _in_degree[_met_to_index["Glc6P"]] += 1;
+  _in_degree[_met_to_index["MgADP"]] += 1;
+  
+  /* v3 {1.0}Glc6P = {1.0}Fru6P */
+  _total_degree[_met_to_index["Glc6P"]] += 1;
+  _total_degree[_met_to_index["Fru6P"]] += 1;
+  
+  _out_degree[_met_to_index["Glc6P"]] += 1;
+  
+  _in_degree[_met_to_index["Fru6P"]] += 1;
+  
+  /* v4 {1.0}Fru6P + {1.0}MgATP = {1.0}Fru16P2 + {1.0}MgADP */
+  _total_degree[_met_to_index["Fru6P"]] += 1;
+  _total_degree[_met_to_index["MgATP"]] += 1;
+  _total_degree[_met_to_index["Fru16P2"]] += 1;
+  _total_degree[_met_to_index["MgADP"]] += 1;
+  
+  _out_degree[_met_to_index["Fru6P"]] += 1;
+  _out_degree[_met_to_index["MgATP"]] += 1;
+  
+  _in_degree[_met_to_index["Fru16P2"]] += 1;
+  _in_degree[_met_to_index["MgADP"]] += 1;
+  
+  /* v5 {1.0}Fru16P2 = {1.0}GraP + {1.0}DHAP */
+  _total_degree[_met_to_index["Fru16P2"]] += 1;
+  _total_degree[_met_to_index["GraP"]] += 1;
+  _total_degree[_met_to_index["DHAP"]] += 1;
+  
+  _out_degree[_met_to_index["Fru16P2"]] += 1;
+  
+  _in_degree[_met_to_index["GraP"]] += 1;
+  _in_degree[_met_to_index["DHAP"]] += 1;
+  
+  /* v6 {1.0}DHAP = {1.0}GraP */
+  _total_degree[_met_to_index["DHAP"]] += 1;
+  _total_degree[_met_to_index["GraP"]] += 1;
+  
+  _out_degree[_met_to_index["DHAP"]] += 1;
+  
+  _in_degree[_met_to_index["GraP"]] += 1;
+  
+  /* v7 {1.0}GraP + {1.0}Phi + {1.0}NAD = {1.0}Gri13P2 + {1.0}NADH */
+  _total_degree[_met_to_index["GraP"]] += 1;
+  _total_degree[_met_to_index["Phi"]] += 1;
+  _total_degree[_met_to_index["NAD"]] += 1;
+  _total_degree[_met_to_index["Gri13P2"]] += 1;
+  _total_degree[_met_to_index["NADH"]] += 1;
+  
+  _out_degree[_met_to_index["GraP"]] += 1;
+  _out_degree[_met_to_index["Phi"]] += 1;
+  _out_degree[_met_to_index["NAD"]] += 1;
+  
+  _in_degree[_met_to_index["Gri13P2"]] += 1;
+  _in_degree[_met_to_index["NADH"]] += 1;
+  
+  /* v8 {1.0}Gri13P2 + {1.0}MgADP = {1.0}Gri3P + {1.0}MgATP */
+  _total_degree[_met_to_index["Gri13P2"]] += 1;
+  _total_degree[_met_to_index["MgADP"]] += 1;
+  _total_degree[_met_to_index["Gri3P"]] += 1;
+  _total_degree[_met_to_index["MgATP"]] += 1;
+  
+  _out_degree[_met_to_index["Gri13P2"]] += 1;
+  _out_degree[_met_to_index["MgADP"]] += 1;
+  
+  _in_degree[_met_to_index["Gri3P"]] += 1;
+  _in_degree[_met_to_index["MgATP"]] += 1;
+  
+  /* v9 {1.0}Gri13P2 = {1.0}Gri23P2f */
+  _total_degree[_met_to_index["Gri13P2"]] += 1;
+  _total_degree[_met_to_index["Gri23P2f"]] += 1;
+  
+  _out_degree[_met_to_index["Gri13P2"]] += 1;
+  
+  _in_degree[_met_to_index["Gri23P2f"]] += 1;
+  
+  /* v10 {1.0}Gri23P2f = {1.0}Gri3P + {1.0}Phi */
+  _total_degree[_met_to_index["Gri23P2f"]] += 1;
+  _total_degree[_met_to_index["Gri3P"]] += 1;
+  _total_degree[_met_to_index["Phi"]] += 1;
+  
+  _out_degree[_met_to_index["Gri23P2f"]] += 1;
+  
+  _in_degree[_met_to_index["Gri3P"]] += 1;
+  _in_degree[_met_to_index["Phi"]] += 1;
+  
+  /* v11 {1.0}Gri3P = {1.0}Gri2P */
+  _total_degree[_met_to_index["Gri3P"]] += 1;
+  _total_degree[_met_to_index["Gri2P"]] += 1;
+  
+  _out_degree[_met_to_index["Gri3P"]] += 1;
+  
+  _in_degree[_met_to_index["Gri2P"]] += 1;
+  
+  /* v12 {1.0}Gri2P = {1.0}PEP */
+  _total_degree[_met_to_index["Gri2P"]] += 1;
+  _total_degree[_met_to_index["PEP"]] += 1;
+  
+  _out_degree[_met_to_index["Gri2P"]] += 1;
+  
+  _in_degree[_met_to_index["PEP"]] += 1;
+  
+  /* v13 {1.0}PEP + {1.0}MgADP = {1.0}Pyr + {1.0}MgATP */
+  _total_degree[_met_to_index["PEP"]] += 1;
+  _total_degree[_met_to_index["MgADP"]] += 1;
+  _total_degree[_met_to_index["Pyr"]] += 1;
+  _total_degree[_met_to_index["MgATP"]] += 1;
+  
+  _out_degree[_met_to_index["PEP"]] += 1;
+  _out_degree[_met_to_index["MgADP"]] += 1;
+  
+  _in_degree[_met_to_index["Pyr"]] += 1;
+  _in_degree[_met_to_index["MgATP"]] += 1;
+  
+  /* v14 {1.0}Pyr + {1.0}NADH = {1.0}Lac + {1.0}NAD */
+  _total_degree[_met_to_index["Pyr"]] += 1;
+  _total_degree[_met_to_index["NADH"]] += 1;
+  _total_degree[_met_to_index["Lac"]] += 1;
+  _total_degree[_met_to_index["NAD"]] += 1;
+  
+  _out_degree[_met_to_index["Pyr"]] += 1;
+  _out_degree[_met_to_index["NADH"]] += 1;
+  
+  _in_degree[_met_to_index["Lac"]] += 1;
+  _in_degree[_met_to_index["NAD"]] += 1;
+  
+  /* v15 {1.0}Pyr + {1.0}NADPHf = {1.0}Lac + {1.0}NADPf */
+  _total_degree[_met_to_index["Pyr"]] += 1;
+  _total_degree[_met_to_index["NADPHf"]] += 1;
+  _total_degree[_met_to_index["Lac"]] += 1;
+  _total_degree[_met_to_index["NADPf"]] += 1;
+  
+  _out_degree[_met_to_index["Pyr"]] += 1;
+  _out_degree[_met_to_index["NADPHf"]] += 1;
+  
+  _in_degree[_met_to_index["Lac"]] += 1;
+  _in_degree[_met_to_index["NADPf"]] += 1;
+  
+  /* v16 {1.0}MgATP = {1.0}MgADP + {1.0}Phi */
+  _total_degree[_met_to_index["MgATP"]] += 1;
+  _total_degree[_met_to_index["MgADP"]] += 1;
+  _total_degree[_met_to_index["Phi"]] += 1;
+  
+  _out_degree[_met_to_index["MgATP"]] += 1;
+  
+  _in_degree[_met_to_index["MgADP"]] += 1;
+  _in_degree[_met_to_index["Phi"]] += 1;
+  
+  /* v17 {1.0}MgATP + {1.0}AMPf = {1.0}MgADP + {1.0}ADPf */
+  _total_degree[_met_to_index["MgATP"]] += 1;
+  _total_degree[_met_to_index["AMPf"]] += 1;
+  _total_degree[_met_to_index["MgADP"]] += 1;
+  _total_degree[_met_to_index["ADPf"]] += 1;
+  
+  _out_degree[_met_to_index["MgATP"]] += 1;
+  _out_degree[_met_to_index["AMPf"]] += 1;
+  
+  _in_degree[_met_to_index["MgADP"]] += 1;
+  _in_degree[_met_to_index["ADPf"]] += 1;
+  
+  /* v18 {1.0}Glc6P + {1.0}NADPf = {1.0}GlcA6P + {1.0}NADPHf */
+  _total_degree[_met_to_index["Glc6P"]] += 1;
+  _total_degree[_met_to_index["NADPf"]] += 1;
+  _total_degree[_met_to_index["GlcA6P"]] += 1;
+  _total_degree[_met_to_index["NADPHf"]] += 1;
+  
+  _out_degree[_met_to_index["Glc6P"]] += 1;
+  _out_degree[_met_to_index["NADPf"]] += 1;
+  
+  _in_degree[_met_to_index["GlcA6P"]] += 1;
+  _in_degree[_met_to_index["NADPHf"]] += 1;
+  
+  /* v19 {1.0}GlcA6P + {1.0}NADPf = {1.0}Rul5P + {1.0}NADPHf */
+  _total_degree[_met_to_index["GlcA6P"]] += 1;
+  _total_degree[_met_to_index["NADPf"]] += 1;
+  _total_degree[_met_to_index["Rul5P"]] += 1;
+  _total_degree[_met_to_index["NADPHf"]] += 1;
+  
+  _out_degree[_met_to_index["GlcA6P"]] += 1;
+  _out_degree[_met_to_index["NADPf"]] += 1;
+  
+  _in_degree[_met_to_index["Rul5P"]] += 1;
+  _in_degree[_met_to_index["NADPHf"]] += 1;
+  
+  /* v20 {1.0}GSSG + {1.0}NADPHf = {2.0}GSH + {1.0}NADPf */
+  _total_degree[_met_to_index["GSSG"]] += 1;
+  _total_degree[_met_to_index["NADPHf"]] += 1;
+  _total_degree[_met_to_index["GSH"]] += 1;
+  _total_degree[_met_to_index["NADPf"]] += 1;
+  
+  _out_degree[_met_to_index["GSSG"]] += 1;
+  _out_degree[_met_to_index["NADPHf"]] += 1;
+  
+  _in_degree[_met_to_index["GSH"]] += 1;
+  _in_degree[_met_to_index["NADPf"]] += 1;
+  
+  /* v21 {2.0}GSH = {1.0}GSSG */
+  _total_degree[_met_to_index["GSH"]] += 1;
+  _total_degree[_met_to_index["GSSG"]] += 1;
+  
+  _out_degree[_met_to_index["GSH"]] += 1;
+  
+  _in_degree[_met_to_index["GSSG"]] += 1;
+  
+  /* v22 {1.0}Rul5P = {1.0}Xul5P */
+  _total_degree[_met_to_index["Rul5P"]] += 1;
+  _total_degree[_met_to_index["Xul5P"]] += 1;
+  
+  _out_degree[_met_to_index["Rul5P"]] += 1;
+  
+  _in_degree[_met_to_index["Xul5P"]] += 1;
+  
+  /* v23 {1.0}Rul5P = {1.0}Rib5P */
+  _total_degree[_met_to_index["Rul5P"]] += 1;
+  _total_degree[_met_to_index["Rib5P"]] += 1;
+  
+  _out_degree[_met_to_index["Rul5P"]] += 1;
+  
+  _in_degree[_met_to_index["Rib5P"]] += 1;
+  
+  /* v24 {1.0}Rib5P + {1.0}Xul5P = {1.0}GraP + {1.0}Sed7P */
+  _total_degree[_met_to_index["Rib5P"]] += 1;
+  _total_degree[_met_to_index["Xul5P"]] += 1;
+  _total_degree[_met_to_index["GraP"]] += 1;
+  _total_degree[_met_to_index["Sed7P"]] += 1;
+  
+  _out_degree[_met_to_index["Rib5P"]] += 1;
+  _out_degree[_met_to_index["Xul5P"]] += 1;
+  
+  _in_degree[_met_to_index["GraP"]] += 1;
+  _in_degree[_met_to_index["Sed7P"]] += 1;
+  
+  /* v25 {1.0}Sed7P + {1.0}GraP = {1.0}E4P + {1.0}Fru6P */
+  _total_degree[_met_to_index["Sed7P"]] += 1;
+  _total_degree[_met_to_index["GraP"]] += 1;
+  _total_degree[_met_to_index["E4P"]] += 1;
+  _total_degree[_met_to_index["Fru6P"]] += 1;
+  
+  _out_degree[_met_to_index["Sed7P"]] += 1;
+  _out_degree[_met_to_index["GraP"]] += 1;
+  
+  _in_degree[_met_to_index["E4P"]] += 1;
+  _in_degree[_met_to_index["Fru6P"]] += 1;
+  
+  /* v26 {1.0}Rib5P + {1.0}MgATP = {1.0}$PRPP + {1.0}MgAMP */
+  _total_degree[_met_to_index["Rib5P"]] += 1;
+  _total_degree[_met_to_index["MgATP"]] += 1;
+  _total_degree[_met_to_index["MgAMP"]] += 1;
+  
+  _out_degree[_met_to_index["Rib5P"]] += 1;
+  _out_degree[_met_to_index["MgATP"]] += 1;
+  
+  _in_degree[_met_to_index["MgAMP"]] += 1;
+  
+  /* v27 {1.0}E4P + {1.0}Xul5P = {1.0}GraP + {1.0}Fru6P */
+  _total_degree[_met_to_index["E4P"]] += 1;
+  _total_degree[_met_to_index["Xul5P"]] += 1;
+  _total_degree[_met_to_index["GraP"]] += 1;
+  _total_degree[_met_to_index["Fru6P"]] += 1;
+  
+  _out_degree[_met_to_index["E4P"]] += 1;
+  _out_degree[_met_to_index["Xul5P"]] += 1;
+  
+  _in_degree[_met_to_index["GraP"]] += 1;
+  _in_degree[_met_to_index["Fru6P"]] += 1;
+  
+  /* v28 {1.0}$Phiex = {1.0}Phi */
+  _total_degree[_met_to_index["Phi"]] += 1;
+  
+  _in_degree[_met_to_index["Phi"]] += 1;
+  
+  /* v29 {1.0}$Lacex = {1.0}Lac */
+  _total_degree[_met_to_index["Lac"]] += 1;
+  
+  _in_degree[_met_to_index["Lac"]] += 1;
+  
+  /* v30 {1.0}$Pyrex = {1.0}Pyr */
+  _total_degree[_met_to_index["Pyr"]] += 1;
+  
+  _in_degree[_met_to_index["Pyr"]] += 1;
+  
+  /* v31 {1.0}MgATP = {1.0}ATPf + {1.0}Mgf */
+  _total_degree[_met_to_index["MgATP"]] += 1;
+  _total_degree[_met_to_index["ATPf"]] += 1;
+  _total_degree[_met_to_index["Mgf"]] += 1;
+  
+  _out_degree[_met_to_index["MgATP"]] += 1;
+  
+  _in_degree[_met_to_index["ATPf"]] += 1;
+  _in_degree[_met_to_index["Mgf"]] += 1;
+  
+  /* v32 {1.0}MgADP = {1.0}ADPf + {1.0}Mgf */
+  _total_degree[_met_to_index["MgADP"]] += 1;
+  _total_degree[_met_to_index["ADPf"]] += 1;
+  _total_degree[_met_to_index["Mgf"]] += 1;
+  
+  _out_degree[_met_to_index["MgADP"]] += 1;
+  
+  _in_degree[_met_to_index["ADPf"]] += 1;
+  _in_degree[_met_to_index["Mgf"]] += 1;
+  
+  /* v33 {1.0}MgAMP = {1.0}AMPf + {1.0}Mgf */
+  _total_degree[_met_to_index["MgAMP"]] += 1;
+  _total_degree[_met_to_index["AMPf"]] += 1;
+  _total_degree[_met_to_index["Mgf"]] += 1;
+  
+  _out_degree[_met_to_index["MgAMP"]] += 1;
+  
+  _in_degree[_met_to_index["AMPf"]] += 1;
+  _in_degree[_met_to_index["Mgf"]] += 1;
+  
+  /* v34 {1.0}MgGri23P2 = {1.0}Gri23P2f + {1.0}Mgf */
+  _total_degree[_met_to_index["MgGri23P2"]] += 1;
+  _total_degree[_met_to_index["Gri23P2f"]] += 1;
+  _total_degree[_met_to_index["Mgf"]] += 1;
+  
+  _out_degree[_met_to_index["MgGri23P2"]] += 1;
+  
+  _in_degree[_met_to_index["Gri23P2f"]] += 1;
+  _in_degree[_met_to_index["Mgf"]] += 1;
+  
+  /* v35 {1.0}P1NADP = {1.0}P1f + {1.0}NADPf */
+  _total_degree[_met_to_index["P1NADP"]] += 1;
+  _total_degree[_met_to_index["P1f"]] += 1;
+  _total_degree[_met_to_index["NADPf"]] += 1;
+  
+  _out_degree[_met_to_index["P1NADP"]] += 1;
+  
+  _in_degree[_met_to_index["P1f"]] += 1;
+  _in_degree[_met_to_index["NADPf"]] += 1;
+  
+  /* v36 {1.0}P1NADPH = {1.0}P1f + {1.0}NADPHf */
+  _total_degree[_met_to_index["P1NADPH"]] += 1;
+  _total_degree[_met_to_index["P1f"]] += 1;
+  _total_degree[_met_to_index["NADPHf"]] += 1;
+  
+  _out_degree[_met_to_index["P1NADPH"]] += 1;
+  
+  _in_degree[_met_to_index["P1f"]] += 1;
+  _in_degree[_met_to_index["NADPHf"]] += 1;
+  
+  /* v37 {1.0}P2NADP = {1.0}P2f + {1.0}NADPf */
+  _total_degree[_met_to_index["P2NADP"]] += 1;
+  _total_degree[_met_to_index["P2f"]] += 1;
+  _total_degree[_met_to_index["NADPf"]] += 1;
+  
+  _out_degree[_met_to_index["P2NADP"]] += 1;
+  
+  _in_degree[_met_to_index["P2f"]] += 1;
+  _in_degree[_met_to_index["NADPf"]] += 1;
+  
+  /* v38 {1.0}P2NADPH = {1.0}P2f + {1.0}NADPHf */
+  _total_degree[_met_to_index["P2NADPH"]] += 1;
+  _total_degree[_met_to_index["P2f"]] += 1;
+  _total_degree[_met_to_index["NADPHf"]] += 1;
+  
+  _out_degree[_met_to_index["P2NADPH"]] += 1;
+  
+  _in_degree[_met_to_index["P2f"]] += 1;
+  _in_degree[_met_to_index["NADPHf"]] += 1;
+}
+
+/**
  * \brief    Initialize fixed parameter values
  * \details  --
  * \param    void
@@ -937,46 +1433,46 @@ void Individual::initialize_mutable_parameters( void )
 void Individual::initialize_concentrations( void )
 {
   assert(_initial_s != NULL);
-  _initial_s[_met_to_index["ADPf"]]      = 0.25;
-  _initial_s[_met_to_index["AMPf"]]      = 0.01;//0.0;
-  _initial_s[_met_to_index["ATPf"]]      = 0.25;
-  _initial_s[_met_to_index["DHAP"]]      = 0.1492;
-  _initial_s[_met_to_index["E4P"]]       = 0.0063;
-  _initial_s[_met_to_index["Fru16P2"]]   = 0.0097;
-  _initial_s[_met_to_index["Fru6P"]]     = 0.0153;
-  _initial_s[_met_to_index["GSH"]]       = 3.1136;
-  _initial_s[_met_to_index["GSSG"]]      = 0.0004;
-  _initial_s[_met_to_index["Glc6P"]]     = 0.0394;
-  _initial_s[_met_to_index["GlcA6P"]]    = 0.025;
-  _initial_s[_met_to_index["Glcin"]]     = 4.5663;
-  _initial_s[_met_to_index["GraP"]]      = 0.0061;
-  _initial_s[_met_to_index["Gri13P2"]]   = 0.0005;
-  _initial_s[_met_to_index["Gri23P2f"]]  = 2.0601;
-  _initial_s[_met_to_index["Gri2P"]]     = 0.0084;
-  _initial_s[_met_to_index["Gri3P"]]     = 0.0658;
-  _initial_s[_met_to_index["Lac"]]       = 1.6803;
-  _initial_s[_met_to_index["MgADP"]]     = 0.1;
-  _initial_s[_met_to_index["MgAMP"]]     = 0.01;//0.0;
-  _initial_s[_met_to_index["MgATP"]]     = 1.4;
-  _initial_s[_met_to_index["MgGri23P2"]] = 0.5;
-  _initial_s[_met_to_index["Mgf"]]       = 0.8;
-  _initial_s[_met_to_index["NAD"]]       = 0.0653;
-  _initial_s[_met_to_index["NADH"]]      = 0.0002;
-  _initial_s[_met_to_index["NADPHf"]]    = 0.004;
-  _initial_s[_met_to_index["NADPf"]]     = 0.01;//0.0;
-  _initial_s[_met_to_index["P1NADP"]]    = 0.01;//0.0;
-  _initial_s[_met_to_index["P1NADPH"]]   = 0.024;
-  _initial_s[_met_to_index["P1f"]]       = 0.01;//0.0;
-  _initial_s[_met_to_index["P2NADP"]]    = 0.01;//0.0;
-  _initial_s[_met_to_index["P2NADPH"]]   = 0.024;
-  _initial_s[_met_to_index["P2f"]]       = 0.01;//0.0;
-  _initial_s[_met_to_index["PEP"]]       = 0.0109;
-  _initial_s[_met_to_index["Phi"]]       = 0.9992;
-  _initial_s[_met_to_index["Pyr"]]       = 0.084;
-  _initial_s[_met_to_index["Rib5P"]]     = 0.014;
-  _initial_s[_met_to_index["Rul5P"]]     = 0.0047;
-  _initial_s[_met_to_index["Sed7P"]]     = 0.0154;
-  _initial_s[_met_to_index["Xul5P"]]     = 0.0127;
+  _initial_s[_met_to_index["ADPf"]]      = 0.18712760717235977;
+  _initial_s[_met_to_index["AMPf"]]      = 0.0722413215141835;
+  _initial_s[_met_to_index["ATPf"]]      = 0.1836572449838888;
+  _initial_s[_met_to_index["DHAP"]]      = 0.149233080901138;
+  _initial_s[_met_to_index["E4P"]]       = 0.006271757568490649;
+  _initial_s[_met_to_index["Fru16P2"]]   = 0.009683496132313353;
+  _initial_s[_met_to_index["Fru6P"]]     = 0.015344444071514918;
+  _initial_s[_met_to_index["GSH"]]       = 3.1140265135966514;
+  _initial_s[_met_to_index["GSSG"]]      = 0.00018674320167429774;
+  _initial_s[_met_to_index["Glc6P"]]     = 0.039489574722161525;
+  _initial_s[_met_to_index["GlcA6P"]]    = 0.025054259471968068;
+  _initial_s[_met_to_index["Glcin"]]     = 4.566796368297684;
+  _initial_s[_met_to_index["GraP"]]      = 0.006062870119943679;
+  _initial_s[_met_to_index["Gri13P2"]]   = 0.0004806553656229012;
+  _initial_s[_met_to_index["Gri23P2f"]]  = 2.0612328106487694;
+  _initial_s[_met_to_index["Gri2P"]]     = 0.008442078092860253;
+  _initial_s[_met_to_index["Gri3P"]]     = 0.06576393388493314;
+  _initial_s[_met_to_index["Lac"]]       = 1.6803053255476528;
+  _initial_s[_met_to_index["MgADP"]]     = 0.13682174687137127;
+  _initial_s[_met_to_index["MgAMP"]]     = 0.0024387655884246713;
+  _initial_s[_met_to_index["MgATP"]]     = 1.4177133138697715;
+  _initial_s[_met_to_index["MgGri23P2"]] = 0.6872334598704511;
+  _initial_s[_met_to_index["Mgf"]]       = 0.5557927137999811;
+  _initial_s[_met_to_index["NAD"]]       = 0.0653436283321317;
+  _initial_s[_met_to_index["NADH"]]      = 0.00015637166786830237;
+  _initial_s[_met_to_index["NADPHf"]]    = 0.0048891706646177965;
+  _initial_s[_met_to_index["NADPf"]]     = 0.000023437582334213253;
+  _initial_s[_met_to_index["P1NADP"]]    = 5.7394148572358195e-6;
+  _initial_s[_met_to_index["P1NADPH"]]   = 0.023945284417077356;
+  _initial_s[_met_to_index["P1f"]]       = 0.000048976168065408;
+  _initial_s[_met_to_index["P2NADP"]]    = 0.0020241447955371516;
+  _initial_s[_met_to_index["P2NADPH"]]   = 0.021112223125576247;
+  _initial_s[_met_to_index["P2f"]]       = 0.0008636320788866017;
+  _initial_s[_met_to_index["PEP"]]       = 0.010939580637775247;
+  _initial_s[_met_to_index["Phi"]]       = 0.999225013356031;
+  _initial_s[_met_to_index["Pyr"]]       = 0.08399000505423984;
+  _initial_s[_met_to_index["Rib5P"]]     = 0.014005278010718067;
+  _initial_s[_met_to_index["Rul5P"]]     = 0.004721919539066009;
+  _initial_s[_met_to_index["Sed7P"]]     = 0.015412334068365481;
+  _initial_s[_met_to_index["Xul5P"]]     = 0.012743690466410572;
 }
 
 /**
@@ -1039,7 +1535,7 @@ void Individual::solve( void )
     /*---------------------------------------*/
     /* 2) Compute next state with current dt */
     /*---------------------------------------*/
-    ODE_system(_s, DSDT);
+    ODE_system(DSDT);
     
     for (int i = 0; i < _m; i++)
     {
@@ -1059,8 +1555,6 @@ void Individual::solve( void )
         break;
       }
     }
-    
-    std::cout << ">>>>>> t = " << _t << ", dt = " << _dt << ", decrease = " << decrease_h << "\n";
     
     /*** Reduce DT if necessary ***/
     if (decrease_h)
@@ -1082,11 +1576,10 @@ void Individual::solve( void )
 /**
  * \brief    Compute the ODE system
  * \details  --
- * \param    const double* s
  * \param    double* dsdt
  * \return   \e void
  */
-void Individual::ODE_system( const double* s, double* dsdt )
+void Individual::ODE_system( double* dsdt )
 {
   /*----------------------------------*/
   /* 1) Initialize fixed parameters   */
@@ -1559,4 +2052,59 @@ void Individual::ODE_system( const double* s, double* dsdt )
   dsdt[_met_to_index["NADPHf"]]  += v38;
 }
 
+/**
+ * \brief    Save in backup file
+ * \details  --
+ * \param    gzFile backup_file
+ * \return   \e void
+ */
+void Individual::save( gzFile backup_file )
+{
+  /*----------------------------------------------------- MAIN PARAMETERS */
+  
+  gzwrite(backup_file, &_identifier, sizeof(_identifier));
+  gzwrite(backup_file, &_parent, sizeof(_parent));
+  gzwrite(backup_file, &_g, sizeof(_g));
+  
+  /*----------------------------------------------------- METABOLIC NETWORK */
+  
+  gzwrite(backup_file, &_p_fixed, sizeof(_p_fixed));
+  gzwrite(backup_file, &_p_mutable, sizeof(_p_mutable));
+  gzwrite(backup_file, &_m, sizeof(_m));
+  
+  for (int i = 0; i < _p_mutable; i++)
+  {
+    gzwrite(backup_file, &_mutable_params[i], sizeof(_mutable_params[i]));
+  }
+  for (int i = 0; i < _m; i++)
+  {
+    gzwrite(backup_file, &_s[i], sizeof(_s[i]));
+  }
+  
+  /*----------------------------------------------------- TREE MANAGEMENT */
+  
+  gzwrite(backup_file, &_prepared_for_tree, sizeof(_prepared_for_tree));
+  
+  /*----------------------------------------------------- PHENOTYPE */
+  
+  gzwrite(backup_file, &_mutated, sizeof(_mutated));
+  if (!_prepared_for_tree)
+  {
+    for (int i = 0; i < _m; i++)
+    {
+      gzwrite(backup_file, &_old_s[i], sizeof(_old_s[i]));
+    }
+  }
+  gzwrite(backup_file, &_c, sizeof(_c));
+  gzwrite(backup_file, &_old_c, sizeof(_old_c));
+  gzwrite(backup_file, &_c_opt, sizeof(_c_opt));
+  gzwrite(backup_file, &_w, sizeof(_w));
+  
+  /*----------------------------------------------------- ODE SOLVER */
+  
+  gzwrite(backup_file, &_dt, sizeof(_dt));
+  gzwrite(backup_file, &_t, sizeof(_t));
+  gzwrite(backup_file, &_timestep, sizeof(_timestep));
+  gzwrite(backup_file, &_isStable, sizeof(_isStable));
+}
 

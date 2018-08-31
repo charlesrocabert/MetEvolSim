@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <unordered_map>
+#include <zlib.h>
 #include <assert.h>
 
 #include "Macros.h"
@@ -25,6 +26,7 @@ public:
    *----------------------------*/
   Individual( void ) = delete;
   Individual( Parameters* parameters );
+  Individual( Parameters* parameters, gzFile backup_file );
   Individual( const Individual& individual );
   
   /*----------------------------
@@ -74,6 +76,10 @@ public:
   
   void prepare_for_tree( void );
   
+  /*----------------------------------------------------- BACKUP */
+  
+  void save( gzFile backup_file );
+  
   /*----------------------------
    * PUBLIC ATTRIBUTES
    *----------------------------*/
@@ -86,6 +92,7 @@ protected:
   void create_fixed_param_to_index_map( void );
   void create_mutable_param_to_index_map( void );
   void create_met_to_index_map( void );
+  void create_degree_map( void );
   
   void initialize_fixed_parameters( void );
   void initialize_mutable_parameters( void );
@@ -96,7 +103,7 @@ protected:
   void initialize_concentration_vector( void );
   
   void solve( void );
-  void ODE_system( const double* s, double* dsdt );
+  void ODE_system( double* dsdt );
   
   /*----------------------------
    * PROTECTED ATTRIBUTES
@@ -127,6 +134,10 @@ protected:
   double* _fixed_params;   /*!< Fixed parameters vector   */
   double* _mutable_params; /*!< Mutable parameters vector */
   double* _s;              /*!< Concentration vector      */
+  
+  int* _total_degree; /*!< Total metabolic degree */
+  int* _in_degree;    /*!< Metabolic in-degree    */
+  int* _out_degree;   /*!< Metabolic out-degree   */
   
   /*----------------------------------------------------- PHENOTYPE */
   

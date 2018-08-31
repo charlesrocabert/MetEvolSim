@@ -250,6 +250,7 @@ void Tree::compute_mean_evolution_rate( std::string filename )
   double* mean_nbfix    = new double[_parameters->get_m()];
   double* mean_evolrate = new double[_parameters->get_m()];
   double  counter       = 0.0;
+  double  sum_w         = 0.0;
   for (int i = 0; i < _parameters->get_m(); i++)
   {
     mean_s[i]        = 0.0;
@@ -261,6 +262,7 @@ void Tree::compute_mean_evolution_rate( std::string filename )
     Node* node = _iterator->second;
     if (node->isAlive())
     {
+      double  w        = node->get_individual()->get_w();
       double* s        = node->get_individual()->get_s();
       double* nbfix    = new double[_parameters->get_m()];
       double* evolrate = new double[_parameters->get_m()];
@@ -271,6 +273,7 @@ void Tree::compute_mean_evolution_rate( std::string filename )
         mean_nbfix[i]    += nbfix[i];
         mean_evolrate[i] += evolrate[i];
       }
+      sum_w += w;
       delete[] nbfix;
       nbfix = NULL;
       delete[] evolrate;
