@@ -124,6 +124,19 @@ Holzhutter2004/fast:
 .PHONY : Holzhutter2004/fast
 
 #=============================================================================
+# Target rules for targets named tests
+
+# Build rule for target.
+tests: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 tests
+.PHONY : tests
+
+# fast build rule for target.
+tests/fast:
+	$(MAKE) -f CMakeFiles/tests.dir/build.make CMakeFiles/tests.dir/build
+.PHONY : tests/fast
+
+#=============================================================================
 # Target rules for targets named run
 
 # Build rule for target.
@@ -189,33 +202,6 @@ src/lib/Node.s: src/lib/Node.cpp.s
 src/lib/Node.cpp.s:
 	$(MAKE) -f CMakeFiles/Holzhutter2004.dir/build.make CMakeFiles/Holzhutter2004.dir/src/lib/Node.cpp.s
 .PHONY : src/lib/Node.cpp.s
-
-src/lib/ODESolver.o: src/lib/ODESolver.cpp.o
-
-.PHONY : src/lib/ODESolver.o
-
-# target to build an object file
-src/lib/ODESolver.cpp.o:
-	$(MAKE) -f CMakeFiles/Holzhutter2004.dir/build.make CMakeFiles/Holzhutter2004.dir/src/lib/ODESolver.cpp.o
-.PHONY : src/lib/ODESolver.cpp.o
-
-src/lib/ODESolver.i: src/lib/ODESolver.cpp.i
-
-.PHONY : src/lib/ODESolver.i
-
-# target to preprocess a source file
-src/lib/ODESolver.cpp.i:
-	$(MAKE) -f CMakeFiles/Holzhutter2004.dir/build.make CMakeFiles/Holzhutter2004.dir/src/lib/ODESolver.cpp.i
-.PHONY : src/lib/ODESolver.cpp.i
-
-src/lib/ODESolver.s: src/lib/ODESolver.cpp.s
-
-.PHONY : src/lib/ODESolver.s
-
-# target to generate assembly for a file
-src/lib/ODESolver.cpp.s:
-	$(MAKE) -f CMakeFiles/Holzhutter2004.dir/build.make CMakeFiles/Holzhutter2004.dir/src/lib/ODESolver.cpp.s
-.PHONY : src/lib/ODESolver.cpp.s
 
 src/lib/Parameters.o: src/lib/Parameters.cpp.o
 
@@ -352,6 +338,33 @@ src/run.cpp.s:
 	$(MAKE) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/src/run.cpp.s
 .PHONY : src/run.cpp.s
 
+src/tests.o: src/tests.cpp.o
+
+.PHONY : src/tests.o
+
+# target to build an object file
+src/tests.cpp.o:
+	$(MAKE) -f CMakeFiles/tests.dir/build.make CMakeFiles/tests.dir/src/tests.cpp.o
+.PHONY : src/tests.cpp.o
+
+src/tests.i: src/tests.cpp.i
+
+.PHONY : src/tests.i
+
+# target to preprocess a source file
+src/tests.cpp.i:
+	$(MAKE) -f CMakeFiles/tests.dir/build.make CMakeFiles/tests.dir/src/tests.cpp.i
+.PHONY : src/tests.cpp.i
+
+src/tests.s: src/tests.cpp.s
+
+.PHONY : src/tests.s
+
+# target to generate assembly for a file
+src/tests.cpp.s:
+	$(MAKE) -f CMakeFiles/tests.dir/build.make CMakeFiles/tests.dir/src/tests.cpp.s
+.PHONY : src/tests.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -361,6 +374,7 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
 	@echo "... Holzhutter2004"
+	@echo "... tests"
 	@echo "... run"
 	@echo "... src/lib/Individual.o"
 	@echo "... src/lib/Individual.i"
@@ -368,9 +382,6 @@ help:
 	@echo "... src/lib/Node.o"
 	@echo "... src/lib/Node.i"
 	@echo "... src/lib/Node.s"
-	@echo "... src/lib/ODESolver.o"
-	@echo "... src/lib/ODESolver.i"
-	@echo "... src/lib/ODESolver.s"
 	@echo "... src/lib/Parameters.o"
 	@echo "... src/lib/Parameters.i"
 	@echo "... src/lib/Parameters.s"
@@ -386,6 +397,9 @@ help:
 	@echo "... src/run.o"
 	@echo "... src/run.i"
 	@echo "... src/run.s"
+	@echo "... src/tests.o"
+	@echo "... src/tests.i"
+	@echo "... src/tests.s"
 .PHONY : help
 
 

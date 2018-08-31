@@ -1,2 +1,0 @@
-seed nb_g n m struct nbrandomit prev sigma mu w alpha beta Q PC
-7300220 10000 100 30 1 200 0 0.01 0.001 1e-05 0.5 0 2 1

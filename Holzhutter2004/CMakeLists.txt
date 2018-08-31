@@ -55,6 +55,9 @@ set(EXECUTABLE_OUTPUT_PATH ../build/bin)
 set(RUN_EXECUTABLE run)
 add_executable(${RUN_EXECUTABLE} src/run.cpp)
 
+set(TESTS_EXECUTABLE tests)
+add_executable(${TESTS_EXECUTABLE} src/tests.cpp)
+
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # Find and link external libraries                                             #
@@ -63,17 +66,19 @@ find_package(GSL REQUIRED)
 if(GSL_FOUND)
   include_directories(${GSL_INCLUDE_DIR})
   target_link_libraries(${RUN_EXECUTABLE} ${GSL_LIBRARIES})
+  target_link_libraries(${TESTS_EXECUTABLE} ${GSL_LIBRARIES})
 endif(GSL_FOUND)
 
 find_package(TBB REQUIRED)
 if(TBB_FOUND)
   include_directories(${TBB_INCLUDE_DIR})
   target_link_libraries(${RUN_EXECUTABLE} ${TBB_LIBRARIES})
+  target_link_libraries(${TESTS_EXECUTABLE} ${TBB_LIBRARIES})
 endif(TBB_FOUND)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-# Create and link Eire library                                                 #
+# Create and link Holzhutter2004 library                                       #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 add_library(
   Holzhutter2004
@@ -96,6 +101,7 @@ add_library(
 
 target_link_libraries(Holzhutter2004 tbb gsl gslcblas)
 target_link_libraries(${RUN_EXECUTABLE} Holzhutter2004)
+target_link_libraries(${TESTS_EXECUTABLE} Holzhutter2004)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#

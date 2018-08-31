@@ -26,7 +26,7 @@ Individual::Individual( Parameters* parameters )
   /*----------------------------------------------------- NETWORK STRUCTURE */
   
   _p_fixed   = 17;
-  _p_mutable = 155;
+  _p_mutable = 154;
   _m         = 40;
   
   _fixed_param_to_index.clear();
@@ -102,7 +102,7 @@ Individual::Individual( const Individual& individual )
   /*----------------------------------------------------- NETWORK STRUCTURE */
   
   _p_fixed   = 17;
-  _p_mutable = 155;
+  _p_mutable = 154;
   _m         = 40;
   
   create_fixed_param_to_index_map();
@@ -206,7 +206,7 @@ void Individual::initialize( void )
   
   /*** Set the number of variables ***/
   _p_fixed   = 17;
-  _p_mutable = 155;
+  _p_mutable = 154;
   _m         = 40;
   
   /*** Create the indexes ***/
@@ -303,12 +303,15 @@ void Individual::compute_steady_state( bool ancestor )
       {
         file << " " << _s[it->second];
       }
+      
       file << "\n";
+      file.flush();
     }
     /********/
     
     while (!endOfSolving)
     {
+      std::cout << ">  steady-state iteration " << counter << "\n";
       bool stable   = false;
       bool too_low  = false;
       bool too_high = false;
@@ -325,7 +328,7 @@ void Individual::compute_steady_state( bool ancestor )
       }
       
       /* save */
-      if (ancestor && counter%10000 == 0)
+      if (ancestor && counter%1000 == 0)
       {
         file << _t << " " << _dt;
         for (std::unordered_map<std::string, int>::iterator it = _met_to_index.begin(); it != _met_to_index.end(); ++it)
@@ -371,6 +374,14 @@ void Individual::compute_steady_state( bool ancestor )
       }
       counter++;
     }
+    
+    /* save */
+    if (ancestor)
+    {
+      file.close();
+    }
+    /********/
+    
   }
 }
 
@@ -516,160 +527,160 @@ void Individual::create_fixed_param_to_index_map( void )
 void Individual::create_mutable_param_to_index_map( void )
 {
   _mutable_param_to_index.clear();
-  _mutable_param_to_index["K13P2Gv6"]    = 1;
-  _mutable_param_to_index["K13P2Gv7"]    = 2;
-  _mutable_param_to_index["K1v23"]       = 3;
-  _mutable_param_to_index["K1v24"]       = 4;
-  _mutable_param_to_index["K1v26"]       = 5;
-  _mutable_param_to_index["K23P2Gv1"]    = 6;
-  _mutable_param_to_index["K23P2Gv8"]    = 7;
-  _mutable_param_to_index["K23P2Gv9"]    = 8;
-  _mutable_param_to_index["K2PGv10"]     = 9;
-  _mutable_param_to_index["K2PGv11"]     = 10;
-  _mutable_param_to_index["K2v23"]       = 11;
-  _mutable_param_to_index["K2v24"]       = 12;
-  _mutable_param_to_index["K2v26"]       = 13;
-  _mutable_param_to_index["K3PGv10"]     = 14;
-  _mutable_param_to_index["K3PGv7"]      = 15;
-  _mutable_param_to_index["K3v23"]       = 16;
-  _mutable_param_to_index["K3v24"]       = 17;
-  _mutable_param_to_index["K3v26"]       = 18;
-  _mutable_param_to_index["K4v23"]       = 19;
-  _mutable_param_to_index["K4v24"]       = 20;
-  _mutable_param_to_index["K4v26"]       = 21;
-  _mutable_param_to_index["K5v23"]       = 22;
-  _mutable_param_to_index["K5v24"]       = 23;
-  _mutable_param_to_index["K5v26"]       = 24;
-  _mutable_param_to_index["K6PG1v18"]    = 25;
-  _mutable_param_to_index["K6PG2v18"]    = 26;
-  _mutable_param_to_index["K6v23"]       = 27;
-  _mutable_param_to_index["K6v24"]       = 28;
-  _mutable_param_to_index["K6v26"]       = 29;
-  _mutable_param_to_index["K7v23"]       = 30;
-  _mutable_param_to_index["K7v24"]       = 31;
-  _mutable_param_to_index["K7v26"]       = 32;
-  _mutable_param_to_index["KADPv16"]     = 33;
-  _mutable_param_to_index["KAMPv16"]     = 34;
-  _mutable_param_to_index["KAMPv3"]      = 35;
-  _mutable_param_to_index["KATPv12"]     = 36;
-  _mutable_param_to_index["KATPv16"]     = 37;
-  _mutable_param_to_index["KATPv17"]     = 38;
-  _mutable_param_to_index["KATPv18"]     = 39;
-  _mutable_param_to_index["KATPv25"]     = 40;
-  _mutable_param_to_index["KATPv3"]      = 41;
-  _mutable_param_to_index["KDHAPv4"]     = 42;
-  _mutable_param_to_index["KDHAPv5"]     = 43;
-  _mutable_param_to_index["KFru16P2v12"] = 44;
-  _mutable_param_to_index["KFru16P2v4"]  = 45;
-  _mutable_param_to_index["KFru6Pv2"]    = 46;
-  _mutable_param_to_index["KFru6Pv3"]    = 47;
-  _mutable_param_to_index["KG6Pv17"]     = 48;
-  _mutable_param_to_index["KGSHv19"]     = 49;
-  _mutable_param_to_index["KGSSGv19"]    = 50;
-  _mutable_param_to_index["KGlc6Pv1"]    = 51;
-  _mutable_param_to_index["KGlc6Pv2"]    = 52;
-  _mutable_param_to_index["KGraPv4"]     = 53;
-  _mutable_param_to_index["KGraPv5"]     = 54;
-  _mutable_param_to_index["KGraPv6"]     = 55;
-  _mutable_param_to_index["KMGlcv1"]     = 56;
-  _mutable_param_to_index["KMg23P2Gv1"]  = 57;
-  _mutable_param_to_index["KMgADPv12"]   = 58;
-  _mutable_param_to_index["KMgADPv7"]    = 59;
-  _mutable_param_to_index["KMgATPMgv1"]  = 60;
-  _mutable_param_to_index["KMgATPv1"]    = 61;
-  _mutable_param_to_index["KMgATPv3"]    = 62;
-  _mutable_param_to_index["KMgATPv7"]    = 63;
-  _mutable_param_to_index["KMgv1"]       = 64;
-  _mutable_param_to_index["KMgv3"]       = 65;
-  _mutable_param_to_index["KMinv0"]      = 66;
-  _mutable_param_to_index["KMoutv0"]     = 67;
-  _mutable_param_to_index["KNADHv6"]     = 68;
-  _mutable_param_to_index["KNADPHv17"]   = 69;
-  _mutable_param_to_index["KNADPHv18"]   = 70;
-  _mutable_param_to_index["KNADPHv19"]   = 71;
-  _mutable_param_to_index["KNADPv17"]    = 72;
-  _mutable_param_to_index["KNADPv18"]    = 73;
-  _mutable_param_to_index["KNADPv19"]    = 74;
-  _mutable_param_to_index["KNADv6"]      = 75;
-  _mutable_param_to_index["KPEPv11"]     = 76;
-  _mutable_param_to_index["KPEPv12"]     = 77;
-  _mutable_param_to_index["KPGA23v17"]   = 78;
-  _mutable_param_to_index["KPGA23v18"]   = 79;
-  _mutable_param_to_index["KPv6"]        = 80;
-  _mutable_param_to_index["KR5Pv22"]     = 81;
-  _mutable_param_to_index["KR5Pv25"]     = 82;
-  _mutable_param_to_index["KRu5Pv21"]    = 83;
-  _mutable_param_to_index["KRu5Pv22"]    = 84;
-  _mutable_param_to_index["KX5Pv21"]     = 85;
-  _mutable_param_to_index["Kd1"]         = 86;
-  _mutable_param_to_index["Kd2"]         = 87;
-  _mutable_param_to_index["Kd23P2G"]     = 88;
-  _mutable_param_to_index["Kd3"]         = 89;
-  _mutable_param_to_index["Kd4"]         = 90;
-  _mutable_param_to_index["KdADP"]       = 91;
-  _mutable_param_to_index["KdAMP"]       = 92;
-  _mutable_param_to_index["KdATP"]       = 93;
-  _mutable_param_to_index["Keqv0"]       = 94;
-  _mutable_param_to_index["Keqv1"]       = 95;
-  _mutable_param_to_index["Keqv10"]      = 96;
-  _mutable_param_to_index["Keqv11"]      = 97;
-  _mutable_param_to_index["Keqv12"]      = 98;
-  _mutable_param_to_index["Keqv13"]      = 99;
-  _mutable_param_to_index["Keqv14"]      = 100;
-  _mutable_param_to_index["Keqv16"]      = 101;
-  _mutable_param_to_index["Keqv17"]      = 102;
-  _mutable_param_to_index["Keqv18"]      = 103;
-  _mutable_param_to_index["Keqv19"]      = 104;
-  _mutable_param_to_index["Keqv2"]       = 105;
-  _mutable_param_to_index["Keqv21"]      = 106;
-  _mutable_param_to_index["Keqv22"]      = 107;
-  _mutable_param_to_index["Keqv23"]      = 108;
-  _mutable_param_to_index["Keqv24"]      = 109;
-  _mutable_param_to_index["Keqv25"]      = 110;
-  _mutable_param_to_index["Keqv26"]      = 111;
-  _mutable_param_to_index["Keqv27"]      = 112;
-  _mutable_param_to_index["Keqv28"]      = 113;
-  _mutable_param_to_index["Keqv29"]      = 114;
-  _mutable_param_to_index["Keqv3"]       = 115;
-  _mutable_param_to_index["Keqv4"]       = 116;
-  _mutable_param_to_index["Keqv5"]       = 117;
-  _mutable_param_to_index["Keqv6"]       = 118;
-  _mutable_param_to_index["Keqv7"]       = 119;
-  _mutable_param_to_index["Keqv8"]       = 120;
-  _mutable_param_to_index["Keqv9"]       = 121;
-  _mutable_param_to_index["KiGraPv4"]    = 122;
-  _mutable_param_to_index["KiiGraPv4"]   = 123;
-  _mutable_param_to_index["Kv20"]        = 124;
-  _mutable_param_to_index["Vmax1v1"]     = 125;
-  _mutable_param_to_index["Vmax2v1"]     = 126;
-  _mutable_param_to_index["Vmaxv0"]      = 127;
-  _mutable_param_to_index["Vmaxv10"]     = 128;
-  _mutable_param_to_index["Vmaxv11"]     = 129;
-  _mutable_param_to_index["Vmaxv12"]     = 130;
-  _mutable_param_to_index["Vmaxv13"]     = 131;
-  _mutable_param_to_index["Vmaxv16"]     = 132;
-  _mutable_param_to_index["Vmaxv17"]     = 133;
-  _mutable_param_to_index["Vmaxv18"]     = 134;
-  _mutable_param_to_index["Vmaxv19"]     = 135;
-  _mutable_param_to_index["Vmaxv2"]      = 136;
-  _mutable_param_to_index["Vmaxv21"]     = 137;
-  _mutable_param_to_index["Vmaxv22"]     = 138;
-  _mutable_param_to_index["Vmaxv23"]     = 139;
-  _mutable_param_to_index["Vmaxv24"]     = 140;
-  _mutable_param_to_index["Vmaxv25"]     = 141;
-  _mutable_param_to_index["Vmaxv26"]     = 142;
-  _mutable_param_to_index["Vmaxv27"]     = 143;
-  _mutable_param_to_index["Vmaxv28"]     = 144;
-  _mutable_param_to_index["Vmaxv29"]     = 145;
-  _mutable_param_to_index["Vmaxv3"]      = 146;
-  _mutable_param_to_index["Vmaxv4"]      = 147;
-  _mutable_param_to_index["Vmaxv5"]      = 148;
-  _mutable_param_to_index["Vmaxv6"]      = 149;
-  _mutable_param_to_index["Vmaxv7"]      = 150;
-  _mutable_param_to_index["Vmaxv9"]      = 151;
-  _mutable_param_to_index["kATPasev15"]  = 152;
-  _mutable_param_to_index["kDPGMv8"]     = 153;
-  _mutable_param_to_index["kLDHv14"]     = 154;
+  _mutable_param_to_index["K13P2Gv6"]    = 0;
+  _mutable_param_to_index["K13P2Gv7"]    = 1;
+  _mutable_param_to_index["K1v23"]       = 2;
+  _mutable_param_to_index["K1v24"]       = 3;
+  _mutable_param_to_index["K1v26"]       = 4;
+  _mutable_param_to_index["K23P2Gv1"]    = 5;
+  _mutable_param_to_index["K23P2Gv8"]    = 6;
+  _mutable_param_to_index["K23P2Gv9"]    = 7;
+  _mutable_param_to_index["K2PGv10"]     = 8;
+  _mutable_param_to_index["K2PGv11"]     = 9;
+  _mutable_param_to_index["K2v23"]       = 10;
+  _mutable_param_to_index["K2v24"]       = 11;
+  _mutable_param_to_index["K2v26"]       = 12;
+  _mutable_param_to_index["K3PGv10"]     = 13;
+  _mutable_param_to_index["K3PGv7"]      = 14;
+  _mutable_param_to_index["K3v23"]       = 15;
+  _mutable_param_to_index["K3v24"]       = 16;
+  _mutable_param_to_index["K3v26"]       = 17;
+  _mutable_param_to_index["K4v23"]       = 18;
+  _mutable_param_to_index["K4v24"]       = 19;
+  _mutable_param_to_index["K4v26"]       = 20;
+  _mutable_param_to_index["K5v23"]       = 21;
+  _mutable_param_to_index["K5v24"]       = 22;
+  _mutable_param_to_index["K5v26"]       = 23;
+  _mutable_param_to_index["K6PG1v18"]    = 24;
+  _mutable_param_to_index["K6PG2v18"]    = 25;
+  _mutable_param_to_index["K6v23"]       = 26;
+  _mutable_param_to_index["K6v24"]       = 27;
+  _mutable_param_to_index["K6v26"]       = 28;
+  _mutable_param_to_index["K7v23"]       = 29;
+  _mutable_param_to_index["K7v24"]       = 30;
+  _mutable_param_to_index["K7v26"]       = 31;
+  _mutable_param_to_index["KADPv16"]     = 32;
+  _mutable_param_to_index["KAMPv16"]     = 33;
+  _mutable_param_to_index["KAMPv3"]      = 34;
+  _mutable_param_to_index["KATPv12"]     = 35;
+  _mutable_param_to_index["KATPv16"]     = 36;
+  _mutable_param_to_index["KATPv17"]     = 37;
+  _mutable_param_to_index["KATPv18"]     = 38;
+  _mutable_param_to_index["KATPv25"]     = 39;
+  _mutable_param_to_index["KATPv3"]      = 40;
+  _mutable_param_to_index["KDHAPv4"]     = 41;
+  _mutable_param_to_index["KDHAPv5"]     = 42;
+  _mutable_param_to_index["KFru16P2v12"] = 43;
+  _mutable_param_to_index["KFru16P2v4"]  = 44;
+  _mutable_param_to_index["KFru6Pv2"]    = 45;
+  _mutable_param_to_index["KFru6Pv3"]    = 46;
+  _mutable_param_to_index["KG6Pv17"]     = 47;
+  _mutable_param_to_index["KGSHv19"]     = 48;
+  _mutable_param_to_index["KGSSGv19"]    = 49;
+  _mutable_param_to_index["KGlc6Pv1"]    = 50;
+  _mutable_param_to_index["KGlc6Pv2"]    = 51;
+  _mutable_param_to_index["KGraPv4"]     = 52;
+  _mutable_param_to_index["KGraPv5"]     = 53;
+  _mutable_param_to_index["KGraPv6"]     = 54;
+  _mutable_param_to_index["KMGlcv1"]     = 55;
+  _mutable_param_to_index["KMg23P2Gv1"]  = 56;
+  _mutable_param_to_index["KMgADPv12"]   = 57;
+  _mutable_param_to_index["KMgADPv7"]    = 58;
+  _mutable_param_to_index["KMgATPMgv1"]  = 59;
+  _mutable_param_to_index["KMgATPv1"]    = 60;
+  _mutable_param_to_index["KMgATPv3"]    = 61;
+  _mutable_param_to_index["KMgATPv7"]    = 62;
+  _mutable_param_to_index["KMgv1"]       = 63;
+  _mutable_param_to_index["KMgv3"]       = 64;
+  _mutable_param_to_index["KMinv0"]      = 65;
+  _mutable_param_to_index["KMoutv0"]     = 66;
+  _mutable_param_to_index["KNADHv6"]     = 67;
+  _mutable_param_to_index["KNADPHv17"]   = 68;
+  _mutable_param_to_index["KNADPHv18"]   = 69;
+  _mutable_param_to_index["KNADPHv19"]   = 70;
+  _mutable_param_to_index["KNADPv17"]    = 71;
+  _mutable_param_to_index["KNADPv18"]    = 72;
+  _mutable_param_to_index["KNADPv19"]    = 73;
+  _mutable_param_to_index["KNADv6"]      = 74;
+  _mutable_param_to_index["KPEPv11"]     = 75;
+  _mutable_param_to_index["KPEPv12"]     = 76;
+  _mutable_param_to_index["KPGA23v17"]   = 77;
+  _mutable_param_to_index["KPGA23v18"]   = 78;
+  _mutable_param_to_index["KPv6"]        = 79;
+  _mutable_param_to_index["KR5Pv22"]     = 80;
+  _mutable_param_to_index["KR5Pv25"]     = 81;
+  _mutable_param_to_index["KRu5Pv21"]    = 82;
+  _mutable_param_to_index["KRu5Pv22"]    = 83;
+  _mutable_param_to_index["KX5Pv21"]     = 84;
+  _mutable_param_to_index["Kd1"]         = 85;
+  _mutable_param_to_index["Kd2"]         = 86;
+  _mutable_param_to_index["Kd23P2G"]     = 87;
+  _mutable_param_to_index["Kd3"]         = 88;
+  _mutable_param_to_index["Kd4"]         = 89;
+  _mutable_param_to_index["KdADP"]       = 90;
+  _mutable_param_to_index["KdAMP"]       = 91;
+  _mutable_param_to_index["KdATP"]       = 92;
+  _mutable_param_to_index["Keqv0"]       = 93;
+  _mutable_param_to_index["Keqv1"]       = 94;
+  _mutable_param_to_index["Keqv10"]      = 95;
+  _mutable_param_to_index["Keqv11"]      = 96;
+  _mutable_param_to_index["Keqv12"]      = 97;
+  _mutable_param_to_index["Keqv13"]      = 98;
+  _mutable_param_to_index["Keqv14"]      = 99;
+  _mutable_param_to_index["Keqv16"]      = 100;
+  _mutable_param_to_index["Keqv17"]      = 101;
+  _mutable_param_to_index["Keqv18"]      = 102;
+  _mutable_param_to_index["Keqv19"]      = 103;
+  _mutable_param_to_index["Keqv2"]       = 104;
+  _mutable_param_to_index["Keqv21"]      = 105;
+  _mutable_param_to_index["Keqv22"]      = 106;
+  _mutable_param_to_index["Keqv23"]      = 107;
+  _mutable_param_to_index["Keqv24"]      = 108;
+  _mutable_param_to_index["Keqv25"]      = 109;
+  _mutable_param_to_index["Keqv26"]      = 110;
+  _mutable_param_to_index["Keqv27"]      = 111;
+  _mutable_param_to_index["Keqv28"]      = 112;
+  _mutable_param_to_index["Keqv29"]      = 113;
+  _mutable_param_to_index["Keqv3"]       = 114;
+  _mutable_param_to_index["Keqv4"]       = 115;
+  _mutable_param_to_index["Keqv5"]       = 116;
+  _mutable_param_to_index["Keqv6"]       = 117;
+  _mutable_param_to_index["Keqv7"]       = 118;
+  _mutable_param_to_index["Keqv8"]       = 119;
+  _mutable_param_to_index["Keqv9"]       = 120;
+  _mutable_param_to_index["KiGraPv4"]    = 121;
+  _mutable_param_to_index["KiiGraPv4"]   = 122;
+  _mutable_param_to_index["Kv20"]        = 123;
+  _mutable_param_to_index["Vmax1v1"]     = 124;
+  _mutable_param_to_index["Vmax2v1"]     = 125;
+  _mutable_param_to_index["Vmaxv0"]      = 126;
+  _mutable_param_to_index["Vmaxv10"]     = 127;
+  _mutable_param_to_index["Vmaxv11"]     = 128;
+  _mutable_param_to_index["Vmaxv12"]     = 129;
+  _mutable_param_to_index["Vmaxv13"]     = 130;
+  _mutable_param_to_index["Vmaxv16"]     = 131;
+  _mutable_param_to_index["Vmaxv17"]     = 132;
+  _mutable_param_to_index["Vmaxv18"]     = 133;
+  _mutable_param_to_index["Vmaxv19"]     = 134;
+  _mutable_param_to_index["Vmaxv2"]      = 135;
+  _mutable_param_to_index["Vmaxv21"]     = 136;
+  _mutable_param_to_index["Vmaxv22"]     = 137;
+  _mutable_param_to_index["Vmaxv23"]     = 138;
+  _mutable_param_to_index["Vmaxv24"]     = 139;
+  _mutable_param_to_index["Vmaxv25"]     = 140;
+  _mutable_param_to_index["Vmaxv26"]     = 141;
+  _mutable_param_to_index["Vmaxv27"]     = 142;
+  _mutable_param_to_index["Vmaxv28"]     = 143;
+  _mutable_param_to_index["Vmaxv29"]     = 144;
+  _mutable_param_to_index["Vmaxv3"]      = 145;
+  _mutable_param_to_index["Vmaxv4"]      = 146;
+  _mutable_param_to_index["Vmaxv5"]      = 147;
+  _mutable_param_to_index["Vmaxv6"]      = 148;
+  _mutable_param_to_index["Vmaxv7"]      = 149;
+  _mutable_param_to_index["Vmaxv9"]      = 150;
+  _mutable_param_to_index["kATPasev15"]  = 151;
+  _mutable_param_to_index["kDPGMv8"]     = 152;
+  _mutable_param_to_index["kLDHv14"]     = 153;
 }
 
 /**
@@ -927,7 +938,7 @@ void Individual::initialize_concentrations( void )
 {
   assert(_initial_s != NULL);
   _initial_s[_met_to_index["ADPf"]]      = 0.25;
-  _initial_s[_met_to_index["AMPf"]]      = 0.0;
+  _initial_s[_met_to_index["AMPf"]]      = 0.01;//0.0;
   _initial_s[_met_to_index["ATPf"]]      = 0.25;
   _initial_s[_met_to_index["DHAP"]]      = 0.1492;
   _initial_s[_met_to_index["E4P"]]       = 0.0063;
@@ -945,20 +956,20 @@ void Individual::initialize_concentrations( void )
   _initial_s[_met_to_index["Gri3P"]]     = 0.0658;
   _initial_s[_met_to_index["Lac"]]       = 1.6803;
   _initial_s[_met_to_index["MgADP"]]     = 0.1;
-  _initial_s[_met_to_index["MgAMP"]]     = 0.0;
+  _initial_s[_met_to_index["MgAMP"]]     = 0.01;//0.0;
   _initial_s[_met_to_index["MgATP"]]     = 1.4;
   _initial_s[_met_to_index["MgGri23P2"]] = 0.5;
   _initial_s[_met_to_index["Mgf"]]       = 0.8;
   _initial_s[_met_to_index["NAD"]]       = 0.0653;
   _initial_s[_met_to_index["NADH"]]      = 0.0002;
   _initial_s[_met_to_index["NADPHf"]]    = 0.004;
-  _initial_s[_met_to_index["NADPf"]]     = 0.0;
-  _initial_s[_met_to_index["P1NADP"]]    = 0.0;
+  _initial_s[_met_to_index["NADPf"]]     = 0.01;//0.0;
+  _initial_s[_met_to_index["P1NADP"]]    = 0.01;//0.0;
   _initial_s[_met_to_index["P1NADPH"]]   = 0.024;
-  _initial_s[_met_to_index["P1f"]]       = 0.0;
-  _initial_s[_met_to_index["P2NADP"]]    = 0.0;
+  _initial_s[_met_to_index["P1f"]]       = 0.01;//0.0;
+  _initial_s[_met_to_index["P2NADP"]]    = 0.01;//0.0;
   _initial_s[_met_to_index["P2NADPH"]]   = 0.024;
-  _initial_s[_met_to_index["P2f"]]       = 0.0;
+  _initial_s[_met_to_index["P2f"]]       = 0.01;//0.0;
   _initial_s[_met_to_index["PEP"]]       = 0.0109;
   _initial_s[_met_to_index["Phi"]]       = 0.9992;
   _initial_s[_met_to_index["Pyr"]]       = 0.084;
@@ -1029,6 +1040,7 @@ void Individual::solve( void )
     /* 2) Compute next state with current dt */
     /*---------------------------------------*/
     ODE_system(_s, DSDT);
+    
     for (int i = 0; i < _m; i++)
     {
       _s[i] += DSDT[i]*_dt;
@@ -1047,6 +1059,9 @@ void Individual::solve( void )
         break;
       }
     }
+    
+    std::cout << ">>>>>> t = " << _t << ", dt = " << _dt << ", decrease = " << decrease_h << "\n";
+    
     /*** Reduce DT if necessary ***/
     if (decrease_h)
     {
@@ -1076,23 +1091,23 @@ void Individual::ODE_system( const double* s, double* dsdt )
   /*----------------------------------*/
   /* 1) Initialize fixed parameters   */
   /*----------------------------------*/
-  double Atot     = _fixed_params[_fixed_param_to_index["Atot"]];
-  double EqMult   = _fixed_params[_fixed_param_to_index["EqMult"]];
-  double GStotal  = _fixed_params[_fixed_param_to_index["GStotal"]];
-  double Inhibv1  = _fixed_params[_fixed_param_to_index["Inhibv1"]];
-  double L0v12    = _fixed_params[_fixed_param_to_index["L0v12"]];
-  double L0v3     = _fixed_params[_fixed_param_to_index["L0v3"]];
-  double Mgtot    = _fixed_params[_fixed_param_to_index["Mgtot"]];
-  double NADPtot  = _fixed_params[_fixed_param_to_index["NADPtot"]];
-  double NADtot   = _fixed_params[_fixed_param_to_index["NADtot"]];
-  double alfav0   = _fixed_params[_fixed_param_to_index["alfav0"]];
-  double protein1 = _fixed_params[_fixed_param_to_index["protein1"]];
-  double protein2 = _fixed_params[_fixed_param_to_index["protein2"]];
-  double Glcout   = _fixed_params[_fixed_param_to_index["Glcout"]];
-  double Lacex    = _fixed_params[_fixed_param_to_index["Lacex"]];
-  double PRPP     = _fixed_params[_fixed_param_to_index["PRPP"]];
-  double Phiex    = _fixed_params[_fixed_param_to_index["Phiex"]];
-  double Pyrex    = _fixed_params[_fixed_param_to_index["Pyrex"]];
+  //double Atot     = _fixed_params[_fixed_param_to_index["Atot"]];
+  //double GStotal  = _fixed_params[_fixed_param_to_index["GStotal"]];
+  //double Mgtot    = _fixed_params[_fixed_param_to_index["Mgtot"]];
+  //double NADPtot  = _fixed_params[_fixed_param_to_index["NADPtot"]];
+  //double NADtot   = _fixed_params[_fixed_param_to_index["NADtot"]];
+  //double protein1 = _fixed_params[_fixed_param_to_index["protein1"]];
+  //double protein2 = _fixed_params[_fixed_param_to_index["protein2"]];
+  double EqMult  = _fixed_params[_fixed_param_to_index["EqMult"]];
+  double Inhibv1 = _fixed_params[_fixed_param_to_index["Inhibv1"]];
+  double L0v12   = _fixed_params[_fixed_param_to_index["L0v12"]];
+  double L0v3    = _fixed_params[_fixed_param_to_index["L0v3"]];
+  double alfav0  = _fixed_params[_fixed_param_to_index["alfav0"]];
+  double Glcout  = _fixed_params[_fixed_param_to_index["Glcout"]];
+  double Lacex   = _fixed_params[_fixed_param_to_index["Lacex"]];
+  double PRPP    = _fixed_params[_fixed_param_to_index["PRPP"]];
+  double Phiex   = _fixed_params[_fixed_param_to_index["Phiex"]];
+  double Pyrex   = _fixed_params[_fixed_param_to_index["Pyrex"]];
   
   /*----------------------------------*/
   /* 2) Initialize mutable parameters */
@@ -1354,193 +1369,194 @@ void Individual::ODE_system( const double* s, double* dsdt )
   /* Constants: Glcout Lacex PRPP Phiex Pyrex */
   
   /* v1 {1.0}$Glcout = {1.0}Glcin */
-  dsdt[_met_to_index["Glcin"]] -= v1;
+  dsdt[_met_to_index["Glcin"]] += v1;
   
   /* v2 {1.0}Glcin + {1.0}MgATP = {1.0}Glc6P + {1.0}MgADP */
-  dsdt[_met_to_index["Glc6P"]] -= v2;
-  dsdt[_met_to_index["MgADP"]] -= v2;
-  dsdt[_met_to_index["Glcin"]] += v2;
-  dsdt[_met_to_index["MgATP"]] += v2;
+  dsdt[_met_to_index["Glcin"]] -= v2;
+  dsdt[_met_to_index["MgATP"]] -= v2;
+  dsdt[_met_to_index["Glc6P"]] += v2;
+  dsdt[_met_to_index["MgADP"]] += v2;
   
   /* v3 {1.0}Glc6P = {1.0}Fru6P */
-  dsdt[_met_to_index["Fru6P"]] -= v3;
-  dsdt[_met_to_index["Glc6P"]] += v3;
+  dsdt[_met_to_index["Glc6P"]] -= v3;
+  dsdt[_met_to_index["Fru6P"]] += v3;
   
   /* v4 {1.0}Fru6P + {1.0}MgATP = {1.0}Fru16P2 + {1.0}MgADP */
-  dsdt[_met_to_index["Fru16P2"]] -= v4;
-  dsdt[_met_to_index["MgADP"]]   -= v4;
-  dsdt[_met_to_index["Fru6P"]]   += v4;
-  dsdt[_met_to_index["MgATP"]]   += v4;
+  dsdt[_met_to_index["Fru6P"]]   -= v4;
+  dsdt[_met_to_index["MgATP"]]   -= v4;
+  dsdt[_met_to_index["Fru16P2"]] += v4;
+  dsdt[_met_to_index["MgADP"]]   += v4;
   
   /* v5 {1.0}Fru16P2 = {1.0}GraP + {1.0}DHAP */
-  dsdt[_met_to_index["GraP"]]    -= v5;
-  dsdt[_met_to_index["DHAP"]]    -= v5;
-  dsdt[_met_to_index["Fru16P2"]] += v5;
+  dsdt[_met_to_index["Fru16P2"]] -= v5;
+  dsdt[_met_to_index["GraP"]]    += v5;
+  dsdt[_met_to_index["DHAP"]]    += v5;
   
   /* v6 {1.0}DHAP = {1.0}GraP */
-  dsdt[_met_to_index["GraP"]] -= v6;
-  dsdt[_met_to_index["DHAP"]] += v6;
+  dsdt[_met_to_index["DHAP"]] -= v6;
+  dsdt[_met_to_index["GraP"]] += v6;
   
   /* v7 {1.0}GraP + {1.0}Phi + {1.0}NAD = {1.0}Gri13P2 + {1.0}NADH */
-  dsdt[_met_to_index["Gri13P2"]] -= v7;
-  dsdt[_met_to_index["NADH"]]    -= v7;
-  dsdt[_met_to_index["GraP"]]    += v7;
-  dsdt[_met_to_index["Phi"]]     += v7;
-  dsdt[_met_to_index["NAD"]]     += v7;
+  dsdt[_met_to_index["GraP"]]    -= v7;
+  dsdt[_met_to_index["Phi"]]     -= v7;
+  dsdt[_met_to_index["NAD"]]     -= v7;
+  dsdt[_met_to_index["Gri13P2"]] += v7;
+  dsdt[_met_to_index["NADH"]]    += v7;
   
   /* v8 {1.0}Gri13P2 + {1.0}MgADP = {1.0}Gri3P + {1.0}MgATP */
-  dsdt[_met_to_index["Gri3P"]]   -= v8;
-  dsdt[_met_to_index["MgATP"]]   -= v8;
-  dsdt[_met_to_index["Gri13P2"]] += v8;
-  dsdt[_met_to_index["MgADP"]]   += v8;
+  dsdt[_met_to_index["Gri13P2"]] -= v8;
+  dsdt[_met_to_index["MgADP"]]   -= v8;
+  dsdt[_met_to_index["Gri3P"]]   += v8;
+  dsdt[_met_to_index["MgATP"]]   += v8;
   
   /* v9 {1.0}Gri13P2 = {1.0}Gri23P2f */
-  dsdt[_met_to_index["Gri23P2f"]] -= v9;
-  dsdt[_met_to_index["Gri13P2"]]  += v9;
+  dsdt[_met_to_index["Gri13P2"]]  -= v9;
+  dsdt[_met_to_index["Gri23P2f"]] += v9;
   
   /* v10 {1.0}Gri23P2f = {1.0}Gri3P + {1.0}Phi */
-  dsdt[_met_to_index["Gri3P"]]    -= v10;
-  dsdt[_met_to_index["Phi"]]      -= v10;
-  dsdt[_met_to_index["Gri23P2f"]] += v10;
+  dsdt[_met_to_index["Gri23P2f"]] -= v10;
+  dsdt[_met_to_index["Gri3P"]]    += v10;
+  dsdt[_met_to_index["Phi"]]      += v10;
   
   /* v11 {1.0}Gri3P = {1.0}Gri2P */
-  dsdt[_met_to_index["Gri2P"]] -= v11;
-  dsdt[_met_to_index["Gri3P"]] += v11;
+  dsdt[_met_to_index["Gri3P"]] -= v11;
+  dsdt[_met_to_index["Gri2P"]] += v11;
+  
   
   /* v12 {1.0}Gri2P = {1.0}PEP */
-  dsdt[_met_to_index["PEP"]]   -= v12;
-  dsdt[_met_to_index["Gri2P"]] += v12;
+  dsdt[_met_to_index["Gri2P"]] -= v12;
+  dsdt[_met_to_index["PEP"]]   += v12;
   
   /* v13 {1.0}PEP + {1.0}MgADP = {1.0}Pyr + {1.0}MgATP */
-  dsdt[_met_to_index["Pyr"]]   -= v13;
-  dsdt[_met_to_index["MgATP"]] -= v13;
-  dsdt[_met_to_index["PEP"]]   += v13;
-  dsdt[_met_to_index["MgADP"]] += v13;
+  dsdt[_met_to_index["PEP"]]   -= v13;
+  dsdt[_met_to_index["MgADP"]] -= v13;
+  dsdt[_met_to_index["Pyr"]]   += v13;
+  dsdt[_met_to_index["MgATP"]] += v13;
   
   /* v14 {1.0}Pyr + {1.0}NADH = {1.0}Lac + {1.0}NAD */
-  dsdt[_met_to_index["Lac"]]  -= v14;
-  dsdt[_met_to_index["NAD"]]  -= v14;
-  dsdt[_met_to_index["Pyr"]]  += v14;
-  dsdt[_met_to_index["NADH"]] += v14;
+  dsdt[_met_to_index["Pyr"]]  -= v14;
+  dsdt[_met_to_index["NADH"]] -= v14;
+  dsdt[_met_to_index["Lac"]]  += v14;
+  dsdt[_met_to_index["NAD"]]  += v14;
   
   /* v15 {1.0}Pyr + {1.0}NADPHf = {1.0}Lac + {1.0}NADPf */
-  dsdt[_met_to_index["Lac"]]    -= v15;
-  dsdt[_met_to_index["NADPf"]]  -= v15;
-  dsdt[_met_to_index["Pyr"]]    += v15;
-  dsdt[_met_to_index["NADPHf"]] += v15;
+  dsdt[_met_to_index["Pyr"]]    -= v15;
+  dsdt[_met_to_index["NADPHf"]] -= v15;
+  dsdt[_met_to_index["Lac"]]    += v15;
+  dsdt[_met_to_index["NADPf"]]  += v15;
   
   /* v16 {1.0}MgATP = {1.0}MgADP + {1.0}Phi */
-  dsdt[_met_to_index["MgADP"]] -= v16;
-  dsdt[_met_to_index["Phi"]]   -= v16;
-  dsdt[_met_to_index["MgATP"]] += v16;
+  dsdt[_met_to_index["MgATP"]] -= v16;
+  dsdt[_met_to_index["MgADP"]] += v16;
+  dsdt[_met_to_index["Phi"]]   += v16;
   
   /* v17 {1.0}MgATP + {1.0}AMPf = {1.0}MgADP + {1.0}ADPf */
-  dsdt[_met_to_index["MgADP"]] -= v17;
-  dsdt[_met_to_index["ADPf"]]  -= v17;
-  dsdt[_met_to_index["MgATP"]] += v17;
-  dsdt[_met_to_index["AMPf"]]  += v17;
+  dsdt[_met_to_index["MgATP"]] -= v17;
+  dsdt[_met_to_index["AMPf"]]  -= v17;
+  dsdt[_met_to_index["MgADP"]] += v17;
+  dsdt[_met_to_index["ADPf"]]  += v17;
   
   /* v18 {1.0}Glc6P + {1.0}NADPf = {1.0}GlcA6P + {1.0}NADPHf */
-  dsdt[_met_to_index["GlcA6P"]] -= v18;
-  dsdt[_met_to_index["NADPHf"]] -= v18;
-  dsdt[_met_to_index["Glc6P"]]  += v18;
-  dsdt[_met_to_index["NADPf"]]  += v18;
+  dsdt[_met_to_index["Glc6P"]]  -= v18;
+  dsdt[_met_to_index["NADPf"]]  -= v18;
+  dsdt[_met_to_index["GlcA6P"]] += v18;
+  dsdt[_met_to_index["NADPHf"]] += v18;
   
   /* v19 {1.0}GlcA6P + {1.0}NADPf = {1.0}Rul5P + {1.0}NADPHf */
-  dsdt[_met_to_index["Rul5P"]]  -= v19;
-  dsdt[_met_to_index["NADPHf"]] -= v19;
-  dsdt[_met_to_index["GlcA6P"]] += v19;
-  dsdt[_met_to_index["NADPf"]]  += v19;
+  dsdt[_met_to_index["GlcA6P"]] -= v19;
+  dsdt[_met_to_index["NADPf"]]  -= v19;
+  dsdt[_met_to_index["Rul5P"]]  += v19;
+  dsdt[_met_to_index["NADPHf"]] += v19;
   
   /* v20 {1.0}GSSG + {1.0}NADPHf = {2.0}GSH + {1.0}NADPf */
-  dsdt[_met_to_index["GSH"]]    -= 2.0*v20;
-  dsdt[_met_to_index["NADPf"]]  -= v20;
-  dsdt[_met_to_index["GSSG"]]   += v20;
-  dsdt[_met_to_index["NADPHf"]] += v20;
+  dsdt[_met_to_index["GSSG"]]   -= v20;
+  dsdt[_met_to_index["NADPHf"]] -= v20;
+  dsdt[_met_to_index["GSH"]]    += 2.0*v20;
+  dsdt[_met_to_index["NADPf"]]  += v20;
   
   /* v21 {2.0}GSH = {1.0}GSSG */
-  dsdt[_met_to_index["GSSG"]] -= v21;
-  dsdt[_met_to_index["GSH"]]  += 2.0*v21;
+  dsdt[_met_to_index["GSH"]]  -= 2.0*v21;
+  dsdt[_met_to_index["GSSG"]] += v21;
   
   /* v22 {1.0}Rul5P = {1.0}Xul5P */
-  dsdt[_met_to_index["Xul5P"]] -= v22;
-  dsdt[_met_to_index["Rul5P"]] += v22;
+  dsdt[_met_to_index["Rul5P"]] -= v22;
+  dsdt[_met_to_index["Xul5P"]] += v22;
   
   /* v23 {1.0}Rul5P = {1.0}Rib5P */
-  dsdt[_met_to_index["Rib5P"]] -= v23;
-  dsdt[_met_to_index["Rul5P"]] += v23;
+  dsdt[_met_to_index["Rul5P"]] -= v23;
+  dsdt[_met_to_index["Rib5P"]] += v23;
   
   /* v24 {1.0}Rib5P + {1.0}Xul5P = {1.0}GraP + {1.0}Sed7P */
-  dsdt[_met_to_index["GraP"]]  -= v24;
-  dsdt[_met_to_index["Sed7P"]] -= v24;
-  dsdt[_met_to_index["Rib5P"]] += v24;
-  dsdt[_met_to_index["Xul5P"]] += v24;
+  dsdt[_met_to_index["Rib5P"]] -= v24;
+  dsdt[_met_to_index["Xul5P"]] -= v24;
+  dsdt[_met_to_index["GraP"]]  += v24;
+  dsdt[_met_to_index["Sed7P"]] += v24;
   
   /* v25 {1.0}Sed7P + {1.0}GraP = {1.0}E4P + {1.0}Fru6P */
-  dsdt[_met_to_index["E4P"]]   -= v25;
-  dsdt[_met_to_index["Fru6P"]] -= v25;
-  dsdt[_met_to_index["Sed7P"]] += v25;
-  dsdt[_met_to_index["GraP"]]  += v25;
+  dsdt[_met_to_index["Sed7P"]] -= v25;
+  dsdt[_met_to_index["GraP"]]  -= v25;
+  dsdt[_met_to_index["E4P"]]   += v25;
+  dsdt[_met_to_index["Fru6P"]] += v25;
   
   /* v26 {1.0}Rib5P + {1.0}MgATP = {1.0}$PRPP + {1.0}MgAMP */
-  dsdt[_met_to_index["MgAMP"]] -= v26;
-  dsdt[_met_to_index["Rib5P"]] += v26;
-  dsdt[_met_to_index["MgATP"]] += v26;
+  dsdt[_met_to_index["Rib5P"]] -= v26;
+  dsdt[_met_to_index["MgATP"]] -= v26;
+  dsdt[_met_to_index["MgAMP"]] += v26;
   
   /* v27 {1.0}E4P + {1.0}Xul5P = {1.0}GraP + {1.0}Fru6P */
-  dsdt[_met_to_index["GraP"]]  -= v27;
-  dsdt[_met_to_index["Fru6P"]] -= v27;
-  dsdt[_met_to_index["E4P"]]   += v27;
-  dsdt[_met_to_index["Xul5P"]] += v27;
+  dsdt[_met_to_index["E4P"]]   -= v27;
+  dsdt[_met_to_index["Xul5P"]] -= v27;
+  dsdt[_met_to_index["GraP"]]  += v27;
+  dsdt[_met_to_index["Fru6P"]] += v27;
   
   /* v28 {1.0}$Phiex = {1.0}Phi */
-  dsdt[_met_to_index["Phi"]] -= v28;
+  dsdt[_met_to_index["Phi"]] += v28;
   
   /* v29 {1.0}$Lacex = {1.0}Lac */
-  dsdt[_met_to_index["Lac"]] -= v29;
+  dsdt[_met_to_index["Lac"]] += v29;
   
   /* v30 {1.0}$Pyrex = {1.0}Pyr */
-  dsdt[_met_to_index["Pyr"]] -= v30;
+  dsdt[_met_to_index["Pyr"]] += v30;
   
   /* v31 {1.0}MgATP = {1.0}ATPf + {1.0}Mgf */
-  dsdt[_met_to_index["ATPf"]]  -= v31;
-  dsdt[_met_to_index["Mgf"]]   -= v31;
-  dsdt[_met_to_index["MgATP"]] += v31;
+  dsdt[_met_to_index["MgATP"]] -= v31;
+  dsdt[_met_to_index["ATPf"]]  += v31;
+  dsdt[_met_to_index["Mgf"]]   += v31;
   
   /* v32 {1.0}MgADP = {1.0}ADPf + {1.0}Mgf */
-  dsdt[_met_to_index["ADPf"]]  -= v32;
-  dsdt[_met_to_index["Mgf"]]   -= v32;
-  dsdt[_met_to_index["MgADP"]] += v32;
+  dsdt[_met_to_index["MgADP"]] -= v32;
+  dsdt[_met_to_index["ADPf"]]  += v32;
+  dsdt[_met_to_index["Mgf"]]   += v32;
   
   /* v33 {1.0}MgAMP = {1.0}AMPf + {1.0}Mgf */
-  dsdt[_met_to_index["AMPf"]]  -= v33;
-  dsdt[_met_to_index["Mgf"]]   -= v33;
-  dsdt[_met_to_index["MgAMP"]] += v33;
+  dsdt[_met_to_index["MgAMP"]] -= v33;
+  dsdt[_met_to_index["AMPf"]]  += v33;
+  dsdt[_met_to_index["Mgf"]]   += v33;
   
   /* v34 {1.0}MgGri23P2 = {1.0}Gri23P2f + {1.0}Mgf */
-  dsdt[_met_to_index["Gri23P2f"]]  -= v34;
-  dsdt[_met_to_index["Mgf"]]       -= v34;
-  dsdt[_met_to_index["MgGri23P2"]] += v34;
+  dsdt[_met_to_index["MgGri23P2"]] -= v34;
+  dsdt[_met_to_index["Gri23P2f"]]  += v34;
+  dsdt[_met_to_index["Mgf"]]       += v34;
   
   /* v35 {1.0}P1NADP = {1.0}P1f + {1.0}NADPf */
-  dsdt[_met_to_index["P1f"]]    -= v35;
-  dsdt[_met_to_index["NADPf"]]  -= v35;
-  dsdt[_met_to_index["P1NADP"]] += v35;
+  dsdt[_met_to_index["P1NADP"]] -= v35;
+  dsdt[_met_to_index["P1f"]]    += v35;
+  dsdt[_met_to_index["NADPf"]]  += v35;
   
   /* v36 {1.0}P1NADPH = {1.0}P1f + {1.0}NADPHf */
-  dsdt[_met_to_index["P1f"]]     -= v36;
-  dsdt[_met_to_index["NADPHf"]]  -= v36;
-  dsdt[_met_to_index["P1NADPH"]] += v36;
+  dsdt[_met_to_index["P1NADPH"]] -= v36;
+  dsdt[_met_to_index["P1f"]]     += v36;
+  dsdt[_met_to_index["NADPHf"]]  += v36;
   
   /* v37 {1.0}P2NADP = {1.0}P2f + {1.0}NADPf */
-  dsdt[_met_to_index["P2f"]]    -= v37;
-  dsdt[_met_to_index["NADPf"]]  -= v37;
-  dsdt[_met_to_index["P2NADP"]] += v37;
+  dsdt[_met_to_index["P2NADP"]] -= v37;
+  dsdt[_met_to_index["P2f"]]    += v37;
+  dsdt[_met_to_index["NADPf"]]  += v37;
   
   /* v38 {1.0}P2NADPH = {1.0}P2f + {1.0}NADPHf */
-  dsdt[_met_to_index["P2f"]]     -= v38;
-  dsdt[_met_to_index["NADPHf"]]  -= v38;
-  dsdt[_met_to_index["P2NADPH"]] += v38;
+  dsdt[_met_to_index["P2NADPH"]] -= v38;
+  dsdt[_met_to_index["P2f"]]     += v38;
+  dsdt[_met_to_index["NADPHf"]]  += v38;
 }
 
 
