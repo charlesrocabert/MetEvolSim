@@ -48,10 +48,12 @@ int main( int argc, char const** argv )
   /*---------------------------------*/
   while (pop->get_generation() < parameters->get_generations())
   {
+    /*
     if (pop->get_generation()%1 == 0)
     {
       std::cout << "> Generation " << pop->get_generation() << "\n";
     }
+     */
     pop->next_generation();
     if (pop->get_generation()%STATISTICS_GENERATION_STEP == 0)
     {
@@ -61,7 +63,7 @@ int main( int argc, char const** argv )
       pop->get_tree()->prune();
       pop->get_tree()->compute_best_evolution_rate("best/best_evolrate.txt");
       pop->get_tree()->compute_mean_evolution_rate("best/mean_evolrate.txt");
-      system("Rscript EVOLUTION_RATE.R > /dev/null &");
+      //system("Rscript EVOLUTION_RATE.R > /dev/null &");
     }
   }
   pop->close_statistic_files();

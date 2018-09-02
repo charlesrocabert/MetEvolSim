@@ -16,11 +16,10 @@
 /**
  * \brief    Main function
  * \details  --
- * \param    int argc
- * \param    char const** argv
+ * \param    void
  * \return   \e int
  */
-int main( int argc, char const** argv )
+int main( void )
 {
   std::cout << "1) Load parameters ...\n";
   Parameters* params = new Parameters();

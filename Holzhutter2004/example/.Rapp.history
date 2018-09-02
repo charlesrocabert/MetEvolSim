@@ -1,72 +1,6 @@
 options(show.error.messages = FALSE, warn=-1)#
 #
 setwd("/Users/charlesrocabert/git/MetEvolSim/Holzhutter2004/example")#
-#
-params = read.table("parameters/parameters.txt", sep=" ", h=T)#
-d1 = read.table("best/best_evolrate.txt", h=T, sep=" ")#
-d2 = read.table("best/mean_evolrate.txt", h=T, sep=" ")#
-d3 = read.table("best/best_conc.txt", h=T, sep=" ")#
-#
-d1 = cbind(d1, d3[,1])#
-d1 = d1[d1$evolrate>0,]#
-d2 = cbind(d2, d3[,1])#
-d2 = d2[d2$evolrate>0,]#
-#
-#############################################
-# Build theoretical relative fitness curve ##
-#############################################
-W     = params$w#
-SIGMA = params$sigma#
-MU    = params$mu#
-COPT  = 16.2509#
-SIGMAC  = SIGMA*d2$s/COPT#
-FITNESS = W/sqrt(W^2+SIGMAC^2)#
-relfit = cbind(d2$s, FITNESS/sum(FITNESS))#
-relfit = relfit[order(relfit[,2], decreasing=T),]#
-#
-######################################################
-# FIGURES 1 and 2: best and mean raw evolution rate ##
-######################################################
-pdf(file="figures/best_evolrate.pdf")#
-plot(log10(d1$s), log10(d1$evolrate), pch=20, main="Last best evolution rate", xlab="[S]", ylab="Evolution rate")#
-reg = lm(log10(d1$evolrate)~log10(d1$s))#
-pval = summary(reg)$coefficients[2,4]#
-rsquared = summary(reg)$r.squared#
-abline(reg, lty=2)#
-text(log10(d1$s)*0.95, log10(d1$evolrate)*0.99, d1[,4], cex=0.6, font=1, srt=0)#
-legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
-dev.off()#
-#
-pdf(file="figures/mean_evolrate.pdf")#
-plot(log10(d2$s), log10(d2$evolrate), pch=20, main="Population mean evolution rate", xlab="[S]", ylab="Evolution rate")#
-reg = lm(log10(d2$evolrate)~log10(d2$s))#
-pval = summary(reg)$coefficients[2,4]#
-rsquared = summary(reg)$r.squared#
-abline(reg, lty=2)#
-text(log10(d2$s)*0.95, log10(d2$evolrate)*0.99, d2[,4], cex=0.6, font=1, srt=0)#
-legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
-dev.off()#
-#
-############################################################
-# FIGURES 3 and 4: best and mean predicted evolution rate ##
-############################################################
-pdf(file="figures/best_evolrate_th.pdf")#
-plot(d1$s, sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)), log="xy", pch=20, main="Last best relative evolution rate", xlab="[S]", ylab="Evolution rate")#
-lines(relfit[,1], relfit[,2], col="grey", lwd=2, lty=2)#
-text(d1$s*1.4, sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))*1.4, d1[,4], cex=0.6)#
-dev.off()#
-#
-pdf(file="figures/mean_evolrate_th.pdf")#
-plot(d2$s, sqrt(d2$evolrate)/sum(sqrt(d2$evolrate)), log="xy", pch=20, main="Population mean relative evolution rate", xlab="[S]", ylab="Evolution rate")#
-lines(relfit[,1], relfit[,2], col="grey", lwd=2, lty=2)#
-text(d2$s*1.4, sqrt(d2$evolrate)/sum(sqrt(d2$evolrate))*1.4, d2[,4], cex=0.6)#
-dev.off()
-d3
-names(d3)
-options(show.error.messages = FALSE, warn=-1)#
-#
-setwd("/Users/charlesrocabert/git/MetEvolSim/Holzhutter2004/example")#
-#
 params = read.table("parameters/parameters.txt", sep=" ", h=T)#
 d1 = read.table("best/best_evolrate.txt", h=T, sep=" ")#
 d2 = read.table("best/mean_evolrate.txt", h=T, sep=" ")#
@@ -92,139 +26,183 @@ relfit = relfit[order(relfit[,2], decreasing=T),]#
 ######################################################
 # FIGURES 1 and 2: best and mean raw evolution rate ##
 ######################################################
-pdf(file="figures/best_evolrate.pdf")#
-plot(log10(d1$s), log10(d1$evolrate), pch=20, main="Last best evolution rate", xlab="[S]", ylab="Evolution rate")#
-reg = lm(log10(d1$evolrate)~log10(d1$s))#
-pval = summary(reg)$coefficients[2,4]#
-rsquared = summary(reg)$r.squared#
-abline(reg, lty=2)#
-text(log10(d1$s)*0.95, log10(d1$evolrate)*0.99, d1[,4], cex=0.6, font=1, srt=0)#
-legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
-dev.off()#
+# pdf(file="figures/best_evolrate.pdf")#
+# plot(log10(d1$s), log10(d1$evolrate), pch=20, main="Last best evolution rate", xlab="[S]", ylab="Evolution rate")#
+# reg = lm(log10(d1$evolrate)~log10(d1$s))#
+# pval = summary(reg)$coefficients[2,4]#
+# rsquared = summary(reg)$r.squared#
+# abline(reg, lty=2)#
+# text(log10(d1$s)*0.95, log10(d1$evolrate)*0.99, d1[,4], cex=0.6, font=1, srt=0)#
+# legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+# dev.off()#
 #
-pdf(file="figures/mean_evolrate.pdf")#
-plot(log10(d2$s), log10(d2$evolrate), pch=20, main="Population mean evolution rate", xlab="[S]", ylab="Evolution rate")#
-reg = lm(log10(d2$evolrate)~log10(d2$s))#
-pval = summary(reg)$coefficients[2,4]#
-rsquared = summary(reg)$r.squared#
-abline(reg, lty=2)#
-text(log10(d2$s)*0.95, log10(d2$evolrate)*0.99, d2[,4], cex=0.6, font=1, srt=0)#
-legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
-dev.off()#
+# pdf(file="figures/mean_evolrate.pdf")#
+# plot(log10(d2$s), log10(d2$evolrate), pch=20, main="Population mean evolution rate", xlab="[S]", ylab="Evolution rate")#
+# reg = lm(log10(d2$evolrate)~log10(d2$s))#
+# pval = summary(reg)$coefficients[2,4]#
+# rsquared = summary(reg)$r.squared#
+# abline(reg, lty=2)#
+# text(log10(d2$s)*0.95, log10(d2$evolrate)*0.99, d2[,4], cex=0.6, font=1, srt=0)#
+# legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+# dev.off()#
 #
 ############################################################
 # FIGURES 3 and 4: best and mean predicted evolution rate ##
 ############################################################
-pdf(file="figures/best_evolrate_th.pdf")#
-plot(d1$s, sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)), log="xy", pch=20, main="Last best relative evolution rate", xlab="[S]", ylab="Evolution rate")#
-lines(relfit[,1], relfit[,2], col="grey", lwd=2, lty=2)#
-text(d1$s*1.4, sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))*1.4, d1[,4], cex=0.6)#
+pdf(file="figures/best_evolrate.pdf")#
+plot(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))), pch=20, main="Last best relative evolution rate", xlab="[S]", ylab="Evolution rate")#
+lines(log10(relfit[,1]), log10(relfit[,2]), col="grey", lwd=2, lty=2)#
+loess(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))))#
+reg = lm(log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))~log10(d1$s))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=3)#
+text(log10(d1$s)*1.02, log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))*1.02, d1[,4], cex=0.6)#
+legend("bottomleft", legend=c(paste("pval =", round(pval,5)), paste("rsquared =", round(rsquared,5))))#
 dev.off()#
 #
-pdf(file="figures/mean_evolrate_th.pdf")#
-plot(d2$s, sqrt(d2$evolrate)/sum(sqrt(d2$evolrate)), log="xy", pch=20, main="Population mean relative evolution rate", xlab="[S]", ylab="Evolution rate")#
-lines(relfit[,1], relfit[,2], col="grey", lwd=2, lty=2)#
-text(d2$s*1.4, sqrt(d2$evolrate)/sum(sqrt(d2$evolrate))*1.4, d2[,4], cex=0.6)#
-dev.off()
-plot(d1$s)
-plot(d1$s, d1$total_degree, log="xy")
-plot(d1$s, d1$total_degree, log="xy", pch=20)
-plot(d1$s, d1$in_degree, log="xy", pch=20)
-plot(d1$s, d1$out_degree, log="xy", pch=20)
-plot(d1$evolrate, d1$out_degree, log="xy", pch=20)
-plot(d1$evolrate, d1$in_degree, log="xy", pch=20)
-plot(d1$evolrate, d1$total_degree, log="xy", pch=20)
-plot(log10(d1$s), log10(d1$total_degree), pch=20, main="Last best [S] vs. Total degree", xlab="[S]", ylab="Total degree")#
-reg = lm(log10(d1$total_degree)~log10(d1$s))#
+pdf(file="figures/mean_evolrate.pdf")#
+plot(log10(d2$s), log10(sqrt(d2$evolrate)/sum(sqrt(d2$evolrate))), pch=20, main="Population mean relative evolution rate", xlab="[S]", ylab="Evolution rate")#
+lines(log10(relfit[,1]), log10(relfit[,2]), col="grey", lwd=2, lty=2)#
+reg = lm(log10(sqrt(d2$evolrate)/sum(sqrt(d2$evolrate)))~log10(d2$s))#
 pval = summary(reg)$coefficients[2,4]#
 rsquared = summary(reg)$r.squared#
-abline(reg, lty=2)#
-text(log10(d1$s)*0.95, log10(d1$total_degree)*0.99, d2[,4], cex=0.6, font=1, srt=0)#
-legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))
-plot(log10(d1$s),(d1$total_degree), pch=20, main="Last best [S] vs. Total degree", xlab="[S]", ylab="Total degree")#
-reg = lm((d1$total_degree)~log10(d1$s))#
-pval = summary(reg)$coefficients[2,4]#
-rsquared = summary(reg)$r.squared#
-abline(reg, lty=2)#
-text(log10(d1$s)*0.95,(d1$total_degree)*0.99, d2[,4], cex=0.6, font=1, srt=0)#
-legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))
-plot((d1$total_degree), log10(d1$s), pch=20, main="Last best [S] vs. Total degree", xlab="Total degree", ylab="[S]")#
-reg = lm(log10(d1$s)~(d1$total_degree))#
-pval = summary(reg)$coefficients[2,4]#
-rsquared = summary(reg)$r.squared#
-abline(reg, lty=2)#
-text((d1$total_degree)*0.99, log10(d1$s)*0.95, d1[,4], cex=0.6, font=1, srt=0)#
-legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))
-plot((d1$total_degree), log10(d1$s), pch=20, main="Last best [S] vs. Total degree", xlab="Total degree", ylab="[S]")#
-reg = lm(log10(d1$s)~(d1$total_degree))#
-pval = summary(reg)$coefficients[2,4]#
-rsquared = summary(reg)$r.squared#
-abline(reg, lty=2)#
-text((d1$total_degree)*0.99, log10(d1$s)*1.1, d1[,4], cex=0.6, font=1, srt=0)#
-legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))
-text((d1$total_degree)*1.1, log10(d1$s)*1.1, d1[,4], cex=0.6, font=1, srt=0)
-text((d1$total_degree)*1.1, log10(d1$s)*1.05, d1[,4], cex=0.6, font=1, srt=0)
-text((d1$total_degree)*1.05, log10(d1$s)*1.05, d1[,4], cex=0.6, font=1, srt=0)
-plot((d1$total_degree), log10(d1$s), pch=20, main="Last best [S] vs. Total degree", xlab="Total degree", ylab="[S]")#
-reg = lm(log10(d1$s)~(d1$total_degree))#
-pval = summary(reg)$coefficients[2,4]#
-rsquared = summary(reg)$r.squared#
-abline(reg, lty=2)#
-text((d1$total_degree)*1.05, log10(d1$s)*1.05, d1[,4], cex=0.6, font=1, srt=0)#
-legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))
+abline(reg, lty=3)#
+text(log10(d2$s)*1.02, log10(sqrt(d2$evolrate)/sum(sqrt(d2$evolrate)))*1.02, d1[,4], cex=0.6)#
+legend("bottomleft", legend=c(paste("pval =", round(pval,5)), paste("rsquared =", round(rsquared,5))))#
+dev.off()#
+#
+#######################################################################
+# FIGURES 5, 6, 7 and 8: best and mean [S]/Evol rate vs total degree ##
+#######################################################################
+pdf(file="figures/best_total_degree_vs_s.pdf")#
 plot((d1$total_degree), log10(d1$s), pch=20, main="Last best [S] vs. Total degree", xlab="Total degree", ylab="[S]")#
 reg = lm(log10(d1$s)~(d1$total_degree))#
 pval = summary(reg)$coefficients[2,4]#
 rsquared = summary(reg)$r.squared#
 abline(reg, lty=2)#
 text((d1$total_degree)*1.1, log10(d1$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
-legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))
-plot((d1$total_degree), log10(d1$s), pch=20, main="Last best [S] vs. Total degree", xlab="Total degree", ylab="[S]")#
-reg = lm(log10(d1$s)~(d1$total_degree))#
-pval = summary(reg)$coefficients[2,4]#
-rsquared = summary(reg)$r.squared#
-abline(reg, lty=2)#
-text((d1$total_degree)*1.1, log10(d1$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
-legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/mean_total_degree_vs_s.pdf")#
 plot((d2$total_degree), log10(d2$s), pch=20, main="population mean [S] vs. Total degree", xlab="Total degree", ylab="[S]")#
 reg = lm(log10(d2$s)~(d2$total_degree))#
 pval = summary(reg)$coefficients[2,4]#
 rsquared = summary(reg)$r.squared#
 abline(reg, lty=2)#
 text((d2$total_degree)*1.1, log10(d2$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
-legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))
-plot((d2$total_degree), log10(d2$evolrate), pch=20, main="population mean evolution rate vs. Total degree", xlab="Total degree", ylab="[S]")#
-reg = lm(log10(d2$evolrate)~(d2$total_degree))#
-pval = summary(reg)$coefficients[2,4]#
-rsquared = summary(reg)$r.squared#
-abline(reg, lty=2)#
-text((d2$total_degree)*1.1, log10(d2$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
-legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))
-plot((d1$total_degree), log10(d1$evolrate), pch=20, main="Last best evolution rate vs. Total degree", xlab="Total degree", ylab="[S]")#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/best_total_degree_vs_evolrate.pdf")#
+plot((d1$total_degree), log10(d1$evolrate), pch=20, main="Last best evolution rate vs. Total degree", xlab="Total degree", ylab="Evolution rate")#
 reg = lm(log10(d1$evolrate)~(d1$total_degree))#
 pval = summary(reg)$coefficients[2,4]#
 rsquared = summary(reg)$r.squared#
 abline(reg, lty=2)#
 text((d1$total_degree)*1.1, log10(d1$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
-legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))
-plot((d2$in_degree), log10(d2$evolrate), pch=20, main="population mean evolution rate vs. In-degree", xlab="Total degree", ylab="[S]")#
-reg = lm(log10(d2$evolrate)~(d2$in_degree))#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/mean_total_degree_vs_evolrate.pdf")#
+plot((d2$total_degree), log10(d2$evolrate), pch=20, main="population mean evolution rate vs. Total degree", xlab="Total degree", ylab="Evolution rate")#
+reg = lm(log10(d2$evolrate)~(d2$total_degree))#
 pval = summary(reg)$coefficients[2,4]#
 rsquared = summary(reg)$r.squared#
 abline(reg, lty=2)#
-text((d2$in_degree)*1.1, log10(d2$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
-legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))
-plot((d1$in_degree), log10(d1$evolrate), pch=20, main="Last best evolution rate vs. In-degree", xlab="Total degree", ylab="[S]")#
+text((d2$total_degree)*1.1, log10(d2$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+#######################################################################
+# FIGURES 9, 10, 11 and 12: best and mean [S]/Evol rate vs in-degree ##
+#######################################################################
+pdf(file="figures/best_in_degree_vs_s.pdf")#
+plot((d1$in_degree), log10(d1$s), pch=20, main="Last best [S] vs. In-degree", xlab="In-degree", ylab="[S]")#
+reg = lm(log10(d1$s)~(d1$in_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d1$in_degree)*1.1, log10(d1$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/mean_in_degree_vs_s.pdf")#
+plot((d2$in_degree), log10(d2$s), pch=20, main="population mean [S] vs. In-degree", xlab="In-degree", ylab="[S]")#
+reg = lm(log10(d2$s)~(d2$in_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d2$in_degree)*1.1, log10(d2$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/best_in_degree_vs_evolrate.pdf")#
+plot((d1$in_degree), log10(d1$evolrate), pch=20, main="Last best evolution rate vs. In-degree", xlab="In-degree", ylab="Evolution rate")#
 reg = lm(log10(d1$evolrate)~(d1$in_degree))#
 pval = summary(reg)$coefficients[2,4]#
 rsquared = summary(reg)$r.squared#
 abline(reg, lty=2)#
 text((d1$in_degree)*1.1, log10(d1$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
-legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/mean_in_degree_vs_evolrate.pdf")#
+plot((d2$in_degree), log10(d2$evolrate), pch=20, main="population mean evolution rate vs. In-degree", xlab="In-degree", ylab="Evolution rate")#
+reg = lm(log10(d2$evolrate)~(d2$in_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d2$in_degree)*1.1, log10(d2$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+#########################################################################
+# FIGURES 13, 14, 15 and 16: best and mean [S]/Evol rate vs out-degree ##
+#########################################################################
+pdf(file="figures/best_out_degree_vs_s.pdf")#
+plot((d1$out_degree), log10(d1$s), pch=20, main="Last best [S] vs. Out-degree", xlab="Out-degree", ylab="[S]")#
+reg = lm(log10(d1$s)~(d1$out_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d1$out_degree)*1.1, log10(d1$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/mean_out_degree_vs_s.pdf")#
+plot((d2$out_degree), log10(d2$s), pch=20, main="population mean [S] vs. Out-degree", xlab="Out-degree", ylab="[S]")#
+reg = lm(log10(d2$s)~(d2$out_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d2$out_degree)*1.1, log10(d2$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/best_out_degree_vs_evolrate.pdf")#
+plot((d1$out_degree), log10(d1$evolrate), pch=20, main="Last best evolution rate vs. Out-degree", xlab="Out-degree", ylab="Evolution rate")#
+reg = lm(log10(d1$evolrate)~(d1$out_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d1$out_degree)*1.1, log10(d1$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/mean_out_degree_vs_evolrate.pdf")#
+plot((d2$out_degree), log10(d2$evolrate), pch=20, main="population mean evolution rate vs. Out-degree", xlab="Out-degree", ylab="Evolution rate")#
+reg = lm(log10(d2$evolrate)~(d2$out_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d2$out_degree)*1.1, log10(d2$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()
 options(show.error.messages = FALSE, warn=-1)#
 #
 setwd("/Users/charlesrocabert/git/MetEvolSim/Holzhutter2004/example")#
-#
 params = read.table("parameters/parameters.txt", sep=" ", h=T)#
 d1 = read.table("best/best_evolrate.txt", h=T, sep=" ")#
 d2 = read.table("best/mean_evolrate.txt", h=T, sep=" ")#
@@ -250,43 +228,521 @@ relfit = relfit[order(relfit[,2], decreasing=T),]#
 ######################################################
 # FIGURES 1 and 2: best and mean raw evolution rate ##
 ######################################################
-pdf(file="figures/best_evolrate.pdf")#
-plot(log10(d1$s), log10(d1$evolrate), pch=20, main="Last best evolution rate", xlab="[S]", ylab="Evolution rate")#
-reg = lm(log10(d1$evolrate)~log10(d1$s))#
-pval = summary(reg)$coefficients[2,4]#
-rsquared = summary(reg)$r.squared#
-abline(reg, lty=2)#
-text(log10(d1$s)*0.95, log10(d1$evolrate)*0.99, d1[,4], cex=0.6, font=1, srt=0)#
-legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
-dev.off()#
+# pdf(file="figures/best_evolrate.pdf")#
+# plot(log10(d1$s), log10(d1$evolrate), pch=20, main="Last best evolution rate", xlab="[S]", ylab="Evolution rate")#
+# reg = lm(log10(d1$evolrate)~log10(d1$s))#
+# pval = summary(reg)$coefficients[2,4]#
+# rsquared = summary(reg)$r.squared#
+# abline(reg, lty=2)#
+# text(log10(d1$s)*0.95, log10(d1$evolrate)*0.99, d1[,4], cex=0.6, font=1, srt=0)#
+# legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+# dev.off()#
 #
-pdf(file="figures/mean_evolrate.pdf")#
-plot(log10(d2$s), log10(d2$evolrate), pch=20, main="Population mean evolution rate", xlab="[S]", ylab="Evolution rate")#
-reg = lm(log10(d2$evolrate)~log10(d2$s))#
-pval = summary(reg)$coefficients[2,4]#
-rsquared = summary(reg)$r.squared#
-abline(reg, lty=2)#
-text(log10(d2$s)*0.95, log10(d2$evolrate)*0.99, d2[,4], cex=0.6, font=1, srt=0)#
-legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
-dev.off()#
+# pdf(file="figures/mean_evolrate.pdf")#
+# plot(log10(d2$s), log10(d2$evolrate), pch=20, main="Population mean evolution rate", xlab="[S]", ylab="Evolution rate")#
+# reg = lm(log10(d2$evolrate)~log10(d2$s))#
+# pval = summary(reg)$coefficients[2,4]#
+# rsquared = summary(reg)$r.squared#
+# abline(reg, lty=2)#
+# text(log10(d2$s)*0.95, log10(d2$evolrate)*0.99, d2[,4], cex=0.6, font=1, srt=0)#
+# legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+# dev.off()#
 #
 ############################################################
 # FIGURES 3 and 4: best and mean predicted evolution rate ##
 ############################################################
-pdf(file="figures/best_evolrate_th.pdf")#
-plot(d1$s, sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)), log="xy", pch=20, main="Last best relative evolution rate", xlab="[S]", ylab="Evolution rate")#
-lines(relfit[,1], relfit[,2], col="grey", lwd=2, lty=2)#
-text(d1$s*1.4, sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))*1.4, d1[,4], cex=0.6)#
+pdf(file="figures/best_evolrate.pdf")#
+plot(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))), pch=20, main="Last best relative evolution rate", xlab="[S]", ylab="Evolution rate")#
+lines(log10(relfit[,1]), log10(relfit[,2]), col="grey", lwd=2, lty=2)#
+loe = loess(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))))#
+lines(loe)#
+reg = lm(log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))~log10(d1$s))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=3)#
+text(log10(d1$s)*1.02, log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))*1.02, d1[,4], cex=0.6)#
+legend("bottomleft", legend=c(paste("pval =", round(pval,5)), paste("rsquared =", round(rsquared,5))))#
 dev.off()#
 #
-pdf(file="figures/mean_evolrate_th.pdf")#
-plot(d2$s, sqrt(d2$evolrate)/sum(sqrt(d2$evolrate)), log="xy", pch=20, main="Population mean relative evolution rate", xlab="[S]", ylab="Evolution rate")#
-lines(relfit[,1], relfit[,2], col="grey", lwd=2, lty=2)#
-text(d2$s*1.4, sqrt(d2$evolrate)/sum(sqrt(d2$evolrate))*1.4, d2[,4], cex=0.6)#
+pdf(file="figures/mean_evolrate.pdf")#
+plot(log10(d2$s), log10(sqrt(d2$evolrate)/sum(sqrt(d2$evolrate))), pch=20, main="Population mean relative evolution rate", xlab="[S]", ylab="Evolution rate")#
+lines(log10(relfit[,1]), log10(relfit[,2]), col="grey", lwd=2, lty=2)#
+reg = lm(log10(sqrt(d2$evolrate)/sum(sqrt(d2$evolrate)))~log10(d2$s))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=3)#
+text(log10(d2$s)*1.02, log10(sqrt(d2$evolrate)/sum(sqrt(d2$evolrate)))*1.02, d1[,4], cex=0.6)#
+legend("bottomleft", legend=c(paste("pval =", round(pval,5)), paste("rsquared =", round(rsquared,5))))#
 dev.off()#
 #
 #######################################################################
-# FIGURES 5, 6, 7 and 8: best and mean [S]/Eovl rate vs total degree ##
+# FIGURES 5, 6, 7 and 8: best and mean [S]/Evol rate vs total degree ##
+#######################################################################
+pdf(file="figures/best_total_degree_vs_s.pdf")#
+plot((d1$total_degree), log10(d1$s), pch=20, main="Last best [S] vs. Total degree", xlab="Total degree", ylab="[S]")#
+reg = lm(log10(d1$s)~(d1$total_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d1$total_degree)*1.1, log10(d1$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/mean_total_degree_vs_s.pdf")#
+plot((d2$total_degree), log10(d2$s), pch=20, main="population mean [S] vs. Total degree", xlab="Total degree", ylab="[S]")#
+reg = lm(log10(d2$s)~(d2$total_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d2$total_degree)*1.1, log10(d2$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/best_total_degree_vs_evolrate.pdf")#
+plot((d1$total_degree), log10(d1$evolrate), pch=20, main="Last best evolution rate vs. Total degree", xlab="Total degree", ylab="Evolution rate")#
+reg = lm(log10(d1$evolrate)~(d1$total_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d1$total_degree)*1.1, log10(d1$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/mean_total_degree_vs_evolrate.pdf")#
+plot((d2$total_degree), log10(d2$evolrate), pch=20, main="population mean evolution rate vs. Total degree", xlab="Total degree", ylab="Evolution rate")#
+reg = lm(log10(d2$evolrate)~(d2$total_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d2$total_degree)*1.1, log10(d2$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+#######################################################################
+# FIGURES 9, 10, 11 and 12: best and mean [S]/Evol rate vs in-degree ##
+#######################################################################
+pdf(file="figures/best_in_degree_vs_s.pdf")#
+plot((d1$in_degree), log10(d1$s), pch=20, main="Last best [S] vs. In-degree", xlab="In-degree", ylab="[S]")#
+reg = lm(log10(d1$s)~(d1$in_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d1$in_degree)*1.1, log10(d1$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/mean_in_degree_vs_s.pdf")#
+plot((d2$in_degree), log10(d2$s), pch=20, main="population mean [S] vs. In-degree", xlab="In-degree", ylab="[S]")#
+reg = lm(log10(d2$s)~(d2$in_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d2$in_degree)*1.1, log10(d2$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/best_in_degree_vs_evolrate.pdf")#
+plot((d1$in_degree), log10(d1$evolrate), pch=20, main="Last best evolution rate vs. In-degree", xlab="In-degree", ylab="Evolution rate")#
+reg = lm(log10(d1$evolrate)~(d1$in_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d1$in_degree)*1.1, log10(d1$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/mean_in_degree_vs_evolrate.pdf")#
+plot((d2$in_degree), log10(d2$evolrate), pch=20, main="population mean evolution rate vs. In-degree", xlab="In-degree", ylab="Evolution rate")#
+reg = lm(log10(d2$evolrate)~(d2$in_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d2$in_degree)*1.1, log10(d2$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+#########################################################################
+# FIGURES 13, 14, 15 and 16: best and mean [S]/Evol rate vs out-degree ##
+#########################################################################
+pdf(file="figures/best_out_degree_vs_s.pdf")#
+plot((d1$out_degree), log10(d1$s), pch=20, main="Last best [S] vs. Out-degree", xlab="Out-degree", ylab="[S]")#
+reg = lm(log10(d1$s)~(d1$out_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d1$out_degree)*1.1, log10(d1$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/mean_out_degree_vs_s.pdf")#
+plot((d2$out_degree), log10(d2$s), pch=20, main="population mean [S] vs. Out-degree", xlab="Out-degree", ylab="[S]")#
+reg = lm(log10(d2$s)~(d2$out_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d2$out_degree)*1.1, log10(d2$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/best_out_degree_vs_evolrate.pdf")#
+plot((d1$out_degree), log10(d1$evolrate), pch=20, main="Last best evolution rate vs. Out-degree", xlab="Out-degree", ylab="Evolution rate")#
+reg = lm(log10(d1$evolrate)~(d1$out_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d1$out_degree)*1.1, log10(d1$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/mean_out_degree_vs_evolrate.pdf")#
+plot((d2$out_degree), log10(d2$evolrate), pch=20, main="population mean evolution rate vs. Out-degree", xlab="Out-degree", ylab="Evolution rate")#
+reg = lm(log10(d2$evolrate)~(d2$out_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d2$out_degree)*1.1, log10(d2$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()
+loe
+loe
+loe = loess(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))))
+loe
+options(show.error.messages = FALSE, warn=-1)#
+#
+setwd("/Users/charlesrocabert/git/MetEvolSim/Holzhutter2004/example")#
+params = read.table("parameters/parameters.txt", sep=" ", h=T)#
+d1 = read.table("best/best_evolrate.txt", h=T, sep=" ")#
+d2 = read.table("best/mean_evolrate.txt", h=T, sep=" ")#
+d3 = read.table("best/best_conc.txt", h=T, sep=" ")#
+#
+d1 = cbind(d1, d3[,c(1,4,5,6)])#
+d1 = d1[d1$evolrate>0,]#
+d2 = cbind(d2, d3[,c(1,4,5,6)])#
+d2 = d2[d2$evolrate>0,]#
+#
+#############################################
+# Build theoretical relative fitness curve ##
+#############################################
+W     = params$w#
+SIGMA = params$sigma#
+MU    = params$mu#
+COPT  = 16.2509#
+SIGMAC  = SIGMA*d2$s/COPT#
+FITNESS = W/sqrt(W^2+SIGMAC^2)#
+relfit = cbind(d2$s, FITNESS/sum(FITNESS))#
+relfit = relfit[order(relfit[,2], decreasing=T),]#
+#
+######################################################
+# FIGURES 1 and 2: best and mean raw evolution rate ##
+######################################################
+# pdf(file="figures/best_evolrate.pdf")#
+# plot(log10(d1$s), log10(d1$evolrate), pch=20, main="Last best evolution rate", xlab="[S]", ylab="Evolution rate")#
+# reg = lm(log10(d1$evolrate)~log10(d1$s))#
+# pval = summary(reg)$coefficients[2,4]#
+# rsquared = summary(reg)$r.squared#
+# abline(reg, lty=2)#
+# text(log10(d1$s)*0.95, log10(d1$evolrate)*0.99, d1[,4], cex=0.6, font=1, srt=0)#
+# legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+# dev.off()#
+#
+# pdf(file="figures/mean_evolrate.pdf")#
+# plot(log10(d2$s), log10(d2$evolrate), pch=20, main="Population mean evolution rate", xlab="[S]", ylab="Evolution rate")#
+# reg = lm(log10(d2$evolrate)~log10(d2$s))#
+# pval = summary(reg)$coefficients[2,4]#
+# rsquared = summary(reg)$r.squared#
+# abline(reg, lty=2)#
+# text(log10(d2$s)*0.95, log10(d2$evolrate)*0.99, d2[,4], cex=0.6, font=1, srt=0)#
+# legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+# dev.off()#
+#
+############################################################
+# FIGURES 3 and 4: best and mean predicted evolution rate ##
+############################################################
+pdf(file="figures/best_evolrate.pdf")#
+plot(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))), pch=20, main="Last best relative evolution rate", xlab="[S]", ylab="Evolution rate")#
+lines(log10(relfit[,1]), log10(relfit[,2]), col="grey", lwd=2, lty=2)#
+reg = lm(log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))~log10(d1$s))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=3)#
+text(log10(d1$s)*1.02, log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))*1.02, d1[,4], cex=0.6)#
+legend("bottomleft", legend=c(paste("pval =", round(pval,5)), paste("rsquared =", round(rsquared,5))))#
+dev.off()#
+#
+pdf(file="figures/mean_evolrate.pdf")#
+plot(log10(d2$s), log10(sqrt(d2$evolrate)/sum(sqrt(d2$evolrate))), pch=20, main="Population mean relative evolution rate", xlab="[S]", ylab="Evolution rate")#
+lines(log10(relfit[,1]), log10(relfit[,2]), col="grey", lwd=2, lty=2)#
+reg = lm(log10(sqrt(d2$evolrate)/sum(sqrt(d2$evolrate)))~log10(d2$s))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=3)#
+text(log10(d2$s)*1.02, log10(sqrt(d2$evolrate)/sum(sqrt(d2$evolrate)))*1.02, d1[,4], cex=0.6)#
+legend("bottomleft", legend=c(paste("pval =", round(pval,5)), paste("rsquared =", round(rsquared,5))))#
+dev.off()#
+#
+#######################################################################
+# FIGURES 5, 6, 7 and 8: best and mean [S]/Evol rate vs total degree ##
+#######################################################################
+pdf(file="figures/best_total_degree_vs_s.pdf")#
+plot((d1$total_degree), log10(d1$s), pch=20, main="Last best [S] vs. Total degree", xlab="Total degree", ylab="[S]")#
+reg = lm(log10(d1$s)~(d1$total_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d1$total_degree)*1.1, log10(d1$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/mean_total_degree_vs_s.pdf")#
+plot((d2$total_degree), log10(d2$s), pch=20, main="population mean [S] vs. Total degree", xlab="Total degree", ylab="[S]")#
+reg = lm(log10(d2$s)~(d2$total_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d2$total_degree)*1.1, log10(d2$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/best_total_degree_vs_evolrate.pdf")#
+plot((d1$total_degree), log10(d1$evolrate), pch=20, main="Last best evolution rate vs. Total degree", xlab="Total degree", ylab="Evolution rate")#
+reg = lm(log10(d1$evolrate)~(d1$total_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d1$total_degree)*1.1, log10(d1$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/mean_total_degree_vs_evolrate.pdf")#
+plot((d2$total_degree), log10(d2$evolrate), pch=20, main="population mean evolution rate vs. Total degree", xlab="Total degree", ylab="Evolution rate")#
+reg = lm(log10(d2$evolrate)~(d2$total_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d2$total_degree)*1.1, log10(d2$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+#######################################################################
+# FIGURES 9, 10, 11 and 12: best and mean [S]/Evol rate vs in-degree ##
+#######################################################################
+pdf(file="figures/best_in_degree_vs_s.pdf")#
+plot((d1$in_degree), log10(d1$s), pch=20, main="Last best [S] vs. In-degree", xlab="In-degree", ylab="[S]")#
+reg = lm(log10(d1$s)~(d1$in_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d1$in_degree)*1.1, log10(d1$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/mean_in_degree_vs_s.pdf")#
+plot((d2$in_degree), log10(d2$s), pch=20, main="population mean [S] vs. In-degree", xlab="In-degree", ylab="[S]")#
+reg = lm(log10(d2$s)~(d2$in_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d2$in_degree)*1.1, log10(d2$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/best_in_degree_vs_evolrate.pdf")#
+plot((d1$in_degree), log10(d1$evolrate), pch=20, main="Last best evolution rate vs. In-degree", xlab="In-degree", ylab="Evolution rate")#
+reg = lm(log10(d1$evolrate)~(d1$in_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d1$in_degree)*1.1, log10(d1$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/mean_in_degree_vs_evolrate.pdf")#
+plot((d2$in_degree), log10(d2$evolrate), pch=20, main="population mean evolution rate vs. In-degree", xlab="In-degree", ylab="Evolution rate")#
+reg = lm(log10(d2$evolrate)~(d2$in_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d2$in_degree)*1.1, log10(d2$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+#########################################################################
+# FIGURES 13, 14, 15 and 16: best and mean [S]/Evol rate vs out-degree ##
+#########################################################################
+pdf(file="figures/best_out_degree_vs_s.pdf")#
+plot((d1$out_degree), log10(d1$s), pch=20, main="Last best [S] vs. Out-degree", xlab="Out-degree", ylab="[S]")#
+reg = lm(log10(d1$s)~(d1$out_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d1$out_degree)*1.1, log10(d1$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/mean_out_degree_vs_s.pdf")#
+plot((d2$out_degree), log10(d2$s), pch=20, main="population mean [S] vs. Out-degree", xlab="Out-degree", ylab="[S]")#
+reg = lm(log10(d2$s)~(d2$out_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d2$out_degree)*1.1, log10(d2$s)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/best_out_degree_vs_evolrate.pdf")#
+plot((d1$out_degree), log10(d1$evolrate), pch=20, main="Last best evolution rate vs. Out-degree", xlab="Out-degree", ylab="Evolution rate")#
+reg = lm(log10(d1$evolrate)~(d1$out_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d1$out_degree)*1.1, log10(d1$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()#
+#
+pdf(file="figures/mean_out_degree_vs_evolrate.pdf")#
+plot((d2$out_degree), log10(d2$evolrate), pch=20, main="population mean evolution rate vs. Out-degree", xlab="Out-degree", ylab="Evolution rate")#
+reg = lm(log10(d2$evolrate)~(d2$out_degree))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=2)#
+text((d2$out_degree)*1.1, log10(d2$evolrate)*1.02, d1[,4], cex=0.6, font=1, srt=0)#
+legend("topright", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+dev.off()
+plot(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))), pch=20, main="Last best relative evolution rate", xlab="[S]", ylab="Evolution rate")#
+lines(log10(relfit[,1]), log10(relfit[,2]), col="grey", lwd=2, lty=2)#
+reg = lm(log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))~log10(d1$s))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=3)#
+text(log10(d1$s)*1.02, log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))*1.02, d1[,4], cex=0.6)#
+legend("bottomleft", legend=c(paste("pval =", round(pval,5)), paste("rsquared =", round(rsquared,5))))
+loess(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))))
+ll = loess(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))))#
+ll
+names(ll)
+ll = lowess(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))))
+ll
+lines(ll)
+lines(ll, lty=2)
+plot(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))), pch=20, main="Last best relative evolution rate", xlab="[S]", ylab="Evolution rate")#
+lines(log10(relfit[,1]), log10(relfit[,2]), col="grey", lwd=2, lty=2)#
+ll = lowess(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))))#
+lines(ll, lty=3)#
+reg = lm(log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))~log10(d1$s))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=3)#
+text(log10(d1$s)*1.02, log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))*1.02, d1[,4], cex=0.6)#
+legend("bottomleft", legend=c(paste("pval =", round(pval,5)), paste("rsquared =", round(rsquared,5))))
+plot(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))), pch=20, main="Last best relative evolution rate", xlab="[S]", ylab="Evolution rate")#
+lines(log10(relfit[,1]), log10(relfit[,2]), col="grey", lwd=2, lty=2)#
+ll = lowess(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))))#
+lines(ll, lty=3, col="cornflowerblue")#
+reg = lm(log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))~log10(d1$s))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=3)#
+text(log10(d1$s)*1.02, log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))*1.02, d1[,4], cex=0.6)#
+legend("bottomleft", legend=c(paste("pval =", round(pval,5)), paste("rsquared =", round(rsquared,5))))
+plot(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))), pch=20, main="Last best relative evolution rate", xlab="[S]", ylab="Evolution rate")#
+lines(log10(relfit[,1]), log10(relfit[,2]), col="grey", lwd=2, lty=2)#
+ll = lowess(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))))#
+lines(ll, lty=3, col="cornflowerblue")#
+reg = lm(log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))~log10(d1$s))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=3)#
+text(log10(d1$s)*1.02, log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))*1.02, d1[,4], cex=0.6)#
+legend("bottomleft", legend=c(paste("pval =", round(pval,5)), paste("rsquared =", round(rsquared,5)), "Theory", "Reg", "Lowess"), lty=c(NA,NA, 2,3,3), col=c(NA,NA,"black","black","cornflowerblue"))
+plot(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))), pch=20, main="Last best relative evolution rate", xlab="[S]", ylab="Evolution rate")#
+lines(log10(relfit[,1]), log10(relfit[,2]), col="grey", lwd=2, lty=2)#
+ll = lowess(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))))#
+lines(ll, lty=3, col="cornflowerblue")#
+reg = lm(log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))~log10(d1$s))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=3)#
+text(log10(d1$s)*1.02, log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))*1.02, d1[,4], cex=0.6)#
+legend("bottomleft", legend=c(paste("pval =", round(pval,5)), paste("rsquared =", round(rsquared,5)), "Theory", "Reg", "Lowess"), lty=c(NA,NA,2,3,3), col=c(NA,NA,"grey","black","cornflowerblue"))
+options(show.error.messages = FALSE, warn=-1)#
+#
+setwd("/Users/charlesrocabert/git/MetEvolSim/Holzhutter2004/example")#
+params = read.table("parameters/parameters.txt", sep=" ", h=T)#
+d1 = read.table("best/best_evolrate.txt", h=T, sep=" ")#
+d2 = read.table("best/mean_evolrate.txt", h=T, sep=" ")#
+d3 = read.table("best/best_conc.txt", h=T, sep=" ")#
+#
+d1 = cbind(d1, d3[,c(1,4,5,6)])#
+d1 = d1[d1$evolrate>0,]#
+d2 = cbind(d2, d3[,c(1,4,5,6)])#
+d2 = d2[d2$evolrate>0,]#
+#
+#############################################
+# Build theoretical relative fitness curve ##
+#############################################
+W     = params$w#
+SIGMA = params$sigma#
+MU    = params$mu#
+COPT  = 16.2509#
+SIGMAC  = SIGMA*d2$s/COPT#
+FITNESS = W/sqrt(W^2+SIGMAC^2)#
+relfit = cbind(d2$s, FITNESS/sum(FITNESS))#
+relfit = relfit[order(relfit[,2], decreasing=T),]#
+#
+######################################################
+# FIGURES 1 and 2: best and mean raw evolution rate ##
+######################################################
+# pdf(file="figures/best_evolrate.pdf")#
+# plot(log10(d1$s), log10(d1$evolrate), pch=20, main="Last best evolution rate", xlab="[S]", ylab="Evolution rate")#
+# reg = lm(log10(d1$evolrate)~log10(d1$s))#
+# pval = summary(reg)$coefficients[2,4]#
+# rsquared = summary(reg)$r.squared#
+# abline(reg, lty=2)#
+# text(log10(d1$s)*0.95, log10(d1$evolrate)*0.99, d1[,4], cex=0.6, font=1, srt=0)#
+# legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+# dev.off()#
+#
+# pdf(file="figures/mean_evolrate.pdf")#
+# plot(log10(d2$s), log10(d2$evolrate), pch=20, main="Population mean evolution rate", xlab="[S]", ylab="Evolution rate")#
+# reg = lm(log10(d2$evolrate)~log10(d2$s))#
+# pval = summary(reg)$coefficients[2,4]#
+# rsquared = summary(reg)$r.squared#
+# abline(reg, lty=2)#
+# text(log10(d2$s)*0.95, log10(d2$evolrate)*0.99, d2[,4], cex=0.6, font=1, srt=0)#
+# legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))#
+# dev.off()#
+#
+############################################################
+# FIGURES 3 and 4: best and mean predicted evolution rate ##
+############################################################
+pdf(file="figures/best_evolrate.pdf")#
+plot(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))), pch=20, main="Last best relative evolution rate", xlab="[S]", ylab="Evolution rate")#
+lines(log10(relfit[,1]), log10(relfit[,2]), col="grey", lwd=2, lty=2)#
+ll = lowess(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))))#
+lines(ll, lty=3, col="cornflowerblue")#
+reg = lm(log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))~log10(d1$s))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=3)#
+text(log10(d1$s)*1.02, log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))*1.02, d1[,4], cex=0.6)#
+legend("bottomleft", legend=c(paste("pval =", round(pval,5)), paste("rsquared =", round(rsquared,5)), "Theory", "Reg", "Lowess"), lty=c(NA,NA,2,3,3), col=c(NA,NA,"grey","black","cornflowerblue"))#
+dev.off()#
+#
+pdf(file="figures/mean_evolrate.pdf")#
+plot(log10(d2$s), log10(sqrt(d2$evolrate)/sum(sqrt(d2$evolrate))), pch=20, main="Population mean relative evolution rate", xlab="[S]", ylab="Evolution rate")#
+lines(log10(relfit[,1]), log10(relfit[,2]), col="grey", lwd=2, lty=2)#
+ll = lowess(log10(d2$s), log10(sqrt(d2$evolrate)/sum(sqrt(d2$evolrate))))#
+lines(ll, lty=3, col="cornflowerblue")#
+reg = lm(log10(sqrt(d2$evolrate)/sum(sqrt(d2$evolrate)))~log10(d2$s))#
+pval = summary(reg)$coefficients[2,4]#
+rsquared = summary(reg)$r.squared#
+abline(reg, lty=3)#
+text(log10(d2$s)*1.02, log10(sqrt(d2$evolrate)/sum(sqrt(d2$evolrate)))*1.02, d2[,4], cex=0.6)#
+legend("bottomleft", legend=c(paste("pval =", round(pval,5)), paste("rsquared =", round(rsquared,5)), "Theory", "Reg", "Lowess"), lty=c(NA,NA,2,3,3), col=c(NA,NA,"grey","black","cornflowerblue"))#
+dev.off()#
+#
+#######################################################################
+# FIGURES 5, 6, 7 and 8: best and mean [S]/Evol rate vs total degree ##
 #######################################################################
 pdf(file="figures/best_total_degree_vs_s.pdf")#
 plot((d1$total_degree), log10(d1$s), pch=20, main="Last best [S] vs. Total degree", xlab="Total degree", ylab="[S]")#

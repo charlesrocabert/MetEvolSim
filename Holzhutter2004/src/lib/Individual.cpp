@@ -854,380 +854,137 @@ void Individual::create_met_to_index_map( void )
  */
 void Individual::create_degree_map( void )
 {
-  /* v1 {1.0}$Glcout = {1.0}Glcin */
-  _total_degree[_met_to_index["Glcin"]] += 1;
-  
-  _in_degree[_met_to_index["Glcin"]] += 1;
-  
-  
-  /* v2 {1.0}Glcin + {1.0}MgATP = {1.0}Glc6P + {1.0}MgADP */
-  _total_degree[_met_to_index["Glcin"]] += 1;
-  _total_degree[_met_to_index["MgATP"]] += 1;
-  _total_degree[_met_to_index["Glc6P"]] += 1;
-  _total_degree[_met_to_index["MgADP"]] += 1;
-  
-  _out_degree[_met_to_index["Glcin"]] += 1;
-  _out_degree[_met_to_index["MgATP"]] += 1;
-  
-  _in_degree[_met_to_index["Glc6P"]] += 1;
-  _in_degree[_met_to_index["MgADP"]] += 1;
-  
-  /* v3 {1.0}Glc6P = {1.0}Fru6P */
-  _total_degree[_met_to_index["Glc6P"]] += 1;
-  _total_degree[_met_to_index["Fru6P"]] += 1;
-  
-  _out_degree[_met_to_index["Glc6P"]] += 1;
-  
-  _in_degree[_met_to_index["Fru6P"]] += 1;
-  
-  /* v4 {1.0}Fru6P + {1.0}MgATP = {1.0}Fru16P2 + {1.0}MgADP */
-  _total_degree[_met_to_index["Fru6P"]] += 1;
-  _total_degree[_met_to_index["MgATP"]] += 1;
-  _total_degree[_met_to_index["Fru16P2"]] += 1;
-  _total_degree[_met_to_index["MgADP"]] += 1;
-  
-  _out_degree[_met_to_index["Fru6P"]] += 1;
-  _out_degree[_met_to_index["MgATP"]] += 1;
-  
-  _in_degree[_met_to_index["Fru16P2"]] += 1;
-  _in_degree[_met_to_index["MgADP"]] += 1;
-  
-  /* v5 {1.0}Fru16P2 = {1.0}GraP + {1.0}DHAP */
-  _total_degree[_met_to_index["Fru16P2"]] += 1;
-  _total_degree[_met_to_index["GraP"]] += 1;
-  _total_degree[_met_to_index["DHAP"]] += 1;
-  
-  _out_degree[_met_to_index["Fru16P2"]] += 1;
-  
-  _in_degree[_met_to_index["GraP"]] += 1;
-  _in_degree[_met_to_index["DHAP"]] += 1;
-  
-  /* v6 {1.0}DHAP = {1.0}GraP */
-  _total_degree[_met_to_index["DHAP"]] += 1;
-  _total_degree[_met_to_index["GraP"]] += 1;
-  
-  _out_degree[_met_to_index["DHAP"]] += 1;
-  
-  _in_degree[_met_to_index["GraP"]] += 1;
-  
-  /* v7 {1.0}GraP + {1.0}Phi + {1.0}NAD = {1.0}Gri13P2 + {1.0}NADH */
-  _total_degree[_met_to_index["GraP"]] += 1;
-  _total_degree[_met_to_index["Phi"]] += 1;
-  _total_degree[_met_to_index["NAD"]] += 1;
-  _total_degree[_met_to_index["Gri13P2"]] += 1;
-  _total_degree[_met_to_index["NADH"]] += 1;
-  
-  _out_degree[_met_to_index["GraP"]] += 1;
-  _out_degree[_met_to_index["Phi"]] += 1;
-  _out_degree[_met_to_index["NAD"]] += 1;
-  
-  _in_degree[_met_to_index["Gri13P2"]] += 1;
-  _in_degree[_met_to_index["NADH"]] += 1;
-  
-  /* v8 {1.0}Gri13P2 + {1.0}MgADP = {1.0}Gri3P + {1.0}MgATP */
-  _total_degree[_met_to_index["Gri13P2"]] += 1;
-  _total_degree[_met_to_index["MgADP"]] += 1;
-  _total_degree[_met_to_index["Gri3P"]] += 1;
-  _total_degree[_met_to_index["MgATP"]] += 1;
-  
-  _out_degree[_met_to_index["Gri13P2"]] += 1;
-  _out_degree[_met_to_index["MgADP"]] += 1;
-  
-  _in_degree[_met_to_index["Gri3P"]] += 1;
-  _in_degree[_met_to_index["MgATP"]] += 1;
-  
-  /* v9 {1.0}Gri13P2 = {1.0}Gri23P2f */
-  _total_degree[_met_to_index["Gri13P2"]] += 1;
-  _total_degree[_met_to_index["Gri23P2f"]] += 1;
-  
-  _out_degree[_met_to_index["Gri13P2"]] += 1;
-  
-  _in_degree[_met_to_index["Gri23P2f"]] += 1;
-  
-  /* v10 {1.0}Gri23P2f = {1.0}Gri3P + {1.0}Phi */
-  _total_degree[_met_to_index["Gri23P2f"]] += 1;
-  _total_degree[_met_to_index["Gri3P"]] += 1;
-  _total_degree[_met_to_index["Phi"]] += 1;
-  
-  _out_degree[_met_to_index["Gri23P2f"]] += 1;
-  
-  _in_degree[_met_to_index["Gri3P"]] += 1;
-  _in_degree[_met_to_index["Phi"]] += 1;
-  
-  /* v11 {1.0}Gri3P = {1.0}Gri2P */
-  _total_degree[_met_to_index["Gri3P"]] += 1;
-  _total_degree[_met_to_index["Gri2P"]] += 1;
-  
-  _out_degree[_met_to_index["Gri3P"]] += 1;
-  
-  _in_degree[_met_to_index["Gri2P"]] += 1;
-  
-  /* v12 {1.0}Gri2P = {1.0}PEP */
-  _total_degree[_met_to_index["Gri2P"]] += 1;
-  _total_degree[_met_to_index["PEP"]] += 1;
-  
-  _out_degree[_met_to_index["Gri2P"]] += 1;
-  
-  _in_degree[_met_to_index["PEP"]] += 1;
-  
-  /* v13 {1.0}PEP + {1.0}MgADP = {1.0}Pyr + {1.0}MgATP */
-  _total_degree[_met_to_index["PEP"]] += 1;
-  _total_degree[_met_to_index["MgADP"]] += 1;
-  _total_degree[_met_to_index["Pyr"]] += 1;
-  _total_degree[_met_to_index["MgATP"]] += 1;
-  
-  _out_degree[_met_to_index["PEP"]] += 1;
-  _out_degree[_met_to_index["MgADP"]] += 1;
-  
-  _in_degree[_met_to_index["Pyr"]] += 1;
-  _in_degree[_met_to_index["MgATP"]] += 1;
-  
-  /* v14 {1.0}Pyr + {1.0}NADH = {1.0}Lac + {1.0}NAD */
-  _total_degree[_met_to_index["Pyr"]] += 1;
-  _total_degree[_met_to_index["NADH"]] += 1;
-  _total_degree[_met_to_index["Lac"]] += 1;
-  _total_degree[_met_to_index["NAD"]] += 1;
-  
-  _out_degree[_met_to_index["Pyr"]] += 1;
-  _out_degree[_met_to_index["NADH"]] += 1;
-  
-  _in_degree[_met_to_index["Lac"]] += 1;
-  _in_degree[_met_to_index["NAD"]] += 1;
-  
-  /* v15 {1.0}Pyr + {1.0}NADPHf = {1.0}Lac + {1.0}NADPf */
-  _total_degree[_met_to_index["Pyr"]] += 1;
-  _total_degree[_met_to_index["NADPHf"]] += 1;
-  _total_degree[_met_to_index["Lac"]] += 1;
-  _total_degree[_met_to_index["NADPf"]] += 1;
-  
-  _out_degree[_met_to_index["Pyr"]] += 1;
-  _out_degree[_met_to_index["NADPHf"]] += 1;
-  
-  _in_degree[_met_to_index["Lac"]] += 1;
-  _in_degree[_met_to_index["NADPf"]] += 1;
-  
-  /* v16 {1.0}MgATP = {1.0}MgADP + {1.0}Phi */
-  _total_degree[_met_to_index["MgATP"]] += 1;
-  _total_degree[_met_to_index["MgADP"]] += 1;
-  _total_degree[_met_to_index["Phi"]] += 1;
-  
-  _out_degree[_met_to_index["MgATP"]] += 1;
-  
-  _in_degree[_met_to_index["MgADP"]] += 1;
-  _in_degree[_met_to_index["Phi"]] += 1;
-  
-  /* v17 {1.0}MgATP + {1.0}AMPf = {1.0}MgADP + {1.0}ADPf */
-  _total_degree[_met_to_index["MgATP"]] += 1;
-  _total_degree[_met_to_index["AMPf"]] += 1;
-  _total_degree[_met_to_index["MgADP"]] += 1;
-  _total_degree[_met_to_index["ADPf"]] += 1;
-  
-  _out_degree[_met_to_index["MgATP"]] += 1;
-  _out_degree[_met_to_index["AMPf"]] += 1;
-  
-  _in_degree[_met_to_index["MgADP"]] += 1;
-  _in_degree[_met_to_index["ADPf"]] += 1;
-  
-  /* v18 {1.0}Glc6P + {1.0}NADPf = {1.0}GlcA6P + {1.0}NADPHf */
-  _total_degree[_met_to_index["Glc6P"]] += 1;
-  _total_degree[_met_to_index["NADPf"]] += 1;
-  _total_degree[_met_to_index["GlcA6P"]] += 1;
-  _total_degree[_met_to_index["NADPHf"]] += 1;
-  
-  _out_degree[_met_to_index["Glc6P"]] += 1;
-  _out_degree[_met_to_index["NADPf"]] += 1;
-  
-  _in_degree[_met_to_index["GlcA6P"]] += 1;
-  _in_degree[_met_to_index["NADPHf"]] += 1;
-  
-  /* v19 {1.0}GlcA6P + {1.0}NADPf = {1.0}Rul5P + {1.0}NADPHf */
-  _total_degree[_met_to_index["GlcA6P"]] += 1;
-  _total_degree[_met_to_index["NADPf"]] += 1;
-  _total_degree[_met_to_index["Rul5P"]] += 1;
-  _total_degree[_met_to_index["NADPHf"]] += 1;
-  
-  _out_degree[_met_to_index["GlcA6P"]] += 1;
-  _out_degree[_met_to_index["NADPf"]] += 1;
-  
-  _in_degree[_met_to_index["Rul5P"]] += 1;
-  _in_degree[_met_to_index["NADPHf"]] += 1;
-  
-  /* v20 {1.0}GSSG + {1.0}NADPHf = {2.0}GSH + {1.0}NADPf */
-  _total_degree[_met_to_index["GSSG"]] += 1;
-  _total_degree[_met_to_index["NADPHf"]] += 1;
-  _total_degree[_met_to_index["GSH"]] += 1;
-  _total_degree[_met_to_index["NADPf"]] += 1;
-  
-  _out_degree[_met_to_index["GSSG"]] += 1;
-  _out_degree[_met_to_index["NADPHf"]] += 1;
-  
-  _in_degree[_met_to_index["GSH"]] += 1;
-  _in_degree[_met_to_index["NADPf"]] += 1;
-  
-  /* v21 {2.0}GSH = {1.0}GSSG */
-  _total_degree[_met_to_index["GSH"]] += 1;
-  _total_degree[_met_to_index["GSSG"]] += 1;
-  
-  _out_degree[_met_to_index["GSH"]] += 1;
-  
-  _in_degree[_met_to_index["GSSG"]] += 1;
-  
-  /* v22 {1.0}Rul5P = {1.0}Xul5P */
-  _total_degree[_met_to_index["Rul5P"]] += 1;
-  _total_degree[_met_to_index["Xul5P"]] += 1;
-  
-  _out_degree[_met_to_index["Rul5P"]] += 1;
-  
-  _in_degree[_met_to_index["Xul5P"]] += 1;
-  
-  /* v23 {1.0}Rul5P = {1.0}Rib5P */
-  _total_degree[_met_to_index["Rul5P"]] += 1;
-  _total_degree[_met_to_index["Rib5P"]] += 1;
-  
-  _out_degree[_met_to_index["Rul5P"]] += 1;
-  
-  _in_degree[_met_to_index["Rib5P"]] += 1;
-  
-  /* v24 {1.0}Rib5P + {1.0}Xul5P = {1.0}GraP + {1.0}Sed7P */
-  _total_degree[_met_to_index["Rib5P"]] += 1;
-  _total_degree[_met_to_index["Xul5P"]] += 1;
-  _total_degree[_met_to_index["GraP"]] += 1;
-  _total_degree[_met_to_index["Sed7P"]] += 1;
-  
-  _out_degree[_met_to_index["Rib5P"]] += 1;
-  _out_degree[_met_to_index["Xul5P"]] += 1;
-  
-  _in_degree[_met_to_index["GraP"]] += 1;
-  _in_degree[_met_to_index["Sed7P"]] += 1;
-  
-  /* v25 {1.0}Sed7P + {1.0}GraP = {1.0}E4P + {1.0}Fru6P */
-  _total_degree[_met_to_index["Sed7P"]] += 1;
-  _total_degree[_met_to_index["GraP"]] += 1;
-  _total_degree[_met_to_index["E4P"]] += 1;
-  _total_degree[_met_to_index["Fru6P"]] += 1;
-  
-  _out_degree[_met_to_index["Sed7P"]] += 1;
-  _out_degree[_met_to_index["GraP"]] += 1;
-  
-  _in_degree[_met_to_index["E4P"]] += 1;
-  _in_degree[_met_to_index["Fru6P"]] += 1;
-  
-  /* v26 {1.0}Rib5P + {1.0}MgATP = {1.0}$PRPP + {1.0}MgAMP */
-  _total_degree[_met_to_index["Rib5P"]] += 1;
-  _total_degree[_met_to_index["MgATP"]] += 1;
-  _total_degree[_met_to_index["MgAMP"]] += 1;
-  
-  _out_degree[_met_to_index["Rib5P"]] += 1;
-  _out_degree[_met_to_index["MgATP"]] += 1;
-  
-  _in_degree[_met_to_index["MgAMP"]] += 1;
-  
-  /* v27 {1.0}E4P + {1.0}Xul5P = {1.0}GraP + {1.0}Fru6P */
-  _total_degree[_met_to_index["E4P"]] += 1;
-  _total_degree[_met_to_index["Xul5P"]] += 1;
-  _total_degree[_met_to_index["GraP"]] += 1;
-  _total_degree[_met_to_index["Fru6P"]] += 1;
-  
-  _out_degree[_met_to_index["E4P"]] += 1;
-  _out_degree[_met_to_index["Xul5P"]] += 1;
-  
-  _in_degree[_met_to_index["GraP"]] += 1;
-  _in_degree[_met_to_index["Fru6P"]] += 1;
-  
-  /* v28 {1.0}$Phiex = {1.0}Phi */
-  _total_degree[_met_to_index["Phi"]] += 1;
-  
-  _in_degree[_met_to_index["Phi"]] += 1;
-  
-  /* v29 {1.0}$Lacex = {1.0}Lac */
-  _total_degree[_met_to_index["Lac"]] += 1;
-  
-  _in_degree[_met_to_index["Lac"]] += 1;
-  
-  /* v30 {1.0}$Pyrex = {1.0}Pyr */
-  _total_degree[_met_to_index["Pyr"]] += 1;
-  
-  _in_degree[_met_to_index["Pyr"]] += 1;
-  
-  /* v31 {1.0}MgATP = {1.0}ATPf + {1.0}Mgf */
-  _total_degree[_met_to_index["MgATP"]] += 1;
-  _total_degree[_met_to_index["ATPf"]] += 1;
-  _total_degree[_met_to_index["Mgf"]] += 1;
-  
-  _out_degree[_met_to_index["MgATP"]] += 1;
-  
-  _in_degree[_met_to_index["ATPf"]] += 1;
-  _in_degree[_met_to_index["Mgf"]] += 1;
-  
-  /* v32 {1.0}MgADP = {1.0}ADPf + {1.0}Mgf */
-  _total_degree[_met_to_index["MgADP"]] += 1;
-  _total_degree[_met_to_index["ADPf"]] += 1;
-  _total_degree[_met_to_index["Mgf"]] += 1;
-  
-  _out_degree[_met_to_index["MgADP"]] += 1;
-  
-  _in_degree[_met_to_index["ADPf"]] += 1;
-  _in_degree[_met_to_index["Mgf"]] += 1;
-  
-  /* v33 {1.0}MgAMP = {1.0}AMPf + {1.0}Mgf */
-  _total_degree[_met_to_index["MgAMP"]] += 1;
-  _total_degree[_met_to_index["AMPf"]] += 1;
-  _total_degree[_met_to_index["Mgf"]] += 1;
-  
-  _out_degree[_met_to_index["MgAMP"]] += 1;
-  
-  _in_degree[_met_to_index["AMPf"]] += 1;
-  _in_degree[_met_to_index["Mgf"]] += 1;
-  
-  /* v34 {1.0}MgGri23P2 = {1.0}Gri23P2f + {1.0}Mgf */
-  _total_degree[_met_to_index["MgGri23P2"]] += 1;
-  _total_degree[_met_to_index["Gri23P2f"]] += 1;
-  _total_degree[_met_to_index["Mgf"]] += 1;
-  
-  _out_degree[_met_to_index["MgGri23P2"]] += 1;
-  
-  _in_degree[_met_to_index["Gri23P2f"]] += 1;
-  _in_degree[_met_to_index["Mgf"]] += 1;
-  
-  /* v35 {1.0}P1NADP = {1.0}P1f + {1.0}NADPf */
-  _total_degree[_met_to_index["P1NADP"]] += 1;
-  _total_degree[_met_to_index["P1f"]] += 1;
-  _total_degree[_met_to_index["NADPf"]] += 1;
-  
-  _out_degree[_met_to_index["P1NADP"]] += 1;
-  
-  _in_degree[_met_to_index["P1f"]] += 1;
-  _in_degree[_met_to_index["NADPf"]] += 1;
-  
-  /* v36 {1.0}P1NADPH = {1.0}P1f + {1.0}NADPHf */
-  _total_degree[_met_to_index["P1NADPH"]] += 1;
-  _total_degree[_met_to_index["P1f"]] += 1;
-  _total_degree[_met_to_index["NADPHf"]] += 1;
-  
-  _out_degree[_met_to_index["P1NADPH"]] += 1;
-  
-  _in_degree[_met_to_index["P1f"]] += 1;
-  _in_degree[_met_to_index["NADPHf"]] += 1;
-  
-  /* v37 {1.0}P2NADP = {1.0}P2f + {1.0}NADPf */
-  _total_degree[_met_to_index["P2NADP"]] += 1;
-  _total_degree[_met_to_index["P2f"]] += 1;
-  _total_degree[_met_to_index["NADPf"]] += 1;
-  
-  _out_degree[_met_to_index["P2NADP"]] += 1;
-  
-  _in_degree[_met_to_index["P2f"]] += 1;
-  _in_degree[_met_to_index["NADPf"]] += 1;
-  
-  /* v38 {1.0}P2NADPH = {1.0}P2f + {1.0}NADPHf */
-  _total_degree[_met_to_index["P2NADPH"]] += 1;
-  _total_degree[_met_to_index["P2f"]] += 1;
-  _total_degree[_met_to_index["NADPHf"]] += 1;
-  
-  _out_degree[_met_to_index["P2NADPH"]] += 1;
-  
-  _in_degree[_met_to_index["P2f"]] += 1;
-  _in_degree[_met_to_index["NADPHf"]] += 1;
+  /*-----------------*/
+  /* 1) Total degree */
+  /*-----------------*/
+  _total_degree[_met_to_index["ADPf"]]      = 3;
+  _total_degree[_met_to_index["AMPf"]]      = 3;
+  _total_degree[_met_to_index["ATPf"]]      = 1;
+  _total_degree[_met_to_index["DHAP"]]      = 2;
+  _total_degree[_met_to_index["E4P"]]       = 4;
+  _total_degree[_met_to_index["Fru16P2"]]   = 4;
+  _total_degree[_met_to_index["Fru6P"]]     = 6;
+  _total_degree[_met_to_index["GSH"]]       = 3;
+  _total_degree[_met_to_index["GSSG"]]      = 3;
+  _total_degree[_met_to_index["Glc6P"]]     = 5;
+  _total_degree[_met_to_index["GlcA6P"]]    = 4;
+  _total_degree[_met_to_index["Glcin"]]     = 3;
+  _total_degree[_met_to_index["GraP"]]      = 9;
+  _total_degree[_met_to_index["Gri13P2"]]   = 6;
+  _total_degree[_met_to_index["Gri23P2f"]]  = 4;
+  _total_degree[_met_to_index["Gri2P"]]     = 2;
+  _total_degree[_met_to_index["Gri3P"]]     = 4;
+  _total_degree[_met_to_index["Lac"]]       = 5;
+  _total_degree[_met_to_index["MgADP"]]     = 9;
+  _total_degree[_met_to_index["MgAMP"]]     = 4;
+  _total_degree[_met_to_index["MgATP"]]     = 12;
+  _total_degree[_met_to_index["MgGri23P2"]] = 2;
+  _total_degree[_met_to_index["Mgf"]]       = 4;
+  _total_degree[_met_to_index["NAD"]]       = 4;
+  _total_degree[_met_to_index["NADH"]]      = 5;
+  _total_degree[_met_to_index["NADPHf"]]    = 8;
+  _total_degree[_met_to_index["NADPf"]]     = 8;
+  _total_degree[_met_to_index["P1NADP"]]    = 2;
+  _total_degree[_met_to_index["P1NADPH"]]   = 2;
+  _total_degree[_met_to_index["P1f"]]       = 2;
+  _total_degree[_met_to_index["P2NADP"]]    = 2;
+  _total_degree[_met_to_index["P2NADPH"]]   = 2;
+  _total_degree[_met_to_index["P2f"]]       = 2;
+  _total_degree[_met_to_index["PEP"]]       = 3;
+  _total_degree[_met_to_index["Phi"]]       = 5;
+  _total_degree[_met_to_index["Pyr"]]       = 7;
+  _total_degree[_met_to_index["Rib5P"]]     = 5;
+  _total_degree[_met_to_index["Rul5P"]]     = 4;
+  _total_degree[_met_to_index["Sed7P"]]     = 4;
+  _total_degree[_met_to_index["Xul5P"]]     = 4;
+  
+  /*-----------------*/
+  /* 1) In-degree    */
+  /*-----------------*/
+  _in_degree[_met_to_index["ADPf"]]      = 3;
+  _in_degree[_met_to_index["AMPf"]]      = 1;
+  _in_degree[_met_to_index["ATPf"]]      = 1;
+  _in_degree[_met_to_index["DHAP"]]      = 1;
+  _in_degree[_met_to_index["E4P"]]       = 2;
+  _in_degree[_met_to_index["Fru16P2"]]   = 2;
+  _in_degree[_met_to_index["Fru6P"]]     = 5;
+  _in_degree[_met_to_index["GSH"]]       = 2;
+  _in_degree[_met_to_index["GSSG"]]      = 1;
+  _in_degree[_met_to_index["Glc6P"]]     = 2;
+  _in_degree[_met_to_index["GlcA6P"]]    = 2;
+  _in_degree[_met_to_index["Glcin"]]     = 1;
+  _in_degree[_met_to_index["GraP"]]      = 5;
+  _in_degree[_met_to_index["Gri13P2"]]   = 3;
+  _in_degree[_met_to_index["Gri23P2f"]]  = 2;
+  _in_degree[_met_to_index["Gri2P"]]     = 1;
+  _in_degree[_met_to_index["Gri3P"]]     = 3;
+  _in_degree[_met_to_index["Lac"]]       = 5;
+  _in_degree[_met_to_index["MgADP"]]     = 4;
+  _in_degree[_met_to_index["MgAMP"]]     = 2;
+  _in_degree[_met_to_index["MgATP"]]     = 3;
+  _in_degree[_met_to_index["MgGri23P2"]] = 0;
+  _in_degree[_met_to_index["Mgf"]]       = 4;
+  _in_degree[_met_to_index["NAD"]]       = 2;
+  _in_degree[_met_to_index["NADH"]]      = 3;
+  _in_degree[_met_to_index["NADPHf"]]    = 5;
+  _in_degree[_met_to_index["NADPf"]]     = 5;
+  _in_degree[_met_to_index["P1NADP"]]    = 0;
+  _in_degree[_met_to_index["P1NADPH"]]   = 0;
+  _in_degree[_met_to_index["P1f"]]       = 2;
+  _in_degree[_met_to_index["P2NADP"]]    = 0;
+  _in_degree[_met_to_index["P2NADPH"]]   = 0;
+  _in_degree[_met_to_index["P2f"]]       = 2;
+  _in_degree[_met_to_index["PEP"]]       = 1;
+  _in_degree[_met_to_index["Phi"]]       = 3;
+  _in_degree[_met_to_index["Pyr"]]       = 3;
+  _in_degree[_met_to_index["Rib5P"]]     = 1;
+  _in_degree[_met_to_index["Rul5P"]]     = 2;
+  _in_degree[_met_to_index["Sed7P"]]     = 2;
+  _in_degree[_met_to_index["Xul5P"]]     = 1;
+  
+  /*-----------------*/
+  /* 1) Out-degree   */
+  /*-----------------*/
+  _out_degree[_met_to_index["ADPf"]]      = 0;
+  _out_degree[_met_to_index["AMPf"]]      = 2;
+  _out_degree[_met_to_index["ATPf"]]      = 0;
+  _out_degree[_met_to_index["DHAP"]]      = 1;
+  _out_degree[_met_to_index["E4P"]]       = 2;
+  _out_degree[_met_to_index["Fru16P2"]]   = 2;
+  _out_degree[_met_to_index["Fru6P"]]     = 1;
+  _out_degree[_met_to_index["GSH"]]       = 1;
+  _out_degree[_met_to_index["GSSG"]]      = 2;
+  _out_degree[_met_to_index["Glc6P"]]     = 3;
+  _out_degree[_met_to_index["GlcA6P"]]    = 2;
+  _out_degree[_met_to_index["Glcin"]]     = 2;
+  _out_degree[_met_to_index["GraP"]]      = 4;
+  _out_degree[_met_to_index["Gri13P2"]]   = 3;
+  _out_degree[_met_to_index["Gri23P2f"]]  = 2;
+  _out_degree[_met_to_index["Gri2P"]]     = 1;
+  _out_degree[_met_to_index["Gri3P"]]     = 1;
+  _out_degree[_met_to_index["Lac"]]       = 0;
+  _out_degree[_met_to_index["MgADP"]]     = 5;
+  _out_degree[_met_to_index["MgAMP"]]     = 2;
+  _out_degree[_met_to_index["MgATP"]]     = 9;
+  _out_degree[_met_to_index["MgGri23P2"]] = 2;
+  _out_degree[_met_to_index["Mgf"]]       = 0;
+  _out_degree[_met_to_index["NAD"]]       = 2;
+  _out_degree[_met_to_index["NADH"]]      = 2;
+  _out_degree[_met_to_index["NADPHf"]]    = 3;
+  _out_degree[_met_to_index["NADPf"]]     = 3;
+  _out_degree[_met_to_index["P1NADP"]]    = 2;
+  _out_degree[_met_to_index["P1NADPH"]]   = 2;
+  _out_degree[_met_to_index["P1f"]]       = 0;
+  _out_degree[_met_to_index["P2NADP"]]    = 2;
+  _out_degree[_met_to_index["P2NADPH"]]   = 2;
+  _out_degree[_met_to_index["P2f"]]       = 0;
+  _out_degree[_met_to_index["PEP"]]       = 2;
+  _out_degree[_met_to_index["Phi"]]       = 2;
+  _out_degree[_met_to_index["Pyr"]]       = 4;
+  _out_degree[_met_to_index["Rib5P"]]     = 4;
+  _out_degree[_met_to_index["Rul5P"]]     = 2;
+  _out_degree[_met_to_index["Sed7P"]]     = 2;
+  _out_degree[_met_to_index["Xul5P"]]     = 3;
 }
 
 /**

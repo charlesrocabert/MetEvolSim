@@ -1,2 +1,0 @@
-seed nb_g n m sigma mu w alpha beta Q PC
-7220 30000 1000 40 0.01 0.001 1e-08 0.5 0 2 1
