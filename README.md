@@ -35,6 +35,8 @@ This software has been developed for Unix and OSX (macOS) systems.
 
 #### User mode
 
+For each model (ToyModels, or Holzhutter2004), first navigate to the model folder (<code>cd Toymodels</code>, or <code>cd Holzhutter2004</code>).
+
 To compile the software, run the following instructions on the command line:
 
     cd cmake/

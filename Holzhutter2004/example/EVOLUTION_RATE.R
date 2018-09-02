@@ -27,39 +27,49 @@ relfit = relfit[order(relfit[,2], decreasing=T),]
 #####################################################
 # FIGURES 1 and 2: best and mean raw evolution rate #
 #####################################################
-pdf(file="figures/best_evolrate.pdf")
-plot(log10(d1$s), log10(d1$evolrate), pch=20, main="Last best evolution rate", xlab="[S]", ylab="Evolution rate")
-reg = lm(log10(d1$evolrate)~log10(d1$s))
-pval = summary(reg)$coefficients[2,4]
-rsquared = summary(reg)$r.squared
-abline(reg, lty=2)
-text(log10(d1$s)*0.95, log10(d1$evolrate)*0.99, d1[,4], cex=0.6, font=1, srt=0)
-legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))
-dev.off()
+# pdf(file="figures/best_evolrate.pdf")
+# plot(log10(d1$s), log10(d1$evolrate), pch=20, main="Last best evolution rate", xlab="[S]", ylab="Evolution rate")
+# reg = lm(log10(d1$evolrate)~log10(d1$s))
+# pval = summary(reg)$coefficients[2,4]
+# rsquared = summary(reg)$r.squared
+# abline(reg, lty=2)
+# text(log10(d1$s)*0.95, log10(d1$evolrate)*0.99, d1[,4], cex=0.6, font=1, srt=0)
+# legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))
+# dev.off()
 
-pdf(file="figures/mean_evolrate.pdf")
-plot(log10(d2$s), log10(d2$evolrate), pch=20, main="Population mean evolution rate", xlab="[S]", ylab="Evolution rate")
-reg = lm(log10(d2$evolrate)~log10(d2$s))
-pval = summary(reg)$coefficients[2,4]
-rsquared = summary(reg)$r.squared
-abline(reg, lty=2)
-text(log10(d2$s)*0.95, log10(d2$evolrate)*0.99, d2[,4], cex=0.6, font=1, srt=0)
-legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))
-dev.off()
+# pdf(file="figures/mean_evolrate.pdf")
+# plot(log10(d2$s), log10(d2$evolrate), pch=20, main="Population mean evolution rate", xlab="[S]", ylab="Evolution rate")
+# reg = lm(log10(d2$evolrate)~log10(d2$s))
+# pval = summary(reg)$coefficients[2,4]
+# rsquared = summary(reg)$r.squared
+# abline(reg, lty=2)
+# text(log10(d2$s)*0.95, log10(d2$evolrate)*0.99, d2[,4], cex=0.6, font=1, srt=0)
+# legend("bottomleft", legend=c(paste("pval =", round(pval,3)), paste("rsquared =", round(rsquared,3))))
+# dev.off()
 
 ###########################################################
 # FIGURES 3 and 4: best and mean predicted evolution rate #
 ###########################################################
-pdf(file="figures/best_evolrate_th.pdf")
-plot(d1$s, sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)), log="xy", pch=20, main="Last best relative evolution rate", xlab="[S]", ylab="Evolution rate")
-lines(relfit[,1], relfit[,2], col="grey", lwd=2, lty=2)
-text(d1$s*1.4, sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))*1.4, d1[,4], cex=0.6)
+pdf(file="figures/best_evolrate.pdf")
+plot(log10(d1$s), log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate))), pch=20, main="Last best relative evolution rate", xlab="[S]", ylab="Evolution rate")
+lines(log10(relfit[,1]), log10(relfit[,2]), col="grey", lwd=2, lty=2)
+reg = lm(log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))~log10(d1$s))
+pval = summary(reg)$coefficients[2,4]
+rsquared = summary(reg)$r.squared
+abline(reg, lty=3)
+text(log10(d1$s)*1.02, log10(sqrt(d1$evolrate)/sum(sqrt(d1$evolrate)))*1.02, d1[,4], cex=0.6)
+legend("bottomleft", legend=c(paste("pval =", round(pval,5)), paste("rsquared =", round(rsquared,5))))
 dev.off()
 
-pdf(file="figures/mean_evolrate_th.pdf")
-plot(d2$s, sqrt(d2$evolrate)/sum(sqrt(d2$evolrate)), log="xy", pch=20, main="Population mean relative evolution rate", xlab="[S]", ylab="Evolution rate")
-lines(relfit[,1], relfit[,2], col="grey", lwd=2, lty=2)
-text(d2$s*1.4, sqrt(d2$evolrate)/sum(sqrt(d2$evolrate))*1.4, d2[,4], cex=0.6)
+pdf(file="figures/mean_evolrate.pdf")
+plot(log10(d2$s), log10(sqrt(d2$evolrate)/sum(sqrt(d2$evolrate))), pch=20, main="Population mean relative evolution rate", xlab="[S]", ylab="Evolution rate")
+lines(log10(relfit[,1]), log10(relfit[,2]), col="grey", lwd=2, lty=2)
+reg = lm(log10(sqrt(d2$evolrate)/sum(sqrt(d2$evolrate)))~log10(d2$s))
+pval = summary(reg)$coefficients[2,4]
+rsquared = summary(reg)$r.squared
+abline(reg, lty=3)
+text(log10(d2$s)*1.02, log10(sqrt(d2$evolrate)/sum(sqrt(d2$evolrate)))*1.02, d1[,4], cex=0.6)
+legend("bottomleft", legend=c(paste("pval =", round(pval,5)), paste("rsquared =", round(rsquared,5))))
 dev.off()
 
 ######################################################################
