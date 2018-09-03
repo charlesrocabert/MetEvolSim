@@ -16,6 +16,7 @@
 void readArgs( int argc, char const** argv, Parameters* parameters );
 void printUsage( void );
 void printHeader( void );
+void createFolders( void );
 
 
 /**
@@ -35,6 +36,7 @@ int main( int argc, char const** argv )
   
   parameters->print_parameters();
   parameters->save_parameters();
+  //createFolders();
   
   /*---------------------------------*/
   /* 2) Initialize the population    */
@@ -48,22 +50,16 @@ int main( int argc, char const** argv )
   /*---------------------------------*/
   while (pop->get_generation() < parameters->get_generations())
   {
-    /*
-    if (pop->get_generation()%1 == 0)
-    {
-      std::cout << "> Generation " << pop->get_generation() << "\n";
-    }
-     */
     pop->next_generation();
     if (pop->get_generation()%STATISTICS_GENERATION_STEP == 0)
     {
+      std::cout << "> Generation " << pop->get_generation() << "\n";
       pop->compute_statistics();
       pop->write_statistic_files();
       pop->write_best_individual();
       pop->get_tree()->prune();
       pop->get_tree()->compute_best_evolution_rate("best/best_evolrate.txt");
       pop->get_tree()->compute_mean_evolution_rate("best/mean_evolrate.txt");
-      //system("Rscript EVOLUTION_RATE.R > /dev/null &");
     }
   }
   pop->close_statistic_files();
@@ -293,3 +289,17 @@ void printHeader( void )
   std::cout << "*************** Holzhutter2004 ***************\n";
 }
 
+/**
+ * \brief    Create simulation folders
+ * \details  --
+ * \param    void
+ * \return   \e void
+ */
+void createFolders( void )
+{
+  system("mkdir ancestor");
+  system("mkdir best");
+  system("mkdir population");
+  system("mkdir parameters");
+  system("mkdir figures");
+}

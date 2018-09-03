@@ -30,14 +30,7 @@ Holzhutter2004/cmake/Makefile
 Holzhutter2004/cmake/Config.h
 Holzhutter2004/example/**
 Holzhutter2004/!example/run.sh
-Holzhutter2004/!example/ancestor
-Holzhutter2004/!example/best
-Holzhutter2004/!example/parameters
-Holzhutter2004/!example/population
-Holzhutter2004/example/ancestor/**
-Holzhutter2004/example/best/*
-Holzhutter2004/example/parameters/*
-Holzhutter2004/example/population/*
+Holzhutter2004/!example/generate_figures.sh
+Holzhutter2004/!example/EVOLUTION_RATE.R
 Holzhutter2004/workflow/**
-Holzhutter2004/*test
 
