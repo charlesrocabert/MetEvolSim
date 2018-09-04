@@ -67,6 +67,9 @@ protected:
    * PROTECTED METHODS
    *----------------------------*/
   void evaluate_individual( int i );
+  void create_fixed_param_to_index_map( void );
+  void create_mutable_param_to_index_map( void );
+  void create_met_to_index_map( void );
   
   /*----------------------------
    * PROTECTED ATTRIBUTES
@@ -105,6 +108,10 @@ protected:
   std::ofstream _mean_s_file;  /*!< Mean conc vector output file     */
   std::ofstream _var_s_file;   /*!< Conc vector variance output file */
   std::ofstream _cv_s_file;    /*!< Conc vector CV output file       */
+  
+  std::unordered_map<std::string, int> _fixed_param_to_index;   /*!< Fixed parameter to index map */
+  std::unordered_map<std::string, int> _mutable_param_to_index; /*!< Fixed parameter to index map */
+  std::unordered_map<std::string, int> _met_to_index;           /*!< Metabolite to index map      */
   
 };
 
