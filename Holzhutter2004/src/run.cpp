@@ -28,6 +28,8 @@ void createFolders( void );
  */
 int main( int argc, char const** argv )
 {
+  createFolders();
+  
   /*---------------------------------*/
   /* 1) Read command line parameters */
   /*---------------------------------*/
@@ -36,7 +38,6 @@ int main( int argc, char const** argv )
   
   parameters->print_parameters();
   parameters->save_parameters();
-  //createFolders();
   
   /*---------------------------------*/
   /* 2) Initialize the population    */
@@ -297,6 +298,11 @@ void printHeader( void )
  */
 void createFolders( void )
 {
+  system("rm -rf ancestor");
+  system("rm -rf best");
+  system("rm -rf population");
+  system("rm -rf parameters");
+  system("rm -rf figures");
   system("mkdir ancestor");
   system("mkdir best");
   system("mkdir population");

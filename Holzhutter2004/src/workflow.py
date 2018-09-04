@@ -44,14 +44,11 @@ for rep in range(1, NB_REP+1):
 	os.system("rm -rf "+str(rep))
 	os.mkdir(str(rep))
 	os.chdir(str(rep))
-	os.mkdir("ancestor")
-	os.mkdir("best")
-	os.mkdir("parameters")
-	os.mkdir("population")
 	seed         = random.randint(10, 10000000)
 	command_line = get_command_line(EXEC_PATH, seed, GENERATIONS, N, SIGMA, MU, W, ALPHA, BETA, Q, PC)
 	print "> Launching repetition "+str(rep)+" ..."
 	os.system(command_line)
+	os.chdir("..")
 
 
 

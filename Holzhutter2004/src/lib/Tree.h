@@ -72,6 +72,9 @@ protected:
   inline void tag_tree();
   inline void untag_tree();
   void        tag_offspring( Node* node, std::vector<Node*>* tagged_nodes );
+  void        create_fixed_param_to_index_map( void );
+  void        create_mutable_param_to_index_map( void );
+  void        create_met_to_index_map( void );
   
   /*----------------------------
    * PROTECTED ATTRIBUTES
@@ -79,6 +82,11 @@ protected:
   Parameters*                                                 _parameters; /*!< Main parameters   */
   std::unordered_map<unsigned long long int, Node*>           _node_map;   /*!< Tree nodes map    */
   std::unordered_map<unsigned long long int, Node*>::iterator _iterator;   /*!< Tree map iterator */
+  
+  std::unordered_map<std::string, int> _fixed_param_to_index;   /*!< Fixed parameter to index map */
+  std::unordered_map<std::string, int> _mutable_param_to_index; /*!< Fixed parameter to index map */
+  std::unordered_map<std::string, int> _met_to_index;           /*!< Metabolite to index map      */
+  
 };
 
 
