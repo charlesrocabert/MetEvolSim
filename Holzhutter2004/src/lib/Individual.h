@@ -103,7 +103,7 @@ protected:
   void initialize_concentration_vector( void );
   
   void solve( void );
-  void ODE_system( double* dsdt );
+  void ODE_system( double* dsdt, double* influx, double* outflux );
   
   /*----------------------------
    * PROTECTED ATTRIBUTES
@@ -138,6 +138,10 @@ protected:
   int* _total_degree; /*!< Total metabolic degree */
   int* _in_degree;    /*!< Metabolic in-degree    */
   int* _out_degree;   /*!< Metabolic out-degree   */
+  
+  double* _influx;     /*!< Steady-state influxes     */
+  double* _outflux;    /*!< Steady-state outfluxes    */
+  double* _total_flux; /*!< Steady-state total fluxes */
   
   /*----------------------------------------------------- PHENOTYPE */
   

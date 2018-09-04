@@ -54,6 +54,9 @@ Individual::Individual( Parameters* parameters )
   _total_degree = new int[_m];
   _in_degree    = new int[_m];
   _out_degree   = new int[_m];
+  _influx       = new double[_m];
+  _outflux      = new double[_m];
+  _total_flux   = new double[_m];
   for (int i = 0; i < _m; i++)
   {
     _initial_s[i]    = 0.0;
@@ -61,6 +64,9 @@ Individual::Individual( Parameters* parameters )
     _total_degree[i] = 0;
     _in_degree[i]    = 0;
     _out_degree[i]   = 0;
+    _influx[i]       = 0.0;
+    _outflux[i]      = 0.0;
+    _total_flux[i]   = 0.0;
   }
   
   /*----------------------------------------------------- PHENOTYPE */
@@ -134,6 +140,9 @@ Individual::Individual( Parameters* parameters, gzFile backup_file )
   _total_degree   = new int[_m];
   _in_degree      = new int[_m];
   _out_degree     = new int[_m];
+  _influx         = new double[_m];
+  _outflux        = new double[_m];
+  _total_flux     = new double[_m];
   initialize_fixed_parameters_vector();
   for (int i = 0; i < _p_mutable; i++)
   {
@@ -150,6 +159,12 @@ Individual::Individual( Parameters* parameters, gzFile backup_file )
     _out_degree[i]   = 0;
   }
   create_degree_map();
+  for (int i = 0; i < _m; i++)
+  {
+    gzread(backup_file, &_influx[i], sizeof(_influx[i]));
+    gzread(backup_file, &_outflux[i], sizeof(_outflux[i]));
+    gzread(backup_file, &_total_flux[i], sizeof(_total_flux[i]));
+  }
   
   /*----------------------------------------------------- TREE MANAGEMENT */
   
@@ -227,9 +242,15 @@ Individual::Individual( const Individual& individual )
   _total_degree = new int[_m];
   _in_degree    = new int[_m];
   _out_degree   = new int[_m];
+  _influx       = new double[_m];
+  _outflux      = new double[_m];
+  _total_flux   = new double[_m];
   memcpy(_total_degree, individual._total_degree, sizeof(int)*_m);
   memcpy(_in_degree, individual._in_degree, sizeof(int)*_m);
   memcpy(_out_degree, individual._out_degree, sizeof(int)*_m);
+  memcpy(_influx, individual._influx, sizeof(double)*_m);
+  memcpy(_outflux, individual._outflux, sizeof(double)*_m);
+  memcpy(_total_flux, individual._total_flux, sizeof(double)*_m);
   
   /*----------------------------------------------------- PHENOTYPE */
   
@@ -293,6 +314,12 @@ Individual::~Individual( void )
   _in_degree = NULL;
   delete[] _out_degree;
   _out_degree = NULL;
+  delete[] _influx;
+  _influx = NULL;
+  delete[] _outflux;
+  _outflux = NULL;
+  delete[] _total_flux;
+  _total_flux = NULL;
   
   /*----------------------------------------------------- PHENOTYPE */
   
@@ -494,6 +521,13 @@ void Individual::compute_steady_state( bool ancestor )
       file.close();
     }
     /********/
+    
+    for (int i = 0; i < _m; i++)
+    {
+      _influx[i]     /= _dt;
+      _outflux[i]    /= _dt;
+      _total_flux[i]  = _influx[i]+_outflux[i];
+    }
   }
 }
 
@@ -556,10 +590,10 @@ void Individual::save_indidivual_state( std::string params_filename, std::string
   /* 2) Write concentrations */
   /*-------------------------*/
   file.open(met_filename, std::ios::out | std::ios::trunc);
-  file << "name ancestor val total_degree in_degree out_degree\n";
+  file << "name ancestor val total_degree in_degree out_degree influx outflux total_flux\n";
   for (std::unordered_map<std::string, int>::iterator it = _met_to_index.begin(); it != _met_to_index.end(); ++it)
   {
-    file << it->first << " " << _initial_s[it->second] << " " << _initial_s[it->second] << " " << _total_degree[it->second] << " " << _in_degree[it->second] << " " << _out_degree[it->second] << "\n";
+    file << it->first << " " << _initial_s[it->second] << " " << _initial_s[it->second] << " " << _total_degree[it->second] << " " << _in_degree[it->second] << " " << _out_degree[it->second] << " " << _influx[it->second] << " " << _outflux[it->second] << " " << _total_flux[it->second] << "\n";
   }
   file.close();
 }
@@ -1292,7 +1326,7 @@ void Individual::solve( void )
     /*---------------------------------------*/
     /* 2) Compute next state with current dt */
     /*---------------------------------------*/
-    ODE_system(DSDT);
+    ODE_system(DSDT, _influx, _outflux);
     
     for (int i = 0; i < _m; i++)
     {
@@ -1334,9 +1368,11 @@ void Individual::solve( void )
  * \brief    Compute the ODE system
  * \details  --
  * \param    double* dsdt
+ * \param    double* influx
+ * \param    double* outflux
  * \return   \e void
  */
-void Individual::ODE_system( double* dsdt )
+void Individual::ODE_system( double* dsdt, double* influx, double* outflux )
 {
   /*----------------------------------*/
   /* 1) Initialize fixed parameters   */
@@ -1567,7 +1603,9 @@ void Individual::ODE_system( double* dsdt )
   /*----------------------------------*/
   for (int i = 0; i < _m; i++)
   {
-    dsdt[i] = 0.0;
+    dsdt[i]    = 0.0;
+    influx[i]  = 0.0;
+    outflux[i] = 0.0;
   }
   
   /*----------------------------------*/
@@ -1619,7 +1657,9 @@ void Individual::ODE_system( double* dsdt )
   /* Constants: Glcout Lacex PRPP Phiex Pyrex */
   
   /* v1 {1.0}$Glcout = {1.0}Glcin */
-  dsdt[_met_to_index["Glcin"]] += v1;
+  dsdt[_met_to_index["Glcin"]]   += v1;
+  
+  influx[_met_to_index["Glcin"]] += v1;
   
   /* v2 {1.0}Glcin + {1.0}MgATP = {1.0}Glc6P + {1.0}MgADP */
   dsdt[_met_to_index["Glcin"]] -= v2;
@@ -1627,9 +1667,17 @@ void Individual::ODE_system( double* dsdt )
   dsdt[_met_to_index["Glc6P"]] += v2;
   dsdt[_met_to_index["MgADP"]] += v2;
   
+  outflux[_met_to_index["Glcin"]] += v2;
+  outflux[_met_to_index["MgATP"]] += v2;
+  influx[_met_to_index["Glc6P"]]  += v2;
+  influx[_met_to_index["MgADP"]]  += v2;
+  
   /* v3 {1.0}Glc6P = {1.0}Fru6P */
   dsdt[_met_to_index["Glc6P"]] -= v3;
   dsdt[_met_to_index["Fru6P"]] += v3;
+  
+  outflux[_met_to_index["Glc6P"]] += v3;
+  influx[_met_to_index["Fru6P"]]  += v3;
   
   /* v4 {1.0}Fru6P + {1.0}MgATP = {1.0}Fru16P2 + {1.0}MgADP */
   dsdt[_met_to_index["Fru6P"]]   -= v4;
@@ -1637,14 +1685,26 @@ void Individual::ODE_system( double* dsdt )
   dsdt[_met_to_index["Fru16P2"]] += v4;
   dsdt[_met_to_index["MgADP"]]   += v4;
   
+  outflux[_met_to_index["Fru6P"]]  += v4;
+  outflux[_met_to_index["MgATP"]]  += v4;
+  influx[_met_to_index["Fru16P2"]] += v4;
+  influx[_met_to_index["MgADP"]]   += v4;
+  
   /* v5 {1.0}Fru16P2 = {1.0}GraP + {1.0}DHAP */
   dsdt[_met_to_index["Fru16P2"]] -= v5;
   dsdt[_met_to_index["GraP"]]    += v5;
   dsdt[_met_to_index["DHAP"]]    += v5;
   
+  outflux[_met_to_index["Fru16P2"]] += v5;
+  influx[_met_to_index["GraP"]]     += v5;
+  influx[_met_to_index["DHAP"]]     += v5;
+  
   /* v6 {1.0}DHAP = {1.0}GraP */
   dsdt[_met_to_index["DHAP"]] -= v6;
   dsdt[_met_to_index["GraP"]] += v6;
+  
+  outflux[_met_to_index["DHAP"]] += v6;
+  influx[_met_to_index["GraP"]]  += v6;
   
   /* v7 {1.0}GraP + {1.0}Phi + {1.0}NAD = {1.0}Gri13P2 + {1.0}NADH */
   dsdt[_met_to_index["GraP"]]    -= v7;
@@ -1653,29 +1713,52 @@ void Individual::ODE_system( double* dsdt )
   dsdt[_met_to_index["Gri13P2"]] += v7;
   dsdt[_met_to_index["NADH"]]    += v7;
   
+  outflux[_met_to_index["GraP"]]   += v7;
+  outflux[_met_to_index["Phi"]]    += v7;
+  outflux[_met_to_index["NAD"]]    += v7;
+  influx[_met_to_index["Gri13P2"]] += v7;
+  influx[_met_to_index["NADH"]]    += v7;
+  
   /* v8 {1.0}Gri13P2 + {1.0}MgADP = {1.0}Gri3P + {1.0}MgATP */
   dsdt[_met_to_index["Gri13P2"]] -= v8;
   dsdt[_met_to_index["MgADP"]]   -= v8;
   dsdt[_met_to_index["Gri3P"]]   += v8;
   dsdt[_met_to_index["MgATP"]]   += v8;
   
+  outflux[_met_to_index["Gri13P2"]] += v8;
+  outflux[_met_to_index["MgADP"]]   += v8;
+  influx[_met_to_index["Gri3P"]]    += v8;
+  influx[_met_to_index["MgATP"]]    += v8;
+  
   /* v9 {1.0}Gri13P2 = {1.0}Gri23P2f */
   dsdt[_met_to_index["Gri13P2"]]  -= v9;
   dsdt[_met_to_index["Gri23P2f"]] += v9;
+  
+  outflux[_met_to_index["Gri13P2"]] += v9;
+  influx[_met_to_index["Gri23P2f"]] += v9;
   
   /* v10 {1.0}Gri23P2f = {1.0}Gri3P + {1.0}Phi */
   dsdt[_met_to_index["Gri23P2f"]] -= v10;
   dsdt[_met_to_index["Gri3P"]]    += v10;
   dsdt[_met_to_index["Phi"]]      += v10;
   
+  outflux[_met_to_index["Gri23P2f"]] += v10;
+  influx[_met_to_index["Gri3P"]]     += v10;
+  influx[_met_to_index["Phi"]]       += v10;
+  
   /* v11 {1.0}Gri3P = {1.0}Gri2P */
   dsdt[_met_to_index["Gri3P"]] -= v11;
   dsdt[_met_to_index["Gri2P"]] += v11;
   
+  outflux[_met_to_index["Gri3P"]] += v11;
+  influx[_met_to_index["Gri2P"]]  += v11;
   
   /* v12 {1.0}Gri2P = {1.0}PEP */
   dsdt[_met_to_index["Gri2P"]] -= v12;
   dsdt[_met_to_index["PEP"]]   += v12;
+  
+  outflux[_met_to_index["Gri2P"]] += v12;
+  influx[_met_to_index["PEP"]]    += v12;
   
   /* v13 {1.0}PEP + {1.0}MgADP = {1.0}Pyr + {1.0}MgATP */
   dsdt[_met_to_index["PEP"]]   -= v13;
@@ -1683,11 +1766,21 @@ void Individual::ODE_system( double* dsdt )
   dsdt[_met_to_index["Pyr"]]   += v13;
   dsdt[_met_to_index["MgATP"]] += v13;
   
+  outflux[_met_to_index["PEP"]]   += v13;
+  outflux[_met_to_index["MgADP"]] += v13;
+  influx[_met_to_index["Pyr"]]    += v13;
+  influx[_met_to_index["MgATP"]]  += v13;
+  
   /* v14 {1.0}Pyr + {1.0}NADH = {1.0}Lac + {1.0}NAD */
   dsdt[_met_to_index["Pyr"]]  -= v14;
   dsdt[_met_to_index["NADH"]] -= v14;
   dsdt[_met_to_index["Lac"]]  += v14;
   dsdt[_met_to_index["NAD"]]  += v14;
+  
+  outflux[_met_to_index["Pyr"]]  += v14;
+  outflux[_met_to_index["NADH"]] += v14;
+  influx[_met_to_index["Lac"]]   += v14;
+  influx[_met_to_index["NAD"]]   += v14;
   
   /* v15 {1.0}Pyr + {1.0}NADPHf = {1.0}Lac + {1.0}NADPf */
   dsdt[_met_to_index["Pyr"]]    -= v15;
@@ -1695,10 +1788,19 @@ void Individual::ODE_system( double* dsdt )
   dsdt[_met_to_index["Lac"]]    += v15;
   dsdt[_met_to_index["NADPf"]]  += v15;
   
+  outflux[_met_to_index["Pyr"]]    += v15;
+  outflux[_met_to_index["NADPHf"]] += v15;
+  influx[_met_to_index["Lac"]]     += v15;
+  influx[_met_to_index["NADPf"]]   += v15;
+  
   /* v16 {1.0}MgATP = {1.0}MgADP + {1.0}Phi */
   dsdt[_met_to_index["MgATP"]] -= v16;
   dsdt[_met_to_index["MgADP"]] += v16;
   dsdt[_met_to_index["Phi"]]   += v16;
+  
+  outflux[_met_to_index["MgATP"]] += v16;
+  influx[_met_to_index["MgADP"]]  += v16;
+  influx[_met_to_index["Phi"]]    += v16;
   
   /* v17 {1.0}MgATP + {1.0}AMPf = {1.0}MgADP + {1.0}ADPf */
   dsdt[_met_to_index["MgATP"]] -= v17;
@@ -1706,11 +1808,21 @@ void Individual::ODE_system( double* dsdt )
   dsdt[_met_to_index["MgADP"]] += v17;
   dsdt[_met_to_index["ADPf"]]  += v17;
   
+  outflux[_met_to_index["MgATP"]] += v17;
+  outflux[_met_to_index["AMPf"]]  += v17;
+  influx[_met_to_index["MgADP"]]  += v17;
+  influx[_met_to_index["ADPf"]]   += v17;
+  
   /* v18 {1.0}Glc6P + {1.0}NADPf = {1.0}GlcA6P + {1.0}NADPHf */
   dsdt[_met_to_index["Glc6P"]]  -= v18;
   dsdt[_met_to_index["NADPf"]]  -= v18;
   dsdt[_met_to_index["GlcA6P"]] += v18;
   dsdt[_met_to_index["NADPHf"]] += v18;
+  
+  outflux[_met_to_index["Glc6P"]] += v18;
+  outflux[_met_to_index["NADPf"]] += v18;
+  influx[_met_to_index["GlcA6P"]] += v18;
+  influx[_met_to_index["NADPHf"]] += v18;
   
   /* v19 {1.0}GlcA6P + {1.0}NADPf = {1.0}Rul5P + {1.0}NADPHf */
   dsdt[_met_to_index["GlcA6P"]] -= v19;
@@ -1718,23 +1830,42 @@ void Individual::ODE_system( double* dsdt )
   dsdt[_met_to_index["Rul5P"]]  += v19;
   dsdt[_met_to_index["NADPHf"]] += v19;
   
+  outflux[_met_to_index["GlcA6P"]] += v19;
+  outflux[_met_to_index["NADPf"]]  += v19;
+  influx[_met_to_index["Rul5P"]]   += v19;
+  influx[_met_to_index["NADPHf"]]  += v19;
+  
   /* v20 {1.0}GSSG + {1.0}NADPHf = {2.0}GSH + {1.0}NADPf */
   dsdt[_met_to_index["GSSG"]]   -= v20;
   dsdt[_met_to_index["NADPHf"]] -= v20;
   dsdt[_met_to_index["GSH"]]    += 2.0*v20;
   dsdt[_met_to_index["NADPf"]]  += v20;
   
+  outflux[_met_to_index["GSSG"]]   += v20;
+  outflux[_met_to_index["NADPHf"]] += v20;
+  influx[_met_to_index["GSH"]]     += 2.0*v20;
+  influx[_met_to_index["NADPf"]]   += v20;
+  
   /* v21 {2.0}GSH = {1.0}GSSG */
   dsdt[_met_to_index["GSH"]]  -= 2.0*v21;
   dsdt[_met_to_index["GSSG"]] += v21;
+  
+  outflux[_met_to_index["GSH"]] += 2.0*v21;
+  influx[_met_to_index["GSSG"]] += v21;
   
   /* v22 {1.0}Rul5P = {1.0}Xul5P */
   dsdt[_met_to_index["Rul5P"]] -= v22;
   dsdt[_met_to_index["Xul5P"]] += v22;
   
+  outflux[_met_to_index["Rul5P"]] += v22;
+  influx[_met_to_index["Xul5P"]]  += v22;
+  
   /* v23 {1.0}Rul5P = {1.0}Rib5P */
   dsdt[_met_to_index["Rul5P"]] -= v23;
   dsdt[_met_to_index["Rib5P"]] += v23;
+  
+  outflux[_met_to_index["Rul5P"]] += v23;
+  influx[_met_to_index["Rib5P"]]  += v23;
   
   /* v24 {1.0}Rib5P + {1.0}Xul5P = {1.0}GraP + {1.0}Sed7P */
   dsdt[_met_to_index["Rib5P"]] -= v24;
@@ -1742,16 +1873,30 @@ void Individual::ODE_system( double* dsdt )
   dsdt[_met_to_index["GraP"]]  += v24;
   dsdt[_met_to_index["Sed7P"]] += v24;
   
+  outflux[_met_to_index["Rib5P"]] += v24;
+  outflux[_met_to_index["Xul5P"]] += v24;
+  influx[_met_to_index["GraP"]]   += v24;
+  influx[_met_to_index["Sed7P"]]  += v24;
+  
   /* v25 {1.0}Sed7P + {1.0}GraP = {1.0}E4P + {1.0}Fru6P */
   dsdt[_met_to_index["Sed7P"]] -= v25;
   dsdt[_met_to_index["GraP"]]  -= v25;
   dsdt[_met_to_index["E4P"]]   += v25;
   dsdt[_met_to_index["Fru6P"]] += v25;
   
+  outflux[_met_to_index["Sed7P"]] += v25;
+  outflux[_met_to_index["GraP"]]  += v25;
+  influx[_met_to_index["E4P"]]    += v25;
+  influx[_met_to_index["Fru6P"]]  += v25;
+  
   /* v26 {1.0}Rib5P + {1.0}MgATP = {1.0}$PRPP + {1.0}MgAMP */
   dsdt[_met_to_index["Rib5P"]] -= v26;
   dsdt[_met_to_index["MgATP"]] -= v26;
   dsdt[_met_to_index["MgAMP"]] += v26;
+  
+  outflux[_met_to_index["Rib5P"]] += v26;
+  outflux[_met_to_index["MgATP"]] += v26;
+  influx[_met_to_index["MgAMP"]]  += v26;
   
   /* v27 {1.0}E4P + {1.0}Xul5P = {1.0}GraP + {1.0}Fru6P */
   dsdt[_met_to_index["E4P"]]   -= v27;
@@ -1759,54 +1904,97 @@ void Individual::ODE_system( double* dsdt )
   dsdt[_met_to_index["GraP"]]  += v27;
   dsdt[_met_to_index["Fru6P"]] += v27;
   
+  outflux[_met_to_index["E4P"]]   += v27;
+  outflux[_met_to_index["Xul5P"]] += v27;
+  influx[_met_to_index["GraP"]]   += v27;
+  influx[_met_to_index["Fru6P"]]  += v27;
+  
   /* v28 {1.0}$Phiex = {1.0}Phi */
   dsdt[_met_to_index["Phi"]] += v28;
+  
+  influx[_met_to_index["Phi"]] += v28;
   
   /* v29 {1.0}$Lacex = {1.0}Lac */
   dsdt[_met_to_index["Lac"]] += v29;
   
+  influx[_met_to_index["Lac"]] += v29;
+  
   /* v30 {1.0}$Pyrex = {1.0}Pyr */
   dsdt[_met_to_index["Pyr"]] += v30;
+  
+  influx[_met_to_index["Pyr"]] += v30;
   
   /* v31 {1.0}MgATP = {1.0}ATPf + {1.0}Mgf */
   dsdt[_met_to_index["MgATP"]] -= v31;
   dsdt[_met_to_index["ATPf"]]  += v31;
   dsdt[_met_to_index["Mgf"]]   += v31;
   
+  outflux[_met_to_index["MgATP"]] += v31;
+  influx[_met_to_index["ATPf"]]   += v31;
+  influx[_met_to_index["Mgf"]]    += v31;
+  
   /* v32 {1.0}MgADP = {1.0}ADPf + {1.0}Mgf */
   dsdt[_met_to_index["MgADP"]] -= v32;
   dsdt[_met_to_index["ADPf"]]  += v32;
   dsdt[_met_to_index["Mgf"]]   += v32;
+  
+  outflux[_met_to_index["MgADP"]] += v32;
+  influx[_met_to_index["ADPf"]]   += v32;
+  influx[_met_to_index["Mgf"]]    += v32;
   
   /* v33 {1.0}MgAMP = {1.0}AMPf + {1.0}Mgf */
   dsdt[_met_to_index["MgAMP"]] -= v33;
   dsdt[_met_to_index["AMPf"]]  += v33;
   dsdt[_met_to_index["Mgf"]]   += v33;
   
+  outflux[_met_to_index["MgAMP"]] += v33;
+  influx[_met_to_index["AMPf"]]   += v33;
+  influx[_met_to_index["Mgf"]]    += v33;
+  
   /* v34 {1.0}MgGri23P2 = {1.0}Gri23P2f + {1.0}Mgf */
   dsdt[_met_to_index["MgGri23P2"]] -= v34;
   dsdt[_met_to_index["Gri23P2f"]]  += v34;
   dsdt[_met_to_index["Mgf"]]       += v34;
+  
+  outflux[_met_to_index["MgGri23P2"]] += v34;
+  influx[_met_to_index["Gri23P2f"]]   += v34;
+  influx[_met_to_index["Mgf"]]        += v34;
   
   /* v35 {1.0}P1NADP = {1.0}P1f + {1.0}NADPf */
   dsdt[_met_to_index["P1NADP"]] -= v35;
   dsdt[_met_to_index["P1f"]]    += v35;
   dsdt[_met_to_index["NADPf"]]  += v35;
   
+  outflux[_met_to_index["P1NADP"]] += v35;
+  influx[_met_to_index["P1f"]]     += v35;
+  influx[_met_to_index["NADPf"]]   += v35;
+  
   /* v36 {1.0}P1NADPH = {1.0}P1f + {1.0}NADPHf */
   dsdt[_met_to_index["P1NADPH"]] -= v36;
   dsdt[_met_to_index["P1f"]]     += v36;
   dsdt[_met_to_index["NADPHf"]]  += v36;
+  
+  outflux[_met_to_index["P1NADPH"]] += v36;
+  influx[_met_to_index["P1f"]]      += v36;
+  influx[_met_to_index["NADPHf"]]   += v36;
   
   /* v37 {1.0}P2NADP = {1.0}P2f + {1.0}NADPf */
   dsdt[_met_to_index["P2NADP"]] -= v37;
   dsdt[_met_to_index["P2f"]]    += v37;
   dsdt[_met_to_index["NADPf"]]  += v37;
   
+  outflux[_met_to_index["P2NADP"]] += v37;
+  influx[_met_to_index["P2f"]]     += v37;
+  influx[_met_to_index["NADPf"] ]  += v37;
+  
   /* v38 {1.0}P2NADPH = {1.0}P2f + {1.0}NADPHf */
   dsdt[_met_to_index["P2NADPH"]] -= v38;
   dsdt[_met_to_index["P2f"]]     += v38;
   dsdt[_met_to_index["NADPHf"]]  += v38;
+  
+  outflux[_met_to_index["P2NADPH"]] += v38;
+  influx[_met_to_index["P2f"]]      += v38;
+  influx[_met_to_index["NADPHf"]]   += v38;
 }
 
 /**
@@ -1836,6 +2024,12 @@ void Individual::save( gzFile backup_file )
   for (int i = 0; i < _m; i++)
   {
     gzwrite(backup_file, &_s[i], sizeof(_s[i]));
+  }
+  for (int i = 0; i < _m; i++)
+  {
+    gzwrite(backup_file, &_influx[i], sizeof(_influx[i]));
+    gzwrite(backup_file, &_outflux[i], sizeof(_outflux[i]));
+    gzwrite(backup_file, &_total_flux[i], sizeof(_total_flux[i]));
   }
   
   /*----------------------------------------------------- TREE MANAGEMENT */

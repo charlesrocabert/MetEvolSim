@@ -9,10 +9,12 @@ params = read.table("parameters/parameters.txt", sep=" ", h=T)
 d1 = read.table("best/best_evolrate.txt", h=T, sep=" ")
 d3 = read.table("best/best_conc.txt", h=T, sep=" ")
 d4 = read.table("../model/clustering.txt", h=T, sep=" ")
-
-d = cbind(d1, d3[,2:6])
+head(d3)
+d = cbind(d1, d3[,2:9])
 d = cbind(d, d4[,2])
 d = d[d$evolrate>0,]
+
+CLUST_INDEX = 13
 
 #---------------------------------------------#
 # 2) Build theoretical relative fitness curve #
@@ -29,7 +31,7 @@ relfit = relfit[order(relfit[,2], decreasing=T),]
 #----------------------------------#
 # FIGURE 1: [S] and Evolution rate #
 #----------------------------------#
-pdf(file="figures/best_evolrate.pdf")
+pdf(file="figures/1_best_evolrate.pdf")
 plot(log10(d$s), log10(d$evolrate), pch=20, main="Last best evolution rate", xlab="[S]", ylab="Evolution rate")
 reg = lm(log10(d$evolrate)~log10(d$s))
 pval = summary(reg)$coefficients[2,4]
@@ -43,7 +45,7 @@ dev.off()
 #------------------------------------------------------#
 # FIGURE 2: [S], Evolution rate, and theoretical model #
 #------------------------------------------------------#
-pdf(file="figures/best_evolrate_theory.pdf")
+pdf(file="figures/2_best_evolrate_theory.pdf")
 plot(log10(d$s), log10(sqrt(d$evolrate)/sum(sqrt(d$evolrate))), pch=20, main="Last best relative evolution rate", xlab="[S]", ylab="Relative evolution rate")
 lines(log10(relfit[,1]), log10(relfit[,2]), col="grey", lwd=2, lty=2)
 ll = lowess(log10(d$s), log10(sqrt(d$evolrate)/sum(sqrt(d$evolrate))))
@@ -59,7 +61,7 @@ dev.off()
 #------------------------------------------------#
 # FIGURES 3 and 4: [S]/Evol rate vs total degree #
 #------------------------------------------------#
-pdf(file="figures/best_total_degree_vs_s.pdf")
+pdf(file="figures/3_best_total_degree_vs_s.pdf")
 plot((d$total_degree), log10(d$s), pch=20, main="Last best [S] vs. Total degree", xlab="Total degree", ylab="[S]")
 reg = lm(log10(d$s)~(d$total_degree))
 pval = summary(reg)$coefficients[2,4]
@@ -69,7 +71,7 @@ text((d$total_degree)*1.1, log10(d$s)*1.02, d$name, cex=0.6, font=1, srt=0)
 legend("topright", legend=c(paste("pval =", round(pval,6)), paste("rsquared =", round(rsquared,6))))
 dev.off()
 
-pdf(file="figures/best_total_degree_vs_evolrate.pdf")
+pdf(file="figures/4_best_total_degree_vs_evolrate.pdf")
 plot((d$total_degree), log10(d$evolrate), pch=20, main="Last best evolution rate vs. Total degree", xlab="Total degree", ylab="Evolution rate")
 reg = lm(log10(d$evolrate)~(d$total_degree))
 pval = summary(reg)$coefficients[2,4]
@@ -82,7 +84,7 @@ dev.off()
 #---------------------------------------------#
 # FIGURES 5 and 6: [S]/Evol rate vs in-degree #
 #---------------------------------------------#
-pdf(file="figures/best_in_degree_vs_s.pdf")
+pdf(file="figures/5_best_in_degree_vs_s.pdf")
 plot((d$in_degree), log10(d$s), pch=20, main="Last best [S] vs. In-degree", xlab="In-degree", ylab="[S]")
 reg = lm(log10(d$s)~(d$in_degree))
 pval = summary(reg)$coefficients[2,4]
@@ -93,7 +95,7 @@ legend("topright", legend=c(paste("pval =", round(pval,6)), paste("rsquared =", 
 dev.off()
 
 
-pdf(file="figures/best_in_degree_vs_evolrate.pdf")
+pdf(file="figures/6_best_in_degree_vs_evolrate.pdf")
 plot((d$in_degree), log10(d$evolrate), pch=20, main="Last best evolution rate vs. In-degree", xlab="In-degree", ylab="Evolution rate")
 reg = lm(log10(d$evolrate)~(d$in_degree))
 pval = summary(reg)$coefficients[2,4]
@@ -107,7 +109,7 @@ dev.off()
 #----------------------------------------------#
 # FIGURES 7 and 8: [S]/Evol rate vs out-degree #
 #----------------------------------------------#
-pdf(file="figures/best_out_degree_vs_s.pdf")
+pdf(file="figures/7_best_out_degree_vs_s.pdf")
 plot((d$out_degree), log10(d$s), pch=20, main="Last best [S] vs. Out-degree", xlab="Out-degree", ylab="[S]")
 reg = lm(log10(d$s)~(d$out_degree))
 pval = summary(reg)$coefficients[2,4]
@@ -117,7 +119,7 @@ text((d$out_degree)*1.1, log10(d$s)*1.02, d$name, cex=0.6, font=1, srt=0)
 legend("topright", legend=c(paste("pval =", round(pval,6)), paste("rsquared =", round(rsquared,6))))
 dev.off()
 
-pdf(file="figures/best_out_degree_vs_evolrate.pdf")
+pdf(file="figures/8_best_out_degree_vs_evolrate.pdf")
 plot((d$out_degree), log10(d$evolrate), pch=20, main="Last best evolution rate vs. Out-degree", xlab="Out-degree", ylab="Evolution rate")
 reg = lm(log10(d$evolrate)~(d$out_degree))
 pval = summary(reg)$coefficients[2,4]
@@ -130,23 +132,23 @@ dev.off()
 #-----------------------------------------------#
 # FIGURES 9 and 10: [S]/Evol rate vs clustering #
 #-----------------------------------------------#
-pdf(file="figures/best_clustering_vs_s.pdf")
-plot((d[,10]), log10(d$s), pch=20, main="Last best [S] vs. Clustering coefficient", xlab="Clustering coefficient", ylab="[S]")
-reg = lm(log10(d$s)~(d[,10]))
+pdf(file="figures/9_best_clustering_vs_s.pdf")
+plot((d[,CLUST_INDEX]), log10(d$s), pch=20, main="Last best [S] vs. Clustering coefficient", xlab="Clustering coefficient", ylab="[S]")
+reg = lm(log10(d$s)~(d[,CLUST_INDEX]))
 pval = summary(reg)$coefficients[2,4]
 rsquared = summary(reg)$r.squared
 abline(reg, lty=2)
-text((d[,10])*1.1, log10(d$s)*1.02, d$name, cex=0.6, font=1, srt=0)
+text((d[,CLUST_INDEX])*1.1, log10(d$s)*1.02, d$name, cex=0.6, font=1, srt=0)
 legend("topright", legend=c(paste("pval =", round(pval,6)), paste("rsquared =", round(rsquared,6))))
 dev.off()
 
-pdf(file="figures/best_clustering_vs_evolrate.pdf")
-plot((d[,10]), log10(d$evolrate), pch=20, main="Last best evolution rate vs. Clustering coefficient", xlab="Clustering coefficient", ylab="Evolution rate")
-reg = lm(log10(d$evolrate)~(d[,10]))
+pdf(file="figures/10_best_clustering_vs_evolrate.pdf")
+plot((d[,CLUST_INDEX]), log10(d$evolrate), pch=20, main="Last best evolution rate vs. Clustering coefficient", xlab="Clustering coefficient", ylab="Evolution rate")
+reg = lm(log10(d$evolrate)~(d[,CLUST_INDEX]))
 pval = summary(reg)$coefficients[2,4]
 rsquared = summary(reg)$r.squared
 abline(reg, lty=2)
-text((d[,10])*1.1, log10(d$evolrate)*1.02, d$name, cex=0.6, font=1, srt=0)
+text((d[,CLUST_INDEX])*1.1, log10(d$evolrate)*1.02, d$name, cex=0.6, font=1, srt=0)
 legend("topright", legend=c(paste("pval =", round(pval,6)), paste("rsquared =", round(rsquared,6))))
 dev.off()
 
@@ -158,43 +160,47 @@ intercept     = reg$coefficients[[1]]
 slope         = reg$coefficients[[2]]
 evolrate_diff = log10(d$evolrate)-(intercept+log10(d$s)*slope)
 
-pdf(file="figures/best_total_degree_vs_diff.pdf")
+pdf(file="figures/11_best_total_degree_vs_diff.pdf")
 plot((d$total_degree), evolrate_diff, pch=20, main="Deviation from evol rate regression vs. Total degree", xlab="Total degree", ylab="Deviation from evolution rate regression")
 reg = lm(evolrate_diff~(d$total_degree))
 pval = summary(reg)$coefficients[2,4]
 rsquared = summary(reg)$r.squared
 abline(reg, lty=2)
+abline(h=0, lty=1, col="lightgrey")
 text((d$total_degree)*1.1, evolrate_diff*1.02, d$name, cex=0.6, font=1, srt=0)
 legend("topright", legend=c(paste("pval =", round(pval,6)), paste("rsquared =", round(rsquared,6))))
 dev.off()
 
-pdf(file="figures/best_in_degree_vs_diff.pdf")
+pdf(file="figures/12_best_in_degree_vs_diff.pdf")
 plot((d$in_degree), evolrate_diff, pch=20, main="Deviation from evol rate regression vs. In-degree", xlab="In-degree", ylab="Deviation from evolution rate regression")
 reg = lm(evolrate_diff~(d$in_degree))
 pval = summary(reg)$coefficients[2,4]
 rsquared = summary(reg)$r.squared
 abline(reg, lty=2)
+abline(h=0, lty=1, col="lightgrey")
 text((d$in_degree)*1.1, evolrate_diff*1.02, d$name, cex=0.6, font=1, srt=0)
 legend("topright", legend=c(paste("pval =", round(pval,6)), paste("rsquared =", round(rsquared,6))))
 dev.off()
 
-pdf(file="figures/best_out_degree_vs_diff.pdf")
+pdf(file="figures/13_best_out_degree_vs_diff.pdf")
 plot((d$out_degree), evolrate_diff, pch=20, main="Deviation from evol rate regression vs. Out-degree", xlab="Out-degree", ylab="Deviation from evolution rate regression")
 reg = lm(evolrate_diff~(d$out_degree))
 pval = summary(reg)$coefficients[2,4]
 rsquared = summary(reg)$r.squared
 abline(reg, lty=2)
+abline(h=0, lty=1, col="lightgrey")
 text((d$out_degree)*1.1, evolrate_diff*1.02, d$name, cex=0.6, font=1, srt=0)
 legend("topright", legend=c(paste("pval =", round(pval,6)), paste("rsquared =", round(rsquared,6))))
 dev.off()
 
-pdf(file="figures/best_clustering_vs_diff.pdf")
-plot((d[,10]), evolrate_diff, pch=20, main="Deviation from evol rate regression vs. Clustering coefficient", xlab="Clustering coefficient", ylab="Deviation from evolution rate regression")
-reg = lm(evolrate_diff~(d[,10]))
+pdf(file="figures/14_best_clustering_vs_diff.pdf")
+plot((d[,CLUST_INDEX]), evolrate_diff, pch=20, main="Deviation from evol rate regression vs. Clustering coefficient", xlab="Clustering coefficient", ylab="Deviation from evolution rate regression")
+reg = lm(evolrate_diff~(d[,CLUST_INDEX]))
 pval = summary(reg)$coefficients[2,4]
 rsquared = summary(reg)$r.squared
 abline(reg, lty=2)
-text((d[,10])*1.1, evolrate_diff*1.02, d$name, cex=0.6, font=1, srt=0)
+abline(h=0, lty=1, col="lightgrey")
+text((d[,CLUST_INDEX])*1.1, evolrate_diff*1.02, d$name, cex=0.6, font=1, srt=0)
 legend("topright", legend=c(paste("pval =", round(pval,6)), paste("rsquared =", round(rsquared,6))))
 dev.off()
 
@@ -203,43 +209,69 @@ dev.off()
 #---------------------------------------------------------------#
 evolrate_diff = log10(sqrt(d$evolrate)/sum(sqrt(d$evolrate)))-FITNESS/sum(FITNESS)
 
-pdf(file="figures/best_total_degree_vs_diff_th.pdf")
+pdf(file="figures/15_best_total_degree_vs_diff_th.pdf")
 plot((d$total_degree), evolrate_diff, pch=20, main="Deviation from evol rate theory vs. Total degree", xlab="Total degree", ylab="Deviation from evolution rate theory")
 reg = lm(evolrate_diff~(d$total_degree))
 pval = summary(reg)$coefficients[2,4]
 rsquared = summary(reg)$r.squared
 abline(reg, lty=2)
+abline(h=0, lty=1, col="lightgrey")
 text((d$total_degree)*1.1, evolrate_diff*1.02, d$name, cex=0.6, font=1, srt=0)
 legend("topright", legend=c(paste("pval =", round(pval,6)), paste("rsquared =", round(rsquared,6))))
 dev.off()
 
-pdf(file="figures/best_in_degree_vs_diff_th.pdf")
+pdf(file="figures/16_best_in_degree_vs_diff_th.pdf")
 plot((d$in_degree), evolrate_diff, pch=20, main="Deviation from evol rate theory vs. In-degree", xlab="In-degree", ylab="Deviation from evolution rate theory")
 reg = lm(evolrate_diff~(d$in_degree))
 pval = summary(reg)$coefficients[2,4]
 rsquared = summary(reg)$r.squared
 abline(reg, lty=2)
+abline(h=0, lty=1, col="lightgrey")
 text((d$in_degree)*1.1, evolrate_diff*1.02, d$name, cex=0.6, font=1, srt=0)
 legend("topright", legend=c(paste("pval =", round(pval,6)), paste("rsquared =", round(rsquared,6))))
 dev.off()
 
-pdf(file="figures/best_out_degree_vs_diff_th.pdf")
+pdf(file="figures/17_best_out_degree_vs_diff_th.pdf")
 plot((d$out_degree), evolrate_diff, pch=20, main="Deviation from evol rate theory vs. Out-degree", xlab="Out-degree", ylab="Deviation from evolution rate theory")
 reg = lm(evolrate_diff~(d$out_degree))
 pval = summary(reg)$coefficients[2,4]
 rsquared = summary(reg)$r.squared
 abline(reg, lty=2)
+abline(h=0, lty=1, col="lightgrey")
 text((d$out_degree)*1.1, evolrate_diff*1.02, d$name, cex=0.6, font=1, srt=0)
 legend("topright", legend=c(paste("pval =", round(pval,6)), paste("rsquared =", round(rsquared,6))))
 dev.off()
 
-pdf(file="figures/best_clustering_vs_diff_th.pdf")
-plot((d[,10]), evolrate_diff, pch=20, main="Deviation from evol rate theory vs. Clustering coefficient", xlab="Clustering coefficient", ylab="Deviation from evolution rate theory")
-reg = lm(evolrate_diff~(d[,10]))
+pdf(file="figures/18_best_clustering_vs_diff_th.pdf")
+plot((d[,CLUST_INDEX]), evolrate_diff, pch=20, main="Deviation from evol rate theory vs. Clustering coefficient", xlab="Clustering coefficient", ylab="Deviation from evolution rate theory")
+reg = lm(evolrate_diff~(d[,CLUST_INDEX]))
 pval = summary(reg)$coefficients[2,4]
 rsquared = summary(reg)$r.squared
 abline(reg, lty=2)
-text((d[,10])*1.1, evolrate_diff*1.02, d$name, cex=0.6, font=1, srt=0)
+abline(h=0, lty=1, col="lightgrey")
+text((d[,CLUST_INDEX])*1.1, evolrate_diff*1.02, d$name, cex=0.6, font=1, srt=0)
 legend("topright", legend=c(paste("pval =", round(pval,6)), paste("rsquared =", round(rsquared,6))))
 dev.off()
 
+#---------------------------------------#
+# NEXT FIGURES: [S]/Evol rate vs fluxes #
+#---------------------------------------#
+pdf(file="figures/19_best_flux_vs_s.pdf")
+plot((d$total_flux), log10(d$s), pch=20, main="Last best [S] vs. Flux", xlab="Flux", ylab="[S]")
+reg = lm(log10(d$s)~(d$total_flux))
+pval = summary(reg)$coefficients[2,4]
+rsquared = summary(reg)$r.squared
+abline(reg, lty=2)
+text((d$total_flux), log10(d$s), d$name, cex=0.6, font=1, srt=0)
+legend("topright", legend=c(paste("pval =", round(pval,6)), paste("rsquared =", round(rsquared,6))))
+dev.off()
+
+pdf(file="figures/20_best_flux_vs_evolrate.pdf")
+plot((d$total_flux), log10(d$evolrate), pch=20, main="Last best evolution rate vs. Flux", xlab="Flux", ylab="Evolution rate")
+reg = lm(log10(d$evolrate)~(d$total_flux))
+pval = summary(reg)$coefficients[2,4]
+rsquared = summary(reg)$r.squared
+abline(reg, lty=2)
+text((d$total_flux), log10(d$evolrate), d$name, cex=0.6, font=1, srt=0)
+legend("topright", legend=c(paste("pval =", round(pval,6)), paste("rsquared =", round(rsquared,6))))
+dev.off()
