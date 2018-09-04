@@ -225,7 +225,7 @@ void Node::compute_evolution_rate( double* nbfix, double* evolrate )
     for (int i = 0; i < m; i++)
     {
       double diff1 = fabs(node_s[i]-parent_s[i])/parent_s[i];
-      double diff2 = fabs(node_s[i]-ancestor_s[i])/ancestor_s[i];
+      double diff2 = fabs(node_s[i]-parent_s[i])/ancestor_s[i];
       if (mutated && diff1 > STEADY_STATE_DIFF_TH)
       {
         nbfix[i] += 1.0;
@@ -257,6 +257,49 @@ void Node::compute_evolution_rate( double* nbfix, double* evolrate )
   mean = NULL;
   delete[] var;
   var = NULL;
+}
+
+/**
+ * \brief    Recover fixed mutations and save them in a file
+ * \details  --
+ * \param    std::string filename
+ * \param    std::unordered_map<std::string, int>* mutable_param_to_index
+ * \return   \e void
+ */
+void Node::recover_fixed_mutations( std::string filename, std::unordered_map<std::string, int>* mutable_param_to_index )
+{
+  Node* node     = this;
+  Node* parent   = node->get_parent();
+  Node* ancestor = get_ancestor();
+  assert(ancestor != NULL);
+  assert(ancestor->isRoot());
+  double* ancestor_mutable_params = ancestor->get_individual()->get_mutable_params();
+  std::ofstream file(filename, std::ios::out | std::ios::trunc);
+  file << "g param size relative_size ancestor_relative_size diff_c\n";
+  while (parent != NULL && !parent->isMasterRoot())
+  {
+    int     generation            = node->get_generation();
+    bool    mutated               = node->get_individual()->isMutated();
+    double* node_mutable_params   = node->get_individual()->get_mutable_params();
+    double* parent_mutable_params = parent->get_individual()->get_mutable_params();
+    if (mutated)
+    {
+      for (std::unordered_map<std::string, int>::iterator it = mutable_param_to_index->begin(); it != mutable_param_to_index->end(); ++it)
+      {
+        if (node_mutable_params[it->second] != parent_mutable_params[it->second])
+        {
+          double diff = node_mutable_params[it->second]-parent_mutable_params[it->second];
+          double rel_diff = (node_mutable_params[it->second]-parent_mutable_params[it->second])/parent_mutable_params[it->second];
+          double ancestor_diff = (node_mutable_params[it->second]-parent_mutable_params[it->second])/ancestor_mutable_params[it->second];
+          double diff_c = node->get_individual()->get_c()-parent->get_individual()->get_c();
+          file << generation << " " << it->first << " " << diff << " " << rel_diff << " " << ancestor_diff << " " << diff_c << "\n";
+        }
+      }
+    }
+    node   = parent;
+    parent = node->get_parent();
+  }
+  file.close();
 }
 
 /*----------------------------

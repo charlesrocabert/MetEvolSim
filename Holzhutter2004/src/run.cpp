@@ -61,6 +61,7 @@ int main( int argc, char const** argv )
       pop->get_tree()->prune();
       pop->get_tree()->compute_best_evolution_rate("best/best_evolrate.txt");
       pop->get_tree()->compute_mean_evolution_rate("best/mean_evolrate.txt");
+      pop->get_tree()->recover_best_fixed_mutations("best/best_fixed_mutations.txt");
     }
   }
   pop->close_statistic_files();

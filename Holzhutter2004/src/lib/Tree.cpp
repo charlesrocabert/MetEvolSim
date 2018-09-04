@@ -308,6 +308,18 @@ void Tree::compute_mean_evolution_rate( std::string filename )
   mean_evolrate = NULL;
 }
 
+/**
+ * \brief    Recover best individual's fixed mutations
+ * \details  Data is written in a text file
+ * \param    std::string filename
+ * \return   \e void
+ */
+void Tree::recover_best_fixed_mutations( std::string filename )
+{
+  Node* best = get_best_alive_node();
+  best->recover_fixed_mutations(filename, &_mutable_param_to_index);
+}
+
 /*----------------------------
  * PROTECTED METHODS
  *----------------------------*/

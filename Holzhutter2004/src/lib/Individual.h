@@ -40,9 +40,12 @@ public:
   inline unsigned long long int get_identifier( void ) const;
   inline unsigned long long int get_parent( void ) const;
   inline int                    get_generation( void ) const;
+  inline int                    get_p_mutable( void ) const;
   inline int                    get_m( void ) const;
   inline bool                   isStable( void ) const;
   inline bool                   isMutated( void ) const;
+  inline double                 get_mutable_params( int i ) const;
+  inline double*                get_mutable_params( void );
   inline double                 get_s( int i ) const;
   inline double*                get_s( void );
   inline double                 get_c_opt( void ) const;
@@ -203,6 +206,17 @@ inline int Individual::get_generation( void ) const
 }
 
 /**
+ * \brief    Get the number of mutable parameters
+ * \details  --
+ * \param    void
+ * \return   \e int
+ */
+inline int Individual::get_p_mutable( void ) const
+{
+  return _p_mutable;
+}
+
+/**
  * \brief    Get the number of metabolites
  * \details  --
  * \param    void
@@ -233,6 +247,30 @@ inline bool Individual::isStable( void ) const
 inline bool Individual::isMutated( void ) const
 {
   return _mutated;
+}
+
+/**
+ * \brief    Get mutable parameter i
+ * \details  --
+ * \param    void
+ * \return   \e double
+ */
+inline double Individual::get_mutable_params( int i ) const
+{
+  assert(i >= 0);
+  assert(i < _p_mutable);
+  return _mutable_params[i];
+}
+
+/**
+ * \brief    Get mutable parameters vector
+ * \details  --
+ * \param    void
+ * \return   \e double
+ */
+inline double* Individual::get_mutable_params( void )
+{
+  return _mutable_params;
 }
 
 /**

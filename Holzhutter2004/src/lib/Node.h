@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <vector>
+#include <unordered_map>
 #include <assert.h>
 
 #include "Macros.h"
@@ -72,6 +73,7 @@ public:
   void tag_lineage( void );
   void untag_lineage( void );
   void compute_evolution_rate( double* nbfix, double* evolrate );
+  void recover_fixed_mutations( std::string filename, std::unordered_map<std::string, int>* mutable_param_to_index );
   
   /*----------------------------
    * PUBLIC ATTRIBUTES

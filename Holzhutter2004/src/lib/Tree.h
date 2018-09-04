@@ -59,6 +59,7 @@ public:
   void prune();
   void compute_best_evolution_rate( std::string filename );
   void compute_mean_evolution_rate( std::string filename );
+  void recover_best_fixed_mutations( std::string filename );
   
   /*----------------------------
    * PUBLIC ATTRIBUTES
