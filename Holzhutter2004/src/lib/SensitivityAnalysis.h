@@ -51,7 +51,10 @@ public:
   
   void initialize( void );
   void run_analysis( void );
-  void save_analysis( void );
+  void open_files( void );
+  void write_files( std::string parameter );
+  void close_files( void );
+  void write_initial_concentrations( void );
   
   void analyze_parameter( int i, double sigma, int N );
   void mutate( int i, double sigma );
@@ -124,7 +127,7 @@ protected:
   double _timestep; /*!< Current ODE timestep     */
   bool   _isStable; /*!< Is the network stable?   */
   
-  /*----------------------------------------------------- SENSITIVITY_ANALYSIS */
+  /*----------------------------------------------------- SENSITIVITY ANALYSIS */
   
   double*  _param_mean; /*!< Kinetic parameter mean        */
   double*  _param_var;  /*!< Kinetic parameter variance    */
@@ -135,6 +138,13 @@ protected:
   double*  _w_mean;     /*!< Fitness mean                  */
   double*  _w_var;      /*!< Fitness variance              */
   
+  /*----------------------------------------------------- SAVING FILES */
+  
+  std::ofstream _param_file;     /*!< Parameters exploration file            */
+  std::ofstream _mean_conc_file; /*!< Mean concentration vector file         */
+  std::ofstream _var_conc_file;  /*!< Concentration vector variance file     */
+  std::ofstream _sum_file;       /*!< Sum of concentrations exploration file */
+  std::ofstream _fitness_file;   /*!< Fitness exploration file               */
 };
 
 

@@ -204,6 +204,8 @@ void SensitivityAnalysis::initialize( void )
  */
 void SensitivityAnalysis::run_analysis( void )
 {
+  open_files();
+  write_initial_concentrations();
   int counter = 1;
   for (std::unordered_map<std::string, int>::iterator it = _mutable_param_to_index.begin(); it != _mutable_param_to_index.end(); ++it)
   {
@@ -214,7 +216,12 @@ void SensitivityAnalysis::run_analysis( void )
     analyze_parameter(it->second, _parameters->get_sigma(), _parameters->get_n());
     
     /*---------------------*/
-    /* 2) Reset parameters */
+    /* 2) Save data        */
+    /*---------------------*/
+    write_files(it->first);
+    
+    /*---------------------*/
+    /* 3) Reset parameters */
     /*---------------------*/
     memcpy(_mutable_params, _initial_mutable_params, sizeof(double)*_p_mutable);
     memcpy(_s, _initial_s, sizeof(double)*_m);
@@ -223,101 +230,109 @@ void SensitivityAnalysis::run_analysis( void )
 }
 
 /**
- * \brief    Save the sensitivity analysis in a file
+ * \brief    Open saving files
  * \details  --
  * \param    void
  * \return   \e void
  */
-void SensitivityAnalysis::save_analysis( void )
+void SensitivityAnalysis::open_files( void )
 {
-  std::ofstream file;
+  /*** Parameters exploration file ***/
+  _param_file.open("param.txt", std::ios::out | std::ios::trunc);
+  _param_file << "name ancestor mean var\n";
   
-  /*-------------------------------------------*/
-  /* 1) Save parameters exploration            */
-  /*-------------------------------------------*/
-  file.open("params.txt", std::ios::out | std::ios::trunc);
-  file << "name ancestor mean var\n";
-  for (std::unordered_map<std::string, int>::iterator it = _mutable_param_to_index.begin(); it != _mutable_param_to_index.end(); ++it)
-  {
-    file << it->first << " " << _initial_mutable_params[it->second] << " " << _param_mean[it->second] << " " << _param_var[it->second] << "\n";
-  }
-  file.close();
-  
-  /*-------------------------------------------*/
-  /* 2) Save sum of concentrations exploration */
-  /*-------------------------------------------*/
-  file.open("sum.txt", std::ios::out | std::ios::trunc);
-  file << "name ancestor mean var\n";
-  for (std::unordered_map<std::string, int>::iterator it = _mutable_param_to_index.begin(); it != _mutable_param_to_index.end(); ++it)
-  {
-    file << it->first << " " << _c_opt << " " << _c_mean[it->second] << " " << _c_var[it->second] << "\n";
-  }
-  file.close();
-  
-  /*-------------------------------------------*/
-  /* 3) Save fitness exploration               */
-  /*-------------------------------------------*/
-  file.open("fitness.txt", std::ios::out | std::ios::trunc);
-  file << "name ancestor mean var\n";
-  for (std::unordered_map<std::string, int>::iterator it = _mutable_param_to_index.begin(); it != _mutable_param_to_index.end(); ++it)
-  {
-    file << it->first << " " << 1.0 << " " << _w_mean[it->second] << " " << _w_var[it->second] << "\n";
-  }
-  file.close();
-  
-  /*-------------------------------------------*/
-  /* 4) Save concentrations exploration        */
-  /*-------------------------------------------*/
-  /*** Write initial concentrations ***/
-  file.open("concentrations_init.txt", std::ios::out | std::ios::trunc);
-  file << "name";
+  /*** Mean concentration vector file ***/
+  _mean_conc_file.open("mean_conc.txt", std::ios::out | std::ios::trunc);
+  _mean_conc_file << "name";
   for (std::unordered_map<std::string, int>::iterator it = _met_to_index.begin(); it != _met_to_index.end(); ++it)
   {
-    file << " " << it->first;
+    _mean_conc_file << " " << it->first;
   }
-  file << "\ninit";
-  for (std::unordered_map<std::string, int>::iterator it = _met_to_index.begin(); it != _met_to_index.end(); ++it)
-  {
-    file << " " << _initial_s[it->second];
-  }
-  file << "\n";
-  file.close();
+  _mean_conc_file << "\n";
   
-  /*** Write mean concentrations ***/
-  file.open("concentrations_mean.txt", std::ios::out | std::ios::trunc);
-  file << "name";
+  /*** Concentration vector variance file ***/
+  _var_conc_file.open("var_conc.txt", std::ios::out | std::ios::trunc);
+  _var_conc_file << "name";
   for (std::unordered_map<std::string, int>::iterator it = _met_to_index.begin(); it != _met_to_index.end(); ++it)
   {
-    file << " " << it->first;
+    _var_conc_file << " " << it->first;
   }
-  file << "\n";
-  for (std::unordered_map<std::string, int>::iterator it1 = _mutable_param_to_index.begin(); it1 != _mutable_param_to_index.end(); ++it1)
-  {
-    file << it1->first;
-    for (std::unordered_map<std::string, int>::iterator it2 = _met_to_index.begin(); it2 != _met_to_index.end(); ++it2)
-    {
-      file << " " << _conc_mean[it1->second][it2->second];
-    }
-    file << "\n";
-  }
-  file.close();
+  _var_conc_file << "\n";
   
-  /*** Write concentrations variance ***/
-  file.open("concentrations_var.txt", std::ios::out | std::ios::trunc);
-  file << "name";
+  /*** Sum of concentrations exploration file ***/
+  _sum_file.open("sum.txt", std::ios::out | std::ios::trunc);
+  _sum_file << "name ancestor mean var\n";
+  
+  /*** Fitness exploration file ***/
+  _fitness_file.open("fitness.txt", std::ios::out | std::ios::trunc);
+  _fitness_file << "name ancestor mean var\n";
+}
+
+/**
+ * \brief    Writing analysis for a given parameter
+ * \details  --
+ * \param    std::string parameter
+ * \return   \e void
+ */
+void SensitivityAnalysis::write_files( std::string parameter )
+{
+  assert(_mutable_param_to_index.find(parameter) != _mutable_param_to_index.end());
+  int i = _mutable_param_to_index[parameter];
+  
+  /*** Parameters exploration file ***/
+  _param_file << parameter << " " << _initial_mutable_params[i] << " " << _param_mean[i] << " " << _param_var[i] << "\n";
+  
+  /*** Mean concentration vector file ***/
+  _mean_conc_file << parameter;
   for (std::unordered_map<std::string, int>::iterator it = _met_to_index.begin(); it != _met_to_index.end(); ++it)
   {
-    file << " " << it->first;
+    _mean_conc_file << " " << _conc_mean[i][it->second];
   }
-  file << "\n";
-  for (std::unordered_map<std::string, int>::iterator it1 = _mutable_param_to_index.begin(); it1 != _mutable_param_to_index.end(); ++it1)
+  _mean_conc_file << "\n";
+  
+  /*** Concentration vector variance file ***/
+  _var_conc_file << parameter;
+  for (std::unordered_map<std::string, int>::iterator it = _met_to_index.begin(); it != _met_to_index.end(); ++it)
   {
-    file << it1->first;
-    for (std::unordered_map<std::string, int>::iterator it2 = _met_to_index.begin(); it2 != _met_to_index.end(); ++it2)
-    {
-      file << " " << _conc_var[it1->second][it2->second];
-    }
-    file << "\n";
+    _var_conc_file << " " << _conc_var[i][it->second];
+  }
+  _var_conc_file << "\n";
+  
+  /*** Sum of concentrations exploration file ***/
+  _sum_file << parameter << " " << _c_opt << " " << _c_mean[i] << " " << _c_var[i] << "\n";
+  
+  /*** Fitness exploration file ***/
+  _sum_file << parameter << " " << 1.0 << " " << _w_mean[i] << " " << _w_var[i] << "\n";
+}
+
+/**
+ * \brief    Close saving files
+ * \details  --
+ * \param    void
+ * \return   \e void
+ */
+void SensitivityAnalysis::close_files( void )
+{
+  _param_file.close();
+  _mean_conc_file.close();
+  _var_conc_file.close();
+  _sum_file.close();
+  _fitness_file.close();
+}
+
+/**
+ * \brief    Write initial concentrations in a file
+ * \details  --
+ * \param    void
+ * \return   \e void
+ */
+void SensitivityAnalysis::write_initial_concentrations( void )
+{
+  std::ofstream file("init_conc.txt", std::ios::out | std::ios::trunc);
+  file << "met conc\n";
+  for (std::unordered_map<std::string, int>::iterator it = _met_to_index.begin(); it != _met_to_index.end(); ++it)
+  {
+    file << it->first << " " << _initial_s[it->second] << "\n";
   }
   file.close();
 }
@@ -368,20 +383,23 @@ void SensitivityAnalysis::analyze_parameter( int i, double sigma, int N )
   /*-----------------------*/
   /* 2) Compute statistics */
   /*-----------------------*/
-  _param_mean[i] /= counter;
-  _param_var[i]  /= counter;
-  _param_var[i]  -= _param_mean[i]*_param_mean[i];
-  _c_mean[i]     /= counter;
-  _c_var[i]      /= counter;
-  _c_var[i]      -= _c_mean[i]*_c_mean[i];
-  _w_mean[i]     /= counter;
-  _w_var[i]      /= counter;
-  _w_var[i]      -= _w_mean[i]*_w_mean[i];
-  for (int j = 0; j < _m; j++)
+  if (counter > 0.0)
   {
-    _conc_mean[i][j] /= counter;
-    _conc_var[i][j]  /= counter;
-    _conc_var[i][j]  -= _conc_mean[i][j]*_conc_mean[i][j];
+    _param_mean[i] /= counter;
+    _param_var[i]  /= counter;
+    _param_var[i]  -= _param_mean[i]*_param_mean[i];
+    _c_mean[i]     /= counter;
+    _c_var[i]      /= counter;
+    _c_var[i]      -= _c_mean[i]*_c_mean[i];
+    _w_mean[i]     /= counter;
+    _w_var[i]      /= counter;
+    _w_var[i]      -= _w_mean[i]*_w_mean[i];
+    for (int j = 0; j < _m; j++)
+    {
+      _conc_mean[i][j] /= counter;
+      _conc_var[i][j]  /= counter;
+      _conc_var[i][j]  -= _conc_mean[i][j]*_conc_mean[i][j];
+    }
   }
 }
 

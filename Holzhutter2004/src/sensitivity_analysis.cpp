@@ -40,7 +40,6 @@ int main( int argc, char const** argv )
   
   std::cout << "3) Run sensitivity analysis ...\n";
   analysis->run_analysis();
-  analysis->save_analysis();
   
   std::cout << "4) Free the memory  ...\n";
   delete analysis;
