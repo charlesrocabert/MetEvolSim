@@ -3,8 +3,10 @@
 #define __Holzhutter2004__Prng__
 
 #include <iostream>
-#include <assert.h>
 #include <cmath>
+#include <cstring>
+#include <stdlib.h>
+#include <assert.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 

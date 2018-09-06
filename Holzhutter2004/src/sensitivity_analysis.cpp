@@ -12,13 +12,11 @@
 #include "./lib/Enums.h"
 #include "./lib/Structs.h"
 #include "./lib/Parameters.h"
-#include "./lib/Individual.h"
-#include "./lib/Population.h"
+#include "./lib/SensitivityAnalysis.h"
 
 void readArgs( int argc, char const** argv, Parameters* parameters );
 void printUsage( void );
 void printHeader( void );
-void createFolders( void );
 
 
 /**
@@ -30,49 +28,23 @@ void createFolders( void );
  */
 int main( int argc, char const** argv )
 {
-  createFolders();
-  
-  /*---------------------------------*/
-  /* 1) Read command line parameters */
-  /*---------------------------------*/
+  std::cout << "1) Load parameters ...\n";
   Parameters* parameters = new Parameters();
   readArgs(argc, argv, parameters);
-  
   parameters->print_parameters();
   parameters->save_parameters();
   
-  /*---------------------------------*/
-  /* 2) Initialize the population    */
-  /*---------------------------------*/
-  Population* pop = new Population(parameters);
-  pop->initialize();
-  pop->open_statistic_files();
+  std::cout << "2) Create sensitivity analysis framework ...\n";
+  SensitivityAnalysis* analysis = new SensitivityAnalysis(parameters);
+  analysis->initialize();
   
-  /*---------------------------------*/
-  /* 2) Evolve the population        */
-  /*---------------------------------*/
-  while (pop->get_generation() < parameters->get_generations())
-  {
-    pop->next_generation();
-    if (pop->get_generation()%1 == 0)
-    {
-      std::cout << "> Generation " << pop->get_generation() << "\n";
-    }
-    if (pop->get_generation()%STATISTICS_GENERATION_STEP == 0)
-    {
-      //std::cout << "> Generation " << pop->get_generation() << "\n";
-      pop->compute_statistics();
-      pop->write_statistic_files();
-      pop->write_best_individual();
-      pop->get_tree()->prune();
-      pop->get_tree()->compute_best_evolution_rate("best/best_evolrate.txt");
-      pop->get_tree()->compute_mean_evolution_rate("best/mean_evolrate.txt");
-      pop->get_tree()->recover_best_fixed_mutations("best/best_fixed_mutations.txt");
-    }
-  }
-  pop->close_statistic_files();
-  delete pop;
-  pop = NULL;
+  std::cout << "3) Run sensitivity analysis ...\n";
+  analysis->run_analysis();
+  analysis->save_analysis();
+  
+  std::cout << "4) Free the memory  ...\n";
+  delete analysis;
+  analysis = NULL;
   delete parameters;
   parameters = NULL;
   return EXIT_SUCCESS;
@@ -89,15 +61,13 @@ int main( int argc, char const** argv )
 void readArgs( int argc, char const** argv, Parameters* parameters )
 {
   std::unordered_map<std::string, bool> options;
-  options["seed"]        = false;
-  options["generations"] = false;
-  options["n"]           = false;
-  options["sigma"]       = false;
-  options["mu"]          = false;
-  options["w"]           = false;
-  options["alpha"]       = false;
-  options["beta"]        = false;
-  options["Q"]           = false;
+  options["seed"]  = false;
+  options["N"]     = false;
+  options["sigma"] = false;
+  options["w"]     = false;
+  options["alpha"] = false;
+  options["beta"]  = false;
+  options["Q"]     = false;
   for (int i = 0; i < argc; i++)
   {
     if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
@@ -123,30 +93,17 @@ void readArgs( int argc, char const** argv, Parameters* parameters )
         options["seed"] = true;
       }
     }
-    if (strcmp(argv[i], "-generations") == 0 || strcmp(argv[i], "--generations") == 0)
+    if (strcmp(argv[i], "-N") == 0 || strcmp(argv[i], "--N") == 0)
     {
       if (i+1 == argc)
       {
-        std::cout << "Error: --generations parameter value is missing.\n";
+        std::cout << "Error: --N parameter value is missing.\n";
         exit(EXIT_FAILURE);
       }
       else
       {
-        parameters->set_generations(atoi(argv[i+1]));
-        options["generations"] = true;
-      }
-    }
-    if (strcmp(argv[i], "-n") == 0 || strcmp(argv[i], "--n") == 0)
-    {
-      if (i+1 == argc)
-      {
-        std::cout << "Error: --n parameter value is missing.\n";
-        exit(EXIT_FAILURE);
-      }
-      else
-      {
-        parameters->set_n(atoi(argv[i+1]));
-        options["n"] = true;
+        parameters->set_n(atof(argv[i+1]));
+        options["N"] = true;
       }
     }
     if (strcmp(argv[i], "-sigma") == 0 || strcmp(argv[i], "--sigma") == 0)
@@ -160,19 +117,6 @@ void readArgs( int argc, char const** argv, Parameters* parameters )
       {
         parameters->set_sigma(atof(argv[i+1]));
         options["sigma"] = true;
-      }
-    }
-    if (strcmp(argv[i], "-mu") == 0 || strcmp(argv[i], "--mu") == 0)
-    {
-      if (i+1 == argc)
-      {
-        std::cout << "Error: --mu parameter value is missing.\n";
-        exit(EXIT_FAILURE);
-      }
-      else
-      {
-        parameters->set_mu(atof(argv[i+1]));
-        options["mu"] = true;
       }
     }
     if (strcmp(argv[i], "-w") == 0 || strcmp(argv[i], "--w") == 0)
@@ -227,10 +171,6 @@ void readArgs( int argc, char const** argv, Parameters* parameters )
         options["Q"] = true;
       }
     }
-    if (strcmp(argv[i], "-PC") == 0 || strcmp(argv[i], "--PC") == 0)
-    {
-      parameters->set_parallel_computing(true);
-    }
   }
   bool parameter_lacking = false;
   for (auto it = options.begin(); it != options.end(); ++it)
@@ -256,33 +196,27 @@ void readArgs( int argc, char const** argv, Parameters* parameters )
 void printUsage( void )
 {
   std::cout << "*************** Holzhutter2004 ***************\n";
-  std::cout << "Usage: run -h or --help\n";
-  std::cout << "   or: run [options]\n";
+  std::cout << "Usage: sensitivity_analysis -h or --help\n";
+  std::cout << "   or: sensitivity_analysis [options]\n";
   std::cout << "Options are:\n";
   std::cout << "  -h, --help\n";
   std::cout << "        print this help, then exit (optional)\n";
   std::cout << "  -v, --version\n";
   std::cout << "        print the current version, then exit (optional)\n";
   std::cout << "  -seed, --seed\n";
-  std::cout << "        specify the seed of the pseudorandom numbers generator (mandatory)\n";
-  std::cout << "  -generations, --generations\n";
-  std::cout << "        specify the number of generations (mandatory)\n";
-  std::cout << "  -n, --n\n";
-  std::cout << "        specify the population size (mandatory)\n";
-  std::cout << "  -w, --w\n";
   std::cout << "        specify the standard deviation of the fitness function (mandatory)\n";
+  std::cout << "  -N, --N\n";
+  std::cout << "        specify the number of iterations for sensitivity analysis (mandatory)\n";
   std::cout << "  -sigma, --sigma\n";
+  std::cout << "        specify the seed of the pseudorandom numbers generator (mandatory)\n";
+  std::cout << "  -w, --w\n";
   std::cout << "        specify the mutation size standard deviation (mandatory)\n";
-  std::cout << "  -mu, --mu\n";
-  std::cout << "        specify the mutation rate (per metabolite per generation) (mandatory)\n";
   std::cout << "  -alpha, --alpha\n";
   std::cout << "        specify the alpha parameter of the fitness function (mandatory)\n";
   std::cout << "  -beta, --beta\n";
   std::cout << "        specify the beta parameter of the fitness function (mandatory)\n";
   std::cout << "  -Q, --Q\n";
   std::cout << "        specify the Q parameter of the fitness function (mandatory)\n";
-  std::cout << "  -PC, --PC\n";
-  std::cout << "        activate parallel computing (optional)\n";
   std::cout << "\n";
 }
 
@@ -297,22 +231,3 @@ void printHeader( void )
   std::cout << "*************** Holzhutter2004 ***************\n";
 }
 
-/**
- * \brief    Create simulation folders
- * \details  --
- * \param    void
- * \return   \e void
- */
-void createFolders( void )
-{
-  system("rm -rf ancestor");
-  system("rm -rf best");
-  system("rm -rf population");
-  system("rm -rf parameters");
-  system("rm -rf figures");
-  system("mkdir ancestor");
-  system("mkdir best");
-  system("mkdir population");
-  system("mkdir parameters");
-  system("mkdir figures");
-}

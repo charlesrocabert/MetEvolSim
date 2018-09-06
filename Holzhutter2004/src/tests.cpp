@@ -2,9 +2,11 @@
 #include "../cmake/Config.h"
 
 #include <iostream>
-#include <assert.h>
 #include <fstream>
 #include <unordered_map>
+#include <cstring>
+#include <stdlib.h>
+#include <assert.h>
 
 #include "./lib/Macros.h"
 #include "./lib/Enums.h"

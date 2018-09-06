@@ -4,10 +4,11 @@
 
 #include <iostream>
 #include <cmath>
-#include <cstring>
 #include <sstream>
 #include <unordered_map>
 #include <tbb/tbb.h>
+#include <cstring>
+#include <stdlib.h>
 #include <assert.h>
 
 #include "Macros.h"

@@ -12,14 +12,14 @@
 #define MINIMUM_CONCENTRATION   1e-06 /*!< Minimum concentration             */
 #define MAXIMUM_CONCENTRATION   1e+06 /*!< Maximum concentration             */
 #define STEADY_STATE_DIFF_TH    1e-08 /*!< Steady-state difference threshold */
-#define ANC_STEADY_STATE_MAX_T  1e-02 /*!< Maximum integration time          */
-#define IND_STEADY_STATE_MAX_T  1e-02 /*!< Maximum integration time          */
+#define ANC_STEADY_STATE_MAX_T  1e-03 /*!< Maximum integration time          */
+#define IND_STEADY_STATE_MAX_T  1e-03 /*!< Maximum integration time          */
 
 /****************************/
 /* Simulation parameters    */
 /****************************/
 
-#define STATISTICS_GENERATION_STEP  100  /*!< Generation step used to save stats */
+#define STATISTICS_GENERATION_STEP  10  /*!< Generation step used to save stats */
 
 
 #endif /* defined(__Holzhutter2004__Macros__) */

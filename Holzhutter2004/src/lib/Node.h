@@ -5,6 +5,8 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include <cstring>
+#include <stdlib.h>
 #include <assert.h>
 
 #include "Macros.h"

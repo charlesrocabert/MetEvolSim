@@ -4,6 +4,8 @@
 
 #include <iostream>
 #include <fstream>
+#include <cstring>
+#include <stdlib.h>
 #include <assert.h>
 
 #include "Macros.h"

@@ -3,8 +3,10 @@
 #define __Holzhutter2004__Structs__
 
 #include <iostream>
-#include <assert.h>
 #include <vector>
+#include <cstring>
+#include <stdlib.h>
+#include <assert.h>
 
 #include "Macros.h"
 #include "Enums.h"

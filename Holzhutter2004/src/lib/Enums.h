@@ -3,6 +3,8 @@
 #define __Holzhutter2004__Enums__
 
 #include <iostream>
+#include <cstring>
+#include <stdlib.h>
 #include <assert.h>
 
 

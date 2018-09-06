@@ -5,10 +5,12 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
-#include <cstring>
 #include <cmath>
 #include <fstream>
 #include <sstream>
+#include <cstring>
+#include <stdlib.h>
+#include <assert.h>
 
 #include "Macros.h"
 #include "Enums.h"

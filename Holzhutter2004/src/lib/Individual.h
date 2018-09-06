@@ -7,6 +7,8 @@
 #include <sstream>
 #include <unordered_map>
 #include <zlib.h>
+#include <cstring>
+#include <stdlib.h>
 #include <assert.h>
 
 #include "Macros.h"
