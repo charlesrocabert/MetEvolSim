@@ -207,8 +207,17 @@ void SensitivityAnalysis::run_analysis( void )
   int counter = 1;
   for (std::unordered_map<std::string, int>::iterator it = _mutable_param_to_index.begin(); it != _mutable_param_to_index.end(); ++it)
   {
+    /*---------------------*/
+    /* 1) Run analysis     */
+    /*---------------------*/
     std::cout << "   > Analyzing parameter " << it->first << " (" << counter << "/" << _p_mutable << ")\n";
     analyze_parameter(it->second, _parameters->get_sigma(), _parameters->get_n());
+    
+    /*---------------------*/
+    /* 2) Reset parameters */
+    /*---------------------*/
+    memcpy(_mutable_params, _initial_mutable_params, sizeof(double)*_p_mutable);
+    memcpy(_s, _initial_s, sizeof(double)*_m);
     counter++;
   }
 }
