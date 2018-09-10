@@ -219,6 +219,7 @@ void SensitivityAnalysis::run_analysis( void )
     /* 2) Save data        */
     /*---------------------*/
     write_files(it->first);
+    flush_files();
     
     /*---------------------*/
     /* 3) Reset parameters */
@@ -302,7 +303,22 @@ void SensitivityAnalysis::write_files( std::string parameter )
   _sum_file << parameter << " " << _c_opt << " " << _c_mean[i] << " " << _c_var[i] << "\n";
   
   /*** Fitness exploration file ***/
-  _sum_file << parameter << " " << 1.0 << " " << _w_mean[i] << " " << _w_var[i] << "\n";
+  _fitness_file << parameter << " " << 1.0 << " " << _w_mean[i] << " " << _w_var[i] << "\n";
+}
+
+/**
+ * \brief    Flush saving files
+ * \details  --
+ * \param    void
+ * \return   \e void
+ */
+void SensitivityAnalysis::flush_files( void )
+{
+  _param_file.flush();
+  _mean_conc_file.flush();
+  _var_conc_file.flush();
+  _sum_file.flush();
+  _fitness_file.flush();
 }
 
 /**
@@ -356,9 +372,12 @@ void SensitivityAnalysis::analyze_parameter( int i, double sigma, int N )
   /* 1) Run the analysis   */
   /*-----------------------*/
   double counter = 0.0;
-  for (int rep = 0; rep < N; rep++)
+  for (int rep = 1; rep <= N; rep++)
   {
-    //std::cout << rep << "\n";
+    if (rep%10 == 0)
+    {
+      std::cout << "     " << 100.0*(double)rep/(double)N << "%\n";
+    }
     mutate(i, sigma);
     compute_steady_state();
     compute_c();

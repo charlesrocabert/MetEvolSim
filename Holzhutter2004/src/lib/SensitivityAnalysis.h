@@ -53,6 +53,7 @@ public:
   void run_analysis( void );
   void open_files( void );
   void write_files( std::string parameter );
+  void flush_files( void );
   void close_files( void );
   void write_initial_concentrations( void );
   

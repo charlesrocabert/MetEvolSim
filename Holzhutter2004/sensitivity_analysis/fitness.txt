@@ -1,0 +1,2 @@
+name ancestor mean var
+kLDHv14 1 6.79298e-29 5.38175e-55
