@@ -1,2 +1,0 @@
-name ancestor mean var
-kLDHv14 16.2509 16.2588 5.02396e-07
