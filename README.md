@@ -1,3 +1,4 @@
 # MetEvolSim
 
-An individual-based simulator of metabolome evolution
+Copasi-based (http://copasi.org/) tools dedicated to the study of metabolome evolution.
+
