@@ -33,6 +33,8 @@ def load_model( NAME ):
 	elif NAME == "Smallbone2013":
 		model = Smallbone2013()
 		return model
+
+
 ##################
 #      MAIN      #
 ##################
@@ -95,11 +97,3 @@ if __name__ == '__main__':
 				write_steady_state(f, param, param_value, factor, concentrations, fluxes)
 				model.deterministic_parameter_change(param, 0.0)
 				factor += EXPLORATION_STEP
-
-
-
-
-
-
-
-

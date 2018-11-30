@@ -75,20 +75,23 @@ class Holzhutter2004:
 
 	### Make a deterministic parameter mutation by a given factor ###
 	def deterministic_parameter_change( self, param, factor ):
-		#self.parameters[param]["mutant"] = self.parameters[param]["ancestor"]*factor
 		log_val = np.log10(self.parameters[param]["ancestor"])
 		self.parameters[param]["mutant"] = np.power(10.0, log_val+factor)
 
 	### Make a random parameter mutation by a given std sigma ###
 	def random_parameter_change( self, param, sigma ):
-		factor = np.random.normal(1.0, sigma, 1)
-		self.parameters[param]["mutant"] = self.parameters[param]["ancestor"]*factor
-
-	### Make a drifting random parameter mutation by a given std sigma ###
-	def random_drift_parameter_change( self, param, sigma ):
-		factor = np.random.normal(1.0, sigma, 1)
-		self.parameter[param]["mutant"] *= factor
-
+		factor  = np.random.normal(0.0, sigma, 1)
+		log_val = np.log10(self.parameters[param]["ancestor"])
+		self.parameters[param]["mutant"] = np.power(10.0, log_val+factor)
+	
+	### Mutate a random parameter ###
+	def mutate( self, sigma ):
+		index   = np.random.randint(len(self.parameters.keys()), size=1)[0]
+		param   = self.parameters.keys()[index]
+		factor  = np.random.normal(0.0, sigma, 1)[0]
+		self.parameters[param]["mutant"] *= np.power(10.0, factor)
+		return param, self.parameters[param]["mutant"], factor
+	
 	### Write ancestor SBML file ###
 	def write_ancestor_SBML_file( self ):
 		f = open("output/ancestor.xml", "w")
@@ -565,13 +568,3 @@ if __name__ == '__main__':
 	model.run_copasi_for_ancestor()
 	model.run_copasi_for_mutant()
 	print model.get_ancestor_steady_state()
-
-
-
-
-
-
-
-
-
-
