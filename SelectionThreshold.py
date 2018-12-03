@@ -58,31 +58,56 @@ def compute_tflux_distance( ANCESTOR_FLUXES, MUTANT_FLUXES ):
 			distance += (anc_flux-mut_flux)*(anc_flux-mut_flux)
 	return np.sqrt(distance)
 
+### Read command line arguments ###
+def readArgs( argv ):
+	arguments                        = {}
+	arguments["iterations"]          = 0
+	arguments["mutation_size"]       = 0.0
+	arguments["selection_scheme"]    = ""
+	arguments["selection_threshold"] = 0.0
+	arguments["model_name"]          = ""
+	for i in range(len(argv)):
+		if argv[i] == "-iterations":
+			arguments["iterations"] = int(argv[i+1])
+		if argv[i] == "-mutation-size":
+			arguments["mutation_size"] = float(argv[i+1])
+		if argv[i] == "-selection-scheme":
+			arguments["selection_scheme"] = argv[i+1]
+		if argv[i] == "-selection-threshold":
+			arguments["selection_threshold"] = float(argv[i+1])
+		if argv[i] == "-model-name":
+			arguments["model_name"] = argv[i+1]
+	return arguments
 
+		
 ##################
 #      MAIN      #
 ##################
 
-ITERATIONS          = 10000
-LOG_MUTATION_SIZE   = 0.1
-SELECTION_SCHEME    = "TFLUX"
-SELECTION_THRESHOLD = -3.0
-MODEL_NAME          = "Holzhutter2004"
-
 if __name__ == '__main__':
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	# 1) Create the model                                     #
+	# 1) Read command line arguments                          #
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	ARGUMENTS           = readArgs(sys.argv)
+	ITERATIONS          = ARGUMENTS["iterations"]
+	LOG_MUTATION_SIZE   = ARGUMENTS["mutation_size"]
+	SELECTION_SCHEME    = ARGUMENTS["selection_scheme"]
+	SELECTION_THRESHOLD = ARGUMENTS["selection_threshold"]
+	MODEL_NAME          = ARGUMENTS["model_name"]
+	
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	# 2) Create the model                                     #
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	model = load_model(MODEL_NAME)
 	model.load_sbml()
 
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	# 2) Get ancestor steady-state                            #
+	# 3) Get ancestor steady-state                            #
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	ancestor_conc, ancestor_flux = get_ancestor_steady_state(model)
 	
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	# 3) Create the output file and write header and ancestor #
+	# 4) Create the output file and write header and ancestor #
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	f          = open("output/mutation_accumulation.txt", "w")
 	header     = "iteration param_name param_val param_factor"
@@ -100,7 +125,7 @@ if __name__ == '__main__':
 	f.flush()
 
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	# 4) Run the mutation accumulation experiment             #
+	# 5) Run the mutation accumulation experiment             #
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	for iteration in range(1, ITERATIONS+1):
 		print "> iteration "+str(iteration)
@@ -126,6 +151,6 @@ if __name__ == '__main__':
 			print "    dropped."
 			
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	# 5) Close output file                                    #
+	# 6) Close output file                                    #
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	f.close()
