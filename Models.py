@@ -86,13 +86,13 @@ class Holzhutter2004:
 	
 	### Mutate a random parameter ###
 	def mutate( self, sigma ):
-		index   = np.random.randint(len(self.parameters.keys()), size=1)[0]
-		param_name   = self.parameters.keys()[index]
+		param_index  = np.random.randint(len(self.parameters.keys()), size=1)[0]
+		param_name   = self.parameters.keys()[param_index]
 		anc_value    = self.parameters[param_name]["mutant"]
 		factor       = np.random.normal(0.0, sigma, 1)[0]
 		self.parameters[param_name]["mutant"] *= np.power(10.0, factor)
 		mut_value    = self.parameters[param_name]["mutant"]
-		return param_name, anc_value, mut_value, factor
+		return param_index, param_name, anc_value, mut_value, factor
 	
 	### Write ancestor SBML file ###
 	def write_ancestor_SBML_file( self ):
