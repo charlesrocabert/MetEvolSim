@@ -47,12 +47,14 @@ def run_thread( folder, arguments ):
 #      MAIN      #
 ##################
 
-ARGUMENTS           = {"iterations":10000, "mutation_size":0.1, "selection_scheme":"TFLUX", "selection_threshold":0.0, "model_name":"Holzhutter2004"}
+ARGUMENTS           = {"iterations":10000, "mutation_size":0.01, "selection_scheme":"TFLUX", "selection_threshold":0.0, "model_name":"Holzhutter2004"}
 SELECTION_THRESHOLD = [2.0, 1.0, 0.0, -1.0, -2.0, -3.0, -4.0, -5.0, -6.0, -7.0]
+REPETITIONS         = 10
 
 if __name__ == '__main__':
-    N = len(SELECTION_THRESHOLD)
-    for i in range(1, N+1):
-        FOLDER                           = str(i)
-        ARGUMENTS["selection_threshold"] = SELECTION_THRESHOLD[(i-1)]
-        run_thread(FOLDER, ARGUMENTS)
+    NTH    = len(SELECTION_THRESHOLD)
+    FOLDER = 1
+    for i in range(NTH):
+        ARGUMENTS["selection_threshold"] = SELECTION_THRESHOLD[i]
+        for rep in range(1, REPETITIONS+1):
+            run_thread(FOLDER, ARGUMENTS)

@@ -29,9 +29,9 @@ tflux_diff = d$mutant_tflux-d$wt_tflux
 mut_count = c(sum(tflux_diff<0), sum(tflux_diff>0))
 barplot(mut_count, col=c("tomato", "darkolivegreen3"))
 
-plot(d$mutant_csum, pch=20)
-abline(h=d$wt_csum[1], col="tomato", lty=2, lwd=2, main="Csum")
+plot(d$mutant_csum-d$wt_csum, pch=20)
+abline(h=0.0, col="tomato", lty=2, lwd=2, main="Csum")
 
-plot(d$mutant_tflux, pch=20)
-abline(h=d$wt_tflux[1], col="tomato", lty=2, lwd=2, main="Csum")
+plot(d$mutant_tflux-d$wt_tflux, pch=20)
+abline(h=0.0, col="tomato", lty=2, lwd=2, main="Csum")
 
