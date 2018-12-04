@@ -32,9 +32,9 @@ def build_command_line( folder, arguments ):
 ### Run a thread ###
 def run_thread( folder, arguments ):
     print "> Run thread "+folder
-    write_parameters(folder, arguments)
     os.system("rm -rf "+folder)
     os.mkdir(folder)
+    write_parameters(folder, arguments)
     os.mkdir(folder+"/output")
     os.system("cp -r resources "+folder+"/.")
     cmd_line = build_command_line(folder, arguments)

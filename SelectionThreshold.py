@@ -122,7 +122,8 @@ if __name__ == '__main__':
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	model = load_model(MODEL_NAME)
 	model.load_sbml()
-
+	model.load_reaction_to_param_map()
+	
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	# 3) Get ancestor steady-state                            #
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -154,7 +155,8 @@ if __name__ == '__main__':
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	for iteration in range(1, ITERATIONS+1):
 		print "> iteration "+str(iteration)
-		param_index, param_name, param_anc, param_mut, param_factor = model.mutate(LOG_MUTATION_SIZE)
+		#param_index, param_name, param_anc, param_mut, param_factor = model.mutate_uniform_param(LOG_MUTATION_SIZE)
+		param_index, param_name, param_anc, param_mut, param_factor = model.mutate_uniform_reaction(LOG_MUTATION_SIZE)
 		model.write_mutant_SBML_file()
 		model.create_mutant_cps_file()
 		model.edit_mutant_cps_file()

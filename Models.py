@@ -17,11 +17,12 @@ class Holzhutter2004:
 
 	#### Default constructor ###
 	def __init__( self ):
-		self.upper_text = ""
-		self.lower_text = ""
-		self.upper_tag  = "<listOfParameters>"
-		self.lower_tag  = "</listOfParameters>"
-		self.parameters = {}
+		self.upper_text            = ""
+		self.lower_text            = ""
+		self.upper_tag             = "<listOfParameters>"
+		self.lower_tag             = "</listOfParameters>"
+		self.parameters            = {}
+		self.reaction_to_param_map = {}
 
 	### Load the SBML model ###
 	def load_sbml( self ):
@@ -52,6 +53,22 @@ class Holzhutter2004:
 				self.parameters[param]["mutant"]   = float(value)
 				self.parameters[param]["head"]     = headline
 				self.parameters[param]["tail"]     = tailline
+	
+	### Load the reaction-to-parameters map ###
+	def load_reaction_to_param_map( self ):
+		self.reaction_to_param_map = {}
+		f = open("resources/reaction_to_param_map.txt", "r")
+		l = f.readline()
+		while l:
+			l = l.strip(" ;\n").split("[")
+			reaction = "v"+l[1].split("]")[0]
+			param    = l[2].split("\"")[1]
+			if reaction not in self.reaction_to_param_map.keys():
+				self.reaction_to_param_map[reaction] = [param]
+			else:
+				self.reaction_to_param_map[reaction].append(param)
+			l = f.readline()
+		f.close()
 	
 	### Get the list of kinetic parameters ###
 	def get_parameters_list( self ):
@@ -84,8 +101,8 @@ class Holzhutter2004:
 		log_val = np.log10(self.parameters[param]["ancestor"])
 		self.parameters[param]["mutant"] = np.power(10.0, log_val+factor)
 	
-	### Mutate a random parameter ###
-	def mutate( self, sigma ):
+	### Mutate uniformely among parameters ###
+	def mutate_uniform_param( self, sigma ):
 		param_index  = np.random.randint(len(self.parameters.keys()), size=1)[0]
 		param_name   = self.parameters.keys()[param_index]
 		anc_value    = self.parameters[param_name]["mutant"]
@@ -94,6 +111,19 @@ class Holzhutter2004:
 		mut_value    = self.parameters[param_name]["mutant"]
 		return param_index, param_name, anc_value, mut_value, factor
 	
+	### Mutate uniformely among reactions ###
+	def mutate_uniform_reaction( self, sigma ):
+		reaction_index = np.random.randint(len(self.reaction_to_param_map.keys()), size=1)[0]
+		reaction       = self.reaction_to_param_map.keys()[reaction_index]
+		index          = np.random.randint(len(self.reaction_to_param_map[reaction]), size=1)[0]
+		param_name     = self.reaction_to_param_map[reaction][index]
+		param_index    = self.parameters.keys().index(param_name)
+		anc_value      = self.parameters[param_name]["mutant"]
+		factor         = np.random.normal(0.0, sigma, 1)[0]
+		self.parameters[param_name]["mutant"] *= np.power(10.0, factor)
+		mut_value = self.parameters[param_name]["mutant"]
+		return param_index, param_name, anc_value, mut_value, factor
+		
 	### Write ancestor SBML file ###
 	def write_ancestor_SBML_file( self ):
 		f = open("output/ancestor.xml", "w")
