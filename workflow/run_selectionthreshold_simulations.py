@@ -35,6 +35,8 @@ def run_thread( folder, arguments ):
     write_parameters(folder, arguments)
     os.system("rm -rf "+folder)
     os.mkdir(folder)
+    os.mkdir(folder+"/output")
+    os.system("cp -r resources "+folder+"/.")
     cmd_line = build_command_line(folder, arguments)
     os.chdir(folder)
     os.system(cmd_line)
