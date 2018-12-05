@@ -134,7 +134,7 @@ if __name__ == '__main__':
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	# 4) Create the output file and write header and ancestor #
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	f          = open("output/mutation_accumulation.txt", "w")
+	f          = open("output/experiment.txt", "w")
 	header     = "iteration param_index param_name param_val param_factor"
 	first_line = "0 0 ancestor 0.0 0.0"
 	for item in ancestor_conc:

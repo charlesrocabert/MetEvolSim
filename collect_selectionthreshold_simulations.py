@@ -42,12 +42,12 @@ def run_thread( folder, arguments ):
     os.chdir("..")
 
 ### Collect data ###
-def collect_data( selection_threshold, repetitions ):
+def collect_data( selection_threshold, repetitions, folder ):
     NTH    = len(selection_threshold)
-    FOLDER = 1
+    FOLDER = folder
     for i in range(NTH):
         for rep in range(1, repetitions+1):
-            print "> Collect data for "+str(SELECTION_THRESHOLD[i])+" (rep "+str(rep)+")"
+            print "> Collect data for "+str(selection_threshold[i])+" (rep "+str(rep)+")"
             param_filename = "parameters_"+str(FOLDER)+".txt"
             expe_filename  = "experiment_"+str(FOLDER)+".txt"
             os.system("cp "+str(FOLDER)+"/parameters.txt collected/"+param_filename)
@@ -65,11 +65,4 @@ REPETITIONS         = 10
 FOLDER              = 1
 
 if __name__ == '__main__':
-    NTH    = len(SELECTION_THRESHOLD)
-    FOLDER = 1
-    for i in range(NTH):
-        ARGUMENTS["selection_threshold"] = SELECTION_THRESHOLD[i]
-        for rep in range(1, REPETITIONS+1):
-            print "> Run thread "+str(SELECTION_THRESHOLD[i])+" (rep "+str(rep)+")"
-            run_thread(str(FOLDER), ARGUMENTS)
-            FOLDER += 1
+    collect_data(SELECTION_THRESHOLD, REPETITIONS, FOLDER)
