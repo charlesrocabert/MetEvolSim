@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+#*********************************************************************
+# MetEvolSim (Metabolome Evolution Simulator)
+# Copyright (c) 2018-2019 Charles Rocabert, Gábor Boross, Balázs Papp
+# All rights reserved
+#*********************************************************************
+
 import os
 import sys
 import numpy as np
