@@ -11,16 +11,11 @@ import os
 import sys
 import numpy as np
 import subprocess
-from Models import *
+from Model import *
 
-### Compute the ancestor steady-state ###
-def get_ancestor_steady_state( MODEL ):
-	MODEL.write_ancestor_SBML_file()
-	MODEL.create_ancestor_cps_file()
-	MODEL.edit_ancestor_cps_file()
-	MODEL.run_copasi_for_ancestor()
-	metabolites, reactions = MODEL.get_ancestor_steady_state()
-	return metabolites, reactions
+### Compute the WT steady-state ###
+def get_WT_steady_state( model ):
+	return model.compute_WT_steady_state()
 
 ### Save the steady-state as a new line in the data file ###
 def write_steady_state( FILE, ITERATION, PARAMETER_NAME, PARAMETER_VALUE, PARAMETER_FACTOR, CONCENTRATIONS, FLUXES ):
@@ -32,14 +27,6 @@ def write_steady_state( FILE, ITERATION, PARAMETER_NAME, PARAMETER_VALUE, PARAME
 	f.write(line+"\n")
 	f.flush()
 
-def load_model( NAME ):
-	if NAME == "Holzhutter2004":
-		model = Holzhutter2004()
-		return model
-	elif NAME == "Smallbone2013":
-		model = Smallbone2013()
-		return model
-
 
 ##################
 #      MAIN      #
@@ -47,14 +34,13 @@ def load_model( NAME ):
 
 ITERATIONS        = 10000
 LOG_MUTATION_SIZE = 0.1
-MODEL_NAME        = "Holzhutter2004"
+MODEL_FILENAME    = "Holzhutter2004.xml"
 
 if __name__ == '__main__':
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	# 1) Create the model                                     #
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	model = load_model(MODEL_NAME)
-	model.load_sbml()
+	model = Model(MODEL_FILENAME)
 
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	# 2) Get ancestor steady-state                            #

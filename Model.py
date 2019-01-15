@@ -167,9 +167,19 @@ class Model:
 		os.system("rm ./output/mutant_output.txt")
 		cmd_line = "./resources/CopasiSE ./output/mutant.cps"
 		process = subprocess.call([cmd_line], stdout=subprocess.PIPE, shell=True)
-
-	### Get ancestor steady-state values from Copasi output ###
-	def get_WT_steady_state( self ):
+	
+	### Compute WT steady-state ###
+	def compute_WT_steady_state( self ):
+		#-----------------------------------------#
+		# 1) Compute the steady-state with Copasi #
+		#-----------------------------------------#
+		self.write_WT_SBML_file()
+		self.create_WT_cps_file()
+		self.edit_WT_cps_file()
+		self.run_copasi_for_WT()
+		#-----------------------------------------#
+		# 2) Extract steady-state                 #
+		#-----------------------------------------#
 		metabolites = []
 		reactions   = []
 		parse_metabolites = False
@@ -196,9 +206,19 @@ class Model:
 			l = f.readline()
 		f.close()
 		return metabolites, reactions
-
-	### Get mutant steady-state values from Copasi output ###
-	def get_mutant_steady_state( self ):
+	
+	### Compute mutant steady-state ###
+	def compute_mutant_steady_state( self ):
+		#-----------------------------------------#
+		# 1) Compute the steady-state with Copasi #
+		#-----------------------------------------#
+		self.write_mutant_SBML_file()
+		self.create_mutant_cps_file()
+		self.edit_mutant_cps_file()
+		self.run_copasi_for_mutant()
+		#-----------------------------------------#
+		# 2) Extract steady-state                 #
+		#-----------------------------------------#
 		metabolites = []
 		reactions   = []
 		parse_metabolites = False
@@ -211,11 +231,11 @@ class Model:
 			if l == "\n" and parse_reactions:
 				 parse_reactions = False
 			if parse_metabolites:
-				name = l.split("\t")[0]
+				name = l.split("\t")[0].replace(" ", "-")
 				val  = l.split("\t")[1]
 				metabolites.append([name, val])
 			if parse_reactions:
-				name = l.split("\t")[0]
+				name = l.split("\t")[0].replace(" ", "-")
 				val  = l.split("\t")[1]
 				reactions.append([name, val])
 			if l.startswith("Species"):
@@ -225,19 +245,19 @@ class Model:
 			l = f.readline()
 		f.close()
 		return metabolites, reactions
-
-
+	
+	
 ##################
 #      MAIN      #
 ##################
+
 if __name__ == '__main__':
 	model = Model("resources/holzhutter2004.xml")
-	model.write_WT_SBML_file()
-	model.write_mutant_SBML_file()
-	model.create_WT_cps_file()
-	model.create_mutant_cps_file()
-	model.edit_WT_cps_file()
-	model.edit_mutant_cps_file()
-	model.run_copasi_for_WT()
-	model.run_copasi_for_mutant()
-	print model.get_WT_steady_state()
+	print "> Computing Holzhutter (2004) WT steady-state..."
+	metabolites, reactions = model.compute_WT_steady_state()
+	print "> Printing metabolic concentrations at steady-state..."
+	for item in metabolites:
+		print "["+item[0]+"] = "+str(item[1])
+	print "> Printing metabolic fluxes at steady-state..."
+	for item in reactions:
+		print "["+item[0]+"] = "+str(item[1])

@@ -11,16 +11,11 @@ import os
 import sys
 import numpy as np
 import subprocess
-from Models import *
+from Model import *
 
 ### Compute the ancestor steady-state ###
-def get_ancestor_steady_state( MODEL ):
-	MODEL.write_ancestor_SBML_file()
-	MODEL.create_ancestor_cps_file()
-	MODEL.edit_ancestor_cps_file()
-	MODEL.run_copasi_for_ancestor()
-	metabolites, reactions = MODEL.get_ancestor_steady_state()
-	return metabolites, reactions
+def get_ancestor_steady_state( model ):
+	return model.compute_WT_steady_state()
 
 ### Save the steady-state as a new line in the data file ###
 def write_steady_state( FILE, ITERATION, PARAMETER_INDEX, PARAMETER_NAME, PARAMETER_VALUE, PARAMETER_FACTOR, CONCENTRATIONS, FLUXES, WT_CSUM, MUTANT_CSUM, CSUM_DIST, WT_TFLUX, MUTANT_TFLUX, TFLUX_DIST ):
@@ -33,15 +28,6 @@ def write_steady_state( FILE, ITERATION, PARAMETER_INDEX, PARAMETER_NAME, PARAME
 	line += " "+str(WT_TFLUX)+" "+str(MUTANT_TFLUX)+" "+str(TFLUX_DIST)
 	f.write(line+"\n")
 	f.flush()
-
-### Load the SBML model ###
-def load_model( NAME ):
-	if NAME == "Holzhutter2004":
-		model = Holzhutter2004()
-		return model
-	elif NAME == "Smallbone2013":
-		model = Smallbone2013()
-		return model
 
 ### Compute the sum of concentrations distance ###
 def compute_csum_distance( ANCESTOR_CONCENTRATIONS, MUTANT_CONCENTRATIONS ):
