@@ -114,7 +114,6 @@ if __name__ == '__main__':
 	arguments = readArgs(sys.argv)
 	assertArgs(arguments)
 	printHeader()
-	
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	# 2) Run the MCMC simulation     #
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
