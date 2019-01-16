@@ -9,24 +9,39 @@
 
 import os
 import sys
-import numpy as np
 import subprocess
 import libsbml
+import numpy as np
 
-class Model:
+
+class SBML_Model:
 	
 	#### Constructor ###
 	def __init__( self, filename ):
 		self.filename              = filename
 		self.reader                = libsbml.SBMLReader()
-		self.WT_document           = self.reader.readSBMLFromFile(filename)
-		self.mutant_document       = self.reader.readSBMLFromFile(filename)
+		self.WT_document           = self.reader.readSBMLFromFile("resources/"+filename)
+		self.mutant_document       = self.reader.readSBMLFromFile("resources/"+filename)
 		self.WT_model              = self.WT_document.getModel()
 		self.mutant_model          = self.mutant_document.getModel()
+		self.list_of_parameters    = []
 		self.reaction_to_param_map = {}
 	
+	### Get the number of metabolites ###
+	def get_number_of_metabolites( self ):
+		return self.WT_model.getNumSpecies()
+	
+	### Get the number of reactions ###
+	def get_number_of_reactions( self ):
+		return self.WT_model.getNumReactions()
+	
+	### Get the number of parameters ###
+	def get_number_of_parameters( self ):
+		return self.WT_model.getNumParameters()
+		
 	### Load the reaction-to-parameters map ###
 	def load_reaction_to_param_map( self ):
+		self.list_of_parameters    = []
 		self.reaction_to_param_map = {}
 		f = open("resources/reaction_to_param_map.txt", "r")
 		l = f.readline()
@@ -34,13 +49,29 @@ class Model:
 			l = l.strip(" ;\n").split("[")
 			reaction = "v"+l[1].split("]")[0]
 			param    = l[2].split("\"")[1]
+			if param not in self.list_of_parameters:
+				self.list_of_parameters.append(param)
 			if reaction not in self.reaction_to_param_map.keys():
 				self.reaction_to_param_map[reaction] = [param]
 			else:
 				self.reaction_to_param_map[reaction].append(param)
 			l = f.readline()
 		f.close()
-		
+	
+	### Get a random parameter uniformly among parameters ###
+	def get_random_param_uniform_params( self ):
+		param_index = np.random.randint(0, len(self.list_of_parameters))
+		param_name  = self.list_of_parameters[param_index]
+		return param_name
+	
+	### Get a random parameter uniformly among reactions ###
+	def get_random_param_uniform_reactions( self ):
+		reaction_index = np.random.randint(0, len(self.reaction_to_param_map.keys()))
+		reaction_name  = self.reaction_to_param_map.keys()[reaction_index]
+		param_index    = np.random.randint(0, len(self.reaction_to_param_map[reaction_name]))
+		param_name     = self.reaction_to_param_map[reaction_name][param_index]
+		return param_name
+	
 	### Get WT parameter value ###
 	def get_WT_parameter_value( self, param ):
 		return self.WT_model.getListOfParameters().get(param).getValue()
@@ -55,21 +86,31 @@ class Model:
 	
 	### Make a deterministic parameter mutation by a given factor, centered on WT value ###
 	def deterministic_parameter_change( self, param, factor ):
-		log_val = np.log10(self.get_WT_parameter_value(param))
-		self.set_mutant_parameter_value(np.power(10.0, log_val+factor))
+		old_val = self.get_WT_parameter_value(param)
+		log_val = np.log10(old_val)
+		new_val = np.power(10.0, log_val+factor)
+		new_val = new_val[0]
+		self.set_mutant_parameter_value(param, new_val)
+		return old_val, new_val
 
 	### Make a random parameter mutation by a given std sigma, centered on WT value  ###
 	def random_parameter_change( self, param, sigma ):
 		factor = np.random.normal(1.0, sigma, 1)
-		val    = self.get_WT_parameter_value(param)
-		self.set_mutant_parameter_value(val*factor)
+		old_val = self.get_WT_parameter_value(param)
+		new_val = old_val*factor
+		new_val = new_val[0]
+		self.set_mutant_parameter_value(param, new_val)
+		return old_val, new_val
 
 	### Make a drifting random parameter mutation by a given std sigma, centered on previous mutant value ###
 	def random_drift_parameter_change( self, param, sigma ):
-		factor = np.random.normal(1.0, sigma, 1)
-		val    = self.get_mutant_parameter_value(param)
-		self.set_mutant_parameter_value(val*factor)
-
+		factor  = np.random.normal(1.0, sigma, 1)
+		old_val = self.get_mutant_parameter_value(param)
+		new_val = old_val*factor
+		new_val = new_val[0]
+		self.set_mutant_parameter_value(param, new_val)
+		return old_val, new_val
+		
 	### Write WT SBML file ###
 	def write_WT_SBML_file( self ):
 		libsbml.writeSBMLToFile(self.WT_document, "output/WT.xml")
@@ -170,81 +211,81 @@ class Model:
 	
 	### Compute WT steady-state ###
 	def compute_WT_steady_state( self ):
-		#-----------------------------------------#
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Compute the steady-state with Copasi #
-		#-----------------------------------------#
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.write_WT_SBML_file()
 		self.create_WT_cps_file()
 		self.edit_WT_cps_file()
 		self.run_copasi_for_WT()
-		#-----------------------------------------#
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Extract steady-state                 #
-		#-----------------------------------------#
-		metabolites = []
-		reactions   = []
-		parse_metabolites = False
-		parse_reactions   = False
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		concentrations       = []
+		fluxes               = []
+		parse_concentrations = False
+		parse_fluxes         = False
 		f = open("./output/WT_output.txt", "r")
 		l = f.readline()
 		while l:
-			if l == "\n" and parse_metabolites:
-				 parse_metabolites = False
-			if l == "\n" and parse_reactions:
-				 parse_reactions = False
-			if parse_metabolites:
+			if l == "\n" and parse_concentrations:
+				 parse_concentrations = False
+			if l == "\n" and parse_fluxes:
+				 parse_fluxes = False
+			if parse_concentrations:
 				name = l.split("\t")[0].replace(" ", "-")
 				val  = l.split("\t")[1]
-				metabolites.append([name, val])
-			if parse_reactions:
+				concentrations.append([name, val])
+			if parse_fluxes:
 				name = l.split("\t")[0].replace(" ", "-")
 				val  = l.split("\t")[1]
-				reactions.append([name, val])
+				fluxes.append([name, val])
 			if l.startswith("Species"):
-				parse_metabolites = True
+				parse_concentrations = True
 			if l.startswith("Reaction"):
-				parse_reactions = True
+				parse_fluxes = True
 			l = f.readline()
 		f.close()
-		return metabolites, reactions
+		return concentrations, fluxes
 	
 	### Compute mutant steady-state ###
 	def compute_mutant_steady_state( self ):
-		#-----------------------------------------#
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Compute the steady-state with Copasi #
-		#-----------------------------------------#
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.write_mutant_SBML_file()
 		self.create_mutant_cps_file()
 		self.edit_mutant_cps_file()
 		self.run_copasi_for_mutant()
-		#-----------------------------------------#
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Extract steady-state                 #
-		#-----------------------------------------#
-		metabolites = []
-		reactions   = []
-		parse_metabolites = False
-		parse_reactions   = False
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		concentrations       = []
+		fluxes               = []
+		parse_concentrations = False
+		parse_fluxes         = False
 		f = open("./output/mutant_output.txt", "r")
 		l = f.readline()
 		while l:
-			if l == "\n" and parse_metabolites:
-				 parse_metabolites = False
-			if l == "\n" and parse_reactions:
-				 parse_reactions = False
-			if parse_metabolites:
+			if l == "\n" and parse_concentrations:
+				 parse_concentrations = False
+			if l == "\n" and parse_fluxes:
+				 parse_fluxes = False
+			if parse_concentrations:
 				name = l.split("\t")[0].replace(" ", "-")
 				val  = l.split("\t")[1]
-				metabolites.append([name, val])
-			if parse_reactions:
+				concentrations.append([name, val])
+			if parse_fluxes:
 				name = l.split("\t")[0].replace(" ", "-")
 				val  = l.split("\t")[1]
-				reactions.append([name, val])
+				fluxes.append([name, val])
 			if l.startswith("Species"):
-				parse_metabolites = True
+				parse_concentrations = True
 			if l.startswith("Reaction"):
-				parse_reactions = True
+				parse_fluxes = True
 			l = f.readline()
 		f.close()
-		return metabolites, reactions
+		return concentrations, fluxes
 	
 	
 ##################
@@ -252,11 +293,23 @@ class Model:
 ##################
 
 if __name__ == '__main__':
-	model = Model("resources/holzhutter2004.xml")
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	# 1) Load the SBML model     #
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	print "> Loading Holzhutter (2004) model ..."
+	model = SBML_Model("resources/holzhutter2004.xml")
+	model.load_reaction_to_param_map()
+	print "  - number of species: "+str(model.get_number_of_metabolites())
+	print "  - number of reactions: "+str(model.get_number_of_reactions())
+	print "  - number of parameters: "+str(model.get_number_of_parameters())
+	
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	# 2) Compute WT steady-state #
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	print "> Computing Holzhutter (2004) WT steady-state..."
-	metabolites, reactions = model.compute_WT_steady_state()
+	concentrations, reactions = model.compute_WT_steady_state()
 	print "> Printing metabolic concentrations at steady-state..."
-	for item in metabolites:
+	for item in concentrations:
 		print "["+item[0]+"] = "+str(item[1])
 	print "> Printing metabolic fluxes at steady-state..."
 	for item in reactions:

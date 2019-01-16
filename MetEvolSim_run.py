@@ -11,7 +11,7 @@ import os
 import sys
 import numpy as np
 import subprocess
-from Model import *
+from SBML_Model import *
 
 ### Compute the ancestor steady-state ###
 def get_ancestor_steady_state( model ):
@@ -30,21 +30,23 @@ def write_steady_state( FILE, ITERATION, PARAMETER_INDEX, PARAMETER_NAME, PARAME
 	f.flush()
 
 ### Compute the sum of concentrations distance ###
-def compute_csum_distance( ANCESTOR_CONCENTRATIONS, MUTANT_CONCENTRATIONS ):
-	anc_sum = 0.0
+def compute_csum_distance( WT_X, mutant_X ):
+	assert len(WT_X)==len(mutant_X)
+	wt_sum  = 0.0
 	mut_sum = 0.0
-	for i in range(len(ANCESTOR_CONCENTRATIONS)):
-		anc_conc = float(ANCESTOR_CONCENTRATIONS[i][1])
+	for i in range(len(WT_X)):
+		wt_conc  = float(ANCESTOR_CONCENTRATIONS[i][1])
 		mut_conc = float(MUTANT_CONCENTRATIONS[i][1])
 		anc_sum += anc_conc
 		mut_sum += mut_conc
 	return anc_sum, mut_sum, abs(anc_sum-mut_sum)
 
 ### Compute the target fluxes distance ###
-def compute_tflux_distance( ANCESTOR_FLUXES, MUTANT_FLUXES ):
-	anc_sum = 0.0
+def compute_tflux_distance( WT_V, mutant_V ):
+	assert len(WT_V)==len(mutant_V)
+	wt_sum  = 0.0
 	mut_sum = 0.0
-	for i in range(len(ANCESTOR_FLUXES)):
+	for i in range(len(WT_V)):
 		anc_flux = float(ANCESTOR_FLUXES[i][1])
 		mut_flux = float(MUTANT_FLUXES[i][1])
 		anc_sum += anc_flux
@@ -77,8 +79,8 @@ def readArgs( argv ):
 
 ### Print usage ###
 def printUsage():
-	print "Usage: python run_selectionthreshold_simulations.py -h or --help";
-	print "   or: python run_selectionthreshold_simulations.py [list of mandatory parameters]";
+	print "Usage: python MetEvolSim_run.py -h or --help";
+	print "   or: python MetEvolSim_run.py [list of mandatory parameters]";
 	print "Options are:"
 	print "  -h, --help"
 	print "        print this help, then exit"
@@ -91,7 +93,7 @@ def printUsage():
 	print "  -selection-threshold, --selection-threshold <selection_threshold>"
 	print "        Specify the selection threshold"
 	print "  -model-name, --model-name <model_name>"
-	print "        Specify the model name (Holzhutter2004/Smallbone2013)"
+	print "        Specify the model name (e.g. holzhutter2004.xml)"
 
 
 ##################
