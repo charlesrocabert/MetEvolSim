@@ -12,59 +12,26 @@ import sys
 import numpy as np
 import subprocess
 from SBML_Model import *
+from MCMC import *
 
-### Compute the ancestor steady-state ###
-def get_ancestor_steady_state( model ):
-	return model.compute_WT_steady_state()
-
-### Save the steady-state as a new line in the data file ###
-def write_steady_state( FILE, ITERATION, PARAMETER_INDEX, PARAMETER_NAME, PARAMETER_VALUE, PARAMETER_FACTOR, CONCENTRATIONS, FLUXES, WT_CSUM, MUTANT_CSUM, CSUM_DIST, WT_TFLUX, MUTANT_TFLUX, TFLUX_DIST ):
-	line = str(ITERATION)+" "+str(PARAMETER_INDEX)+" "+PARAMETER_NAME+" "+str(PARAMETER_VALUE)+" "+str(PARAMETER_FACTOR)
-	for item in CONCENTRATIONS:
-		line += " "+item[1]
-	for item in FLUXES:
-		line += " "+item[1]
-	line += " "+str(WT_CSUM)+" "+str(MUTANT_CSUM)+" "+str(CSUM_DIST)
-	line += " "+str(WT_TFLUX)+" "+str(MUTANT_TFLUX)+" "+str(TFLUX_DIST)
-	f.write(line+"\n")
-	f.flush()
-
-### Compute the sum of concentrations distance ###
-def compute_csum_distance( WT_X, mutant_X ):
-	assert len(WT_X)==len(mutant_X)
-	wt_sum  = 0.0
-	mut_sum = 0.0
-	for i in range(len(WT_X)):
-		wt_conc  = float(ANCESTOR_CONCENTRATIONS[i][1])
-		mut_conc = float(MUTANT_CONCENTRATIONS[i][1])
-		anc_sum += anc_conc
-		mut_sum += mut_conc
-	return anc_sum, mut_sum, abs(anc_sum-mut_sum)
-
-### Compute the target fluxes distance ###
-def compute_tflux_distance( WT_V, mutant_V ):
-	assert len(WT_V)==len(mutant_V)
-	wt_sum  = 0.0
-	mut_sum = 0.0
-	for i in range(len(WT_V)):
-		anc_flux = float(ANCESTOR_FLUXES[i][1])
-		mut_flux = float(MUTANT_FLUXES[i][1])
-		anc_sum += anc_flux
-		mut_sum += mut_flux
-	return anc_sum, mut_sum, abs(anc_sum-mut_sum)
 
 ### Read command line arguments ###
 def readArgs( argv ):
 	arguments                        = {}
+	arguments["model_filename"]      = ""
+	arguments["output_filename"]     = ""
 	arguments["iterations"]          = 0
 	arguments["mutation_size"]       = 0.0
 	arguments["selection_scheme"]    = ""
 	arguments["selection_threshold"] = 0.0
-	arguments["model_name"]          = ""
 	for i in range(len(argv)):
 		if argv[i] == "-h" or argv[i] == "--help":
-			printUsage()
+			printHelp()
 			sys.exit()
+		if argv[i] == "-model-filename" or argv[i] == "--model-filename":
+			arguments["model_filename"] = argv[i+1]
+		if argv[i] == "-output-filename" or argv[i] == "--output-filename":
+			arguments["output_filename"] = argv[i+1]
 		if argv[i] == "-iterations" or argv[i] == "--iterations":
 			arguments["iterations"] = int(argv[i+1])
 		if argv[i] == "-mutation-size" or argv[i] == "--mutation-size":
@@ -73,111 +40,86 @@ def readArgs( argv ):
 			arguments["selection_scheme"] = argv[i+1]
 		if argv[i] == "-selection-threshold" or argv[i] == "--selection-threshold":
 			arguments["selection_threshold"] = float(argv[i+1])
-		if argv[i] == "-model-name" or argv[i] == "--model-name":
-			arguments["model_name"] = argv[i+1]
 	return arguments
 
-### Print usage ###
-def printUsage():
+### Assert parameters consistency ###
+def assertArgs( args ):
+	for item in args.items():
+		if item[1] == "" or item[1] == 0 or item[1] == 0.0:
+			print "Some argument values are missing."
+			print "Use option -h (--help) to see the list of mandatory arguments."
+			sys.exit()
+	if arguments["iterations"] <= 0:
+		print "Error: argument '-iterations' only admits positive integer values."
+		print "(current value: "+str(arguments["iterations"])+")"
+		sys.exit()
+	if arguments["mutation_size"] <= 0.0:
+		print "Error: argument '-mutation-size' only admits positive decimal values."
+		print "(current value: "+str(arguments["mutation_size"])+")"
+		sys.exit()
+	if arguments["selection_scheme"] != "MUTATION_ACCUMULATION" and arguments["selection_scheme"] != "METABOLIC_LOAD" and arguments["selection_scheme"] != "BIOMASS_FUNCTION":
+		print "Error: argument '-selection-scheme' only admits 3 options (MUTATION_ACCUMULATION / METABOLIC_LOAD / BIOMASS_FUNCTION)."
+		print "(current value: "+str(arguments["selection_scheme"])+")"
+		sys.exit()
+	if arguments["selection_threshold"] <= 0.0:
+		print "Error: argument '-selection-threshold' only admits positive decimal values."
+		print "(current value: "+str(arguments["selection_threshold"])+")"
+		sys.exit()
+		
+### Print help ###
+def printHelp():
+	print ""
+	print "#*********************************************************************"
+	print "# MetEvolSim (Metabolome Evolution Simulator)"
+	print "# Copyright (c) 2018-2019 Charles Rocabert, Gábor Boross, Balázs Papp"
+	print "# All rights reserved"
+	print "#*********************************************************************"
 	print "Usage: python MetEvolSim_run.py -h or --help";
-	print "   or: python MetEvolSim_run.py [list of mandatory parameters]";
+	print "   or: python MetEvolSim_run.py [list of mandatory arguments]";
 	print "Options are:"
 	print "  -h, --help"
 	print "        print this help, then exit"
-	print "  -iterations, --iterations <iterations>"
-	print "        Specify the number of iterations"
-	print "  -mutation-size, --mutation-size <mutation_size>"
-	print "        Specify the log mutation size"
-	print "  -selection-scheme, --selection-scheme <selection_scheme>"
-	print "        Specify the selection scheme (NO_SELECTION/CSUM/TFLUX)"
-	print "  -selection-threshold, --selection-threshold <selection_threshold>"
-	print "        Specify the selection threshold"
-	print "  -model-name, --model-name <model_name>"
-	print "        Specify the model name (e.g. holzhutter2004.xml)"
+	print "  -model-filename, --model-filename <model_filename> (mandatory)"
+	print "        Specify the SBML model filename (e.g. holzhutter2004.xml)"
+	print "  -output-filename, --output-filename <output_filename> (mandatory)"
+	print "        Specify the simulation output filename (e.g. output.txt)"
+	print "  -iterations, --iterations <iterations> (mandatory)"
+	print "        Specify the number of iterations (integer > 0)"
+	print "  -mutation-size, --mutation-size <mutation_size> (mandatory)"
+	print "        Specify the log mutation size (float > 0.0)"
+	print "  -selection-scheme, --selection-scheme <selection_scheme> (mandatory)"
+	print "        Specify the selection scheme (MUTATION_ACCUMULATION / METABOLIC_LOAD / BIOMASS_FUNCTION)"
+	print "  -selection-threshold, --selection-threshold <selection_threshold> (mandatory)"
+	print "        Specify the selection threshold (float > 0.0)"
+	print ""
 
-
+### Print header ###
+def printHeader():
+	print ""
+	print "#*********************************************************************"
+	print "# MetEvolSim (Metabolome Evolution Simulator)"
+	print "# Copyright (c) 2018-2019 Charles Rocabert, Gábor Boross, Balázs Papp"
+	print "# All rights reserved"
+	print "#*********************************************************************"
+	print ""
+	
 ##################
 #      MAIN      #
 ##################
 
 if __name__ == '__main__':
-	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	# 1) Read command line arguments                          #
-	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	ARGUMENTS           = readArgs(sys.argv)
-	ITERATIONS          = ARGUMENTS["iterations"]
-	LOG_MUTATION_SIZE   = ARGUMENTS["mutation_size"]
-	SELECTION_SCHEME    = ARGUMENTS["selection_scheme"]
-	SELECTION_THRESHOLD = ARGUMENTS["selection_threshold"]
-	MODEL_NAME          = ARGUMENTS["model_name"]
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	# 1) Read command line arguments #
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	arguments = readArgs(sys.argv)
+	assertArgs(arguments)
+	printHeader()
 	
-	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	# 2) Create the model                                     #
-	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	model = load_model(MODEL_NAME)
-	model.load_sbml()
-	model.load_reaction_to_param_map()
-	
-	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	# 3) Get ancestor steady-state                            #
-	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	ancestor_conc, ancestor_flux       = get_ancestor_steady_state(model)
-	wt_csum, mutant_csum, csum_dist    = compute_csum_distance(ancestor_conc, ancestor_conc)
-	wt_tflux, mutant_tflux, tflux_dist = compute_tflux_distance(ancestor_flux, ancestor_flux)
-	
-	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	# 4) Create the output file and write header and ancestor #
-	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	f          = open("output/experiment.txt", "w")
-	header     = "iteration param_index param_name param_val param_factor"
-	first_line = "0 0 ancestor 0.0 0.0"
-	for item in ancestor_conc:
-		header     += " "+item[0]
-		first_line += " "+item[1]
-	for item in ancestor_flux:
-		header     += " "+item[0]
-		first_line += " "+item[1]
-	header     += " wt_csum mutant_csum csum_dist wt_tflux mutant_tflux tflux_dist"
-	first_line += " "+str(wt_csum)+" "+str(mutant_csum)+" "+str(csum_dist)
-	first_line += " "+str(wt_tflux)+" "+str(mutant_tflux)+" "+str(tflux_dist)
-	f.write(header+"\n")
-	f.write(first_line+"\n")
-	f.flush()
-
-	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	# 5) Run the mutation accumulation experiment             #
-	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	for iteration in range(1, ITERATIONS+1):
-		print "> iteration "+str(iteration)
-		#param_index, param_name, param_anc, param_mut, param_factor = model.mutate_uniform_param(LOG_MUTATION_SIZE)
-		param_index, param_name, param_anc, param_mut, param_factor = model.mutate_uniform_reaction(LOG_MUTATION_SIZE)
-		model.write_mutant_SBML_file()
-		model.create_mutant_cps_file()
-		model.edit_mutant_cps_file()
-		model.run_copasi_for_mutant()
-		concentrations, fluxes             = model.get_mutant_steady_state()
-		wt_csum, mutant_csum, csum_dist    = compute_csum_distance(ancestor_conc, concentrations)
-		wt_tflux, mutant_tflux, tflux_dist = compute_tflux_distance(ancestor_flux, fluxes)
-		### 5.1) No selection ###
-		if SELECTION_SCHEME == "NO_SELECTION":
-			write_steady_state(f, iteration, param_index, param_name, param_mut, param_factor, concentrations, fluxes, wt_csum, mutant_csum, csum_dist, wt_tflux, mutant_tflux, tflux_dist)
-			print "    drift."
-		### 5.2) Selection on the total metabolic load ###
-		elif SELECTION_SCHEME == "CSUM" and np.log10(csum_dist) < SELECTION_THRESHOLD:
-			write_steady_state(f, iteration, param_index, param_name, param_mut, param_factor, concentrations, fluxes, wt_csum, mutant_csum, csum_dist, wt_tflux, mutant_tflux, tflux_dist)
-			print "    selected."
-		elif SELECTION_SCHEME == "CSUM" and np.log10(csum_dist) >= SELECTION_THRESHOLD:
-			model.set_parameter_mutant_value(param_name, param_anc)
-			print "    dropped."
-		### 5.3) Selection on the sum of target fluxes ###
-		elif SELECTION_SCHEME == "TFLUX" and np.log10(tflux_dist) < SELECTION_THRESHOLD:
-			write_steady_state(f, iteration, param_index, param_name, param_mut, param_factor, concentrations, fluxes, wt_csum, mutant_csum, csum_dist, wt_tflux, mutant_tflux, tflux_dist)
-			print "    selected."
-		elif SELECTION_SCHEME == "TFLUX" and np.log10(tflux_dist) >= SELECTION_THRESHOLD:
-			model.set_parameter_mutant_value(param_name, param_anc)
-			print "    dropped."
-			
-	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	# 6) Close output file                                    #
-	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	f.close()
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	# 2) Run the MCMC simulation     #
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	sim = MCMC(arguments["model_filename"], arguments["iterations"], arguments["mutation_size"], arguments["selection_scheme"], arguments["selection_threshold"], arguments["output_filename"])
+	sim.initialize()
+	stop_MCMC = False
+	while not stop_MCMC:
+	    stop_MCMC = sim.iterate()

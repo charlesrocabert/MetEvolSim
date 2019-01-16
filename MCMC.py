@@ -174,7 +174,7 @@ class MCMC:
         # 4) Select the new iteration event  #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         ### 4.1) If the simulation is a mutation accumulation experiment ###
-        if self.selection_scheme == "MUTATION_ACCUMULATION_EXPERIMENT":
+        if self.selection_scheme == "MUTATION_ACCUMULATION":
             self.write_current_state()
             self.flush_output_file()
             #print "    drift."
@@ -194,6 +194,12 @@ class MCMC:
         elif self.selection_scheme == "BIOMASS_FUNCTION" and np.log10(self.biomass_function_dist) >= self.selection_threshold:
             self.model.set_mutant_parameter_value(self.param_name, old_param_value)
             #print "    dropped."
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        # 5) Check the number of iterations  #
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        if self.current_iteration == self.iterations:
+            return True
+        return False
 	
 	
 ##################
@@ -204,7 +210,7 @@ if __name__ == '__main__':
     model_filename      = "holzhutter2004.xml"
     iterations          = 10
     log_mutation_size   = 0.01
-    selection_scheme    = "MUTATION_ACCUMULATION_EXPERIMENT" # NO_SELECTION / METABOLIC_LOAD / BIOMASS_FUNCTION
+    selection_scheme    = "MUTATION_ACCUMULATION" # MUTATION_ACCUMULATION / METABOLIC_LOAD / BIOMASS_FUNCTION
     selection_threshold = 0.0
     output_filename     = "mcmc_output.txt"
     algo = MCMC(model_filename, iterations, log_mutation_size, selection_scheme, selection_threshold, output_filename)
