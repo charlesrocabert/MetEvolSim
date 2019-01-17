@@ -10,16 +10,16 @@
 import os
 import sys
 import numpy as np
+from scipy import stats
 import subprocess
 from SBML_Model import *
 from MCMC import *
-
+import matplotlib.pyplot as plt
 
 ### Read command line arguments ###
 def readArgs( argv ):
 	arguments                        = {}
 	arguments["model_filename"]      = ""
-	arguments["output_filename"]     = ""
 	arguments["iterations"]          = 0
 	arguments["mutation_size"]       = 0.0
 	arguments["selection_scheme"]    = ""
@@ -30,8 +30,6 @@ def readArgs( argv ):
 			sys.exit()
 		if argv[i] == "-model-filename" or argv[i] == "--model-filename":
 			arguments["model_filename"] = argv[i+1]
-		if argv[i] == "-output-filename" or argv[i] == "--output-filename":
-			arguments["output_filename"] = argv[i+1]
 		if argv[i] == "-iterations" or argv[i] == "--iterations":
 			arguments["iterations"] = int(argv[i+1])
 		if argv[i] == "-mutation-size" or argv[i] == "--mutation-size":
@@ -81,8 +79,6 @@ def printHelp():
 	print "        print this help, then exit"
 	print "  -model-filename, --model-filename <model_filename> (mandatory)"
 	print "        Specify the SBML model filename (e.g. holzhutter2004.xml)"
-	print "  -output-filename, --output-filename <output_filename> (mandatory)"
-	print "        Specify the simulation output filename (e.g. output.txt)"
 	print "  -iterations, --iterations <iterations> (mandatory)"
 	print "        Specify the number of iterations (integer > 0)"
 	print "  -mutation-size, --mutation-size <mutation_size> (mandatory)"
@@ -107,6 +103,8 @@ def printHeader():
 #      MAIN      #
 ##################
 
+plt.ion()
+
 if __name__ == '__main__':
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	# 1) Read command line arguments #
@@ -117,8 +115,20 @@ if __name__ == '__main__':
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	# 2) Run the MCMC simulation     #
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	sim = MCMC(arguments["model_filename"], arguments["iterations"], arguments["mutation_size"], arguments["selection_scheme"], arguments["selection_threshold"], arguments["output_filename"])
+	sim = MCMC(arguments["model_filename"], arguments["iterations"], arguments["mutation_size"], arguments["selection_scheme"], arguments["selection_threshold"])
 	sim.initialize()
 	stop_MCMC = False
 	while not stop_MCMC:
-	    stop_MCMC = sim.iterate()
+		stop_MCMC = sim.iterate()
+		X = np.log10(sim.WT_conc)
+		Y = np.log10(sim.EV_conc)
+		Rho, Pval = stats.spearmanr(X,Y)
+		#slope, intercept, r_value, p_value, std_err = stats.linregress(X,Y)
+		#line = slope*X+intercept
+		try:
+			plt.clf()
+			plt.plot(X, Y, "o")
+			plt.text(-5.5,-11, "Spearman's rho="+str(round(Rho,5))+"\n(p-val="+str(round(Pval,5))+")", bbox=dict(facecolor='white', alpha=0.5))
+			plt.draw()
+		except:
+			print "no plot"

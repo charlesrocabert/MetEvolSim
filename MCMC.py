@@ -14,11 +14,10 @@ import libsbml
 import numpy as np
 from SBML_Model import *
 
-
 class MCMC:
     
     ### Constructor ###
-    def __init__( self, model_filename, iterations, log_mutation_size, selection_scheme, selection_threshold, output_filename ):
+    def __init__( self, model_filename, iterations, log_mutation_size, selection_scheme, selection_threshold ):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         # 1) Load parameters               #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -49,20 +48,128 @@ class MCMC:
         self.mutant_biomass_function  = 0.0
         self.biomass_function_dist    = 0.0
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    	# 4) Create output file            #
+    	# 5) Create output file            #
     	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        self.output_filename = output_filename
-        self.output_file     = open("output/"+output_filename, "w")
+        self.output_file = open("output/iterations.txt", "w")
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        # 5) Current state informations    #
+        # 6) Current state informations    #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         self.current_iteration = 0
-        self.param_name        = "ancestor"
+        self.param_name        = "WT"
         self.param_value       = 0.0
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        # 6) Statistics                    #
+        # 7) Statistics                    #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        ### Array lengths ###
+        self.Nconc     = self.model.get_number_of_metabolites()
+        self.Nflux     = self.model.get_number_of_reactions()
+        ### WT values ###
+        self.WT_conc   = np.zeros(self.Nconc)
+        self.WT_flux   = np.zeros(self.Nflux)
+        ### Sum vectors ###
+        self.sum_conc      = np.zeros(self.Nconc)
+        self.sqsum_conc    = np.zeros(self.Nconc)
+        self.relsqsum_conc = np.zeros(self.Nconc)
+        self.sum_flux      = np.zeros(self.Nflux)
+        self.sqsum_flux    = np.zeros(self.Nflux)
+        self.relsqsum_flux = np.zeros(self.Nflux)
+        ### Final statistics ###
+        self.mean_conc = np.zeros(self.Nconc)
+        self.var_conc  = np.zeros(self.Nconc)
+        self.CV_conc   = np.zeros(self.Nconc)
+        self.EV_conc   = np.zeros(self.Nconc)
+        self.mean_flux = np.zeros(self.Nflux)
+        self.var_flux  = np.zeros(self.Nflux)
+        self.CV_flux   = np.zeros(self.Nflux)
+        self.EV_flux   = np.zeros(self.Nflux)
     
+    ### Convert a list of items into a numpy array ###
+    def item_to_array( self ):
+        conc_vec = np.zeros(self.Nconc)
+        for i in range(self.Nconc):
+            conc_vec[i] = float(self.mutant_concentrations[i][1])
+        flux_vec = np.zeros(self.Nflux)
+        for i in range(self.Nflux):
+            flux_vec[i] = float(self.mutant_fluxes[i][1])
+        return conc_vec, flux_vec
+        
+    ### Initialize statistics ###
+    def initialize_statistics( self ):
+        #~~~~~~~~~~~~~~~~~~~~~~~~#
+        # 1) Set arrays to zero  #
+        #~~~~~~~~~~~~~~~~~~~~~~~~#
+        ### WT values ###
+        self.WT_conc   = np.zeros(self.Nconc)
+        self.WT_flux   = np.zeros(self.Nflux)
+        ### Sum vectors ###
+        self.sum_conc      = np.zeros(self.Nconc)
+        self.sqsum_conc    = np.zeros(self.Nconc)
+        self.relsum_conc   = np.zeros(self.Nconc)
+        self.relsqsum_conc = np.zeros(self.Nconc)
+        self.sum_flux      = np.zeros(self.Nflux)
+        self.sqsum_flux    = np.zeros(self.Nflux)
+        self.relsum_flux   = np.zeros(self.Nflux)
+        self.relsqsum_flux = np.zeros(self.Nflux)
+        ### Final statistics ###
+        self.mean_conc = np.zeros(self.Nconc)
+        self.var_conc  = np.zeros(self.Nconc)
+        self.CV_conc   = np.zeros(self.Nconc)
+        self.EV_conc   = np.zeros(self.Nconc)
+        self.mean_flux = np.zeros(self.Nflux)
+        self.var_flux  = np.zeros(self.Nflux)
+        self.CV_flux   = np.zeros(self.Nflux)
+        self.EV_flux   = np.zeros(self.Nflux)
+        #~~~~~~~~~~~~~~~~~~~~~~~~#
+        # 2) Set WT steady-state #
+        #~~~~~~~~~~~~~~~~~~~~~~~~#
+        conc_vec, flux_vec = self.item_to_array()
+        self.WT_conc = np.copy(conc_vec)
+        self.WT_flux = np.copy(flux_vec)
+    
+    ### Update statistics ###
+    def update_statistics( self ):
+        conc_vec, flux_vec = self.item_to_array()
+        ### Concentrations ###
+        self.sum_conc      += conc_vec
+        self.sqsum_conc    += conc_vec*conc_vec
+        self.relsum_conc   += (conc_vec/self.WT_conc)
+        self.relsqsum_conc += (conc_vec/self.WT_conc)*(conc_vec/self.WT_conc)
+        ### Fluxes ###
+        #self.sum_flux      += flux_vec
+        #self.sqsum_flux    += flux_vec*flux_vec
+        #self.relsum_flux   += (flux_vec/self.WT_flux)
+        #self.relsqsum_flux += (flux_vec/self.WT_flux)*(flux_vec/self.WT_flux)
+    
+    ### Compute statistics for the current iteration ###
+    def compute_statistics( self ):
+        self.mean_conc  = np.copy(self.sum_conc)
+        self.mean_conc /= float(self.current_iteration)
+        self.var_conc   = np.copy(self.sqsum_conc)
+        self.var_conc  /= float(self.current_iteration)
+        self.var_conc  -= self.mean_conc*self.mean_conc
+        self.CV_conc    = np.copy(self.sqsum_conc)
+        self.CV_conc   /= float(self.current_iteration)
+        self.CV_conc   -= self.mean_conc*self.mean_conc
+        self.CV_conc    = np.sqrt(self.CV_conc)/(self.WT_conc)
+        self.EV_conc    = np.copy(self.relsqsum_conc)
+        self.EV_conc   /= float(self.current_iteration)
+        self.EV_conc   -= (self.relsum_conc/float(self.current_iteration))*(self.relsum_conc/float(self.current_iteration))
+        self.EV_conc   /= float(self.current_iteration)
+    
+    ### Write statistics ###
+    def write_statistics( self ):
+        f = open("output/statistics.txt", "w")
+        f.write("name WT mean var CV EV\n")
+        for i in range(len(self.WT_concentrations)):
+            line  = self.WT_concentrations[i][0]+" "
+            line += str(self.WT_concentrations[i][1])+" "
+            line += str(self.mean_conc[i])+" "
+            line += str(self.var_conc[i])+" "
+            line += str(self.CV_conc[i])+" "
+            line += str(self.EV_conc[i])+"\n"
+            f.write(line)
+        f.close()
+        
     ### Compute WT steady-state ###
     def compute_WT_steady_state( self ):
         self.WT_concentrations, self.WT_fluxes = self.model.compute_WT_steady_state()
@@ -151,6 +258,7 @@ class MCMC:
         self.init_output_file()
         self.write_current_state()
         self.flush_output_file()
+        self.initialize_statistics()
         
     ### Iterate MCMC ###
     def iterate( self ):
@@ -177,25 +285,26 @@ class MCMC:
         if self.selection_scheme == "MUTATION_ACCUMULATION":
             self.write_current_state()
             self.flush_output_file()
-            #print "    drift."
         ### 4.2) If the selection is on the total metabolic load  ###
         elif self.selection_scheme == "METABOLIC_LOAD" and np.log10(self.concentration_sum_dist) < self.selection_threshold:
             self.write_current_state()
             self.flush_output_file()
-            #print "    selected."
         elif self.selection_scheme == "METABOLIC_LOAD" and np.log10(self.concentration_sum_dist) >= self.selection_threshold:
             model.set_mutant_parameter_value(self.param_name, old_param_value)
-            #print "    dropped."
         ### 4.3) Selection on the sum of target fluxes ###
         elif self.selection_scheme == "BIOMASS_FUNCTION" and np.log10(self.biomass_function_dist) < self.selection_threshold:
             self.write_current_state()
             self.flush_output_file()
-            #print "    selected."
         elif self.selection_scheme == "BIOMASS_FUNCTION" and np.log10(self.biomass_function_dist) >= self.selection_threshold:
             self.model.set_mutant_parameter_value(self.param_name, old_param_value)
-            #print "    dropped."
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        # 5) Check the number of iterations  #
+        # 5) Compute statistics              #
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        self.update_statistics()
+        self.compute_statistics()
+        self.write_statistics()
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        # 6) Check the number of iterations  #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         if self.current_iteration == self.iterations:
             return True
@@ -212,8 +321,9 @@ if __name__ == '__main__':
     log_mutation_size   = 0.01
     selection_scheme    = "MUTATION_ACCUMULATION" # MUTATION_ACCUMULATION / METABOLIC_LOAD / BIOMASS_FUNCTION
     selection_threshold = 0.0
-    output_filename     = "mcmc_output.txt"
-    algo = MCMC(model_filename, iterations, log_mutation_size, selection_scheme, selection_threshold, output_filename)
+    algo = MCMC(model_filename, iterations, log_mutation_size, selection_scheme, selection_threshold)
     algo.initialize()
+    print algo.item_to_array()
+    sys.exit()
     for it in range(iterations):
         algo.iterate()

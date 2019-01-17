@@ -38,7 +38,7 @@ class SBML_Model:
 	### Get the number of parameters ###
 	def get_number_of_parameters( self ):
 		return self.WT_model.getNumParameters()
-		
+			
 	### Load the reaction-to-parameters map ###
 	def load_reaction_to_param_map( self ):
 		self.list_of_parameters    = []
