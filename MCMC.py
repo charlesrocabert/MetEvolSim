@@ -55,17 +55,18 @@ class MCMC:
         # 6) Current state informations    #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         self.current_iteration = 0
+        self.success_iteration = 0
         self.param_name        = "WT"
         self.param_value       = 0.0
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         # 7) Statistics                    #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         ### Array lengths ###
-        self.Nconc     = self.model.get_number_of_metabolites()
-        self.Nflux     = self.model.get_number_of_reactions()
+        self.Nconc = self.model.get_number_of_metabolites()
+        self.Nflux = self.model.get_number_of_reactions()
         ### WT values ###
-        self.WT_conc   = np.zeros(self.Nconc)
-        self.WT_flux   = np.zeros(self.Nflux)
+        self.WT_conc = np.zeros(self.Nconc)
+        self.WT_flux = np.zeros(self.Nflux)
         ### Sum vectors ###
         self.sum_conc      = np.zeros(self.Nconc)
         self.sqsum_conc    = np.zeros(self.Nconc)
@@ -143,31 +144,34 @@ class MCMC:
     ### Compute statistics for the current iteration ###
     def compute_statistics( self ):
         self.mean_conc  = np.copy(self.sum_conc)
-        self.mean_conc /= float(self.current_iteration)
+        self.mean_conc /= float(self.success_iteration)
         self.var_conc   = np.copy(self.sqsum_conc)
-        self.var_conc  /= float(self.current_iteration)
+        self.var_conc  /= float(self.success_iteration)
         self.var_conc  -= self.mean_conc*self.mean_conc
         self.CV_conc    = np.copy(self.sqsum_conc)
-        self.CV_conc   /= float(self.current_iteration)
+        self.CV_conc   /= float(self.success_iteration)
         self.CV_conc   -= self.mean_conc*self.mean_conc
         self.CV_conc    = np.sqrt(self.CV_conc)/(self.WT_conc)
         self.EV_conc    = np.copy(self.relsqsum_conc)
-        self.EV_conc   /= float(self.current_iteration)
-        self.EV_conc   -= (self.relsum_conc/float(self.current_iteration))*(self.relsum_conc/float(self.current_iteration))
-        self.EV_conc   /= float(self.current_iteration)
+        self.EV_conc   /= float(self.success_iteration)
+        self.EV_conc   -= (self.relsum_conc/float(self.success_iteration))*(self.relsum_conc/float(self.success_iteration))
+        self.EV_conc   /= float(self.success_iteration)
     
     ### Write statistics ###
     def write_statistics( self ):
+        static = ["Glcout", "Lacex", "PRPP", "Phiex", "Pyrex"]
         f = open("output/statistics.txt", "w")
-        f.write("name WT mean var CV EV\n")
+        f.write("iteration name WT mean var CV EV\n")
         for i in range(len(self.WT_concentrations)):
-            line  = self.WT_concentrations[i][0]+" "
-            line += str(self.WT_concentrations[i][1])+" "
-            line += str(self.mean_conc[i])+" "
-            line += str(self.var_conc[i])+" "
-            line += str(self.CV_conc[i])+" "
-            line += str(self.EV_conc[i])+"\n"
-            f.write(line)
+            if not self.WT_concentrations[i][0] in static:
+                line  = str(self.success_iteration)+" "
+                line += self.WT_concentrations[i][0]+" "
+                line += str(self.WT_concentrations[i][1])+" "
+                line += str(self.mean_conc[i])+" "
+                line += str(self.var_conc[i])+" "
+                line += str(self.CV_conc[i])+" "
+                line += str(self.EV_conc[i])+"\n"
+                f.write(line)
         f.close()
         
     ### Compute WT steady-state ###
@@ -229,7 +233,7 @@ class MCMC:
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         # 1) Write parameters information #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        line += str(self.current_iteration)+" "
+        line += str(self.success_iteration)+" "
         line += str(self.param_name)+" "
         line += str(self.param_value)
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -263,7 +267,6 @@ class MCMC:
     ### Iterate MCMC ###
     def iterate( self ):
         self.current_iteration += 1
-        print "> Current iteration = "+str(self.current_iteration)
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         # 1) Introduce a new random mutation #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -283,29 +286,36 @@ class MCMC:
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         ### 4.1) If the simulation is a mutation accumulation experiment ###
         if self.selection_scheme == "MUTATION_ACCUMULATION":
+            self.success_iteration += 1
             self.write_current_state()
             self.flush_output_file()
+            self.update_statistics()
+            self.compute_statistics()
+            self.write_statistics()
         ### 4.2) If the selection is on the total metabolic load  ###
         elif self.selection_scheme == "METABOLIC_LOAD" and np.log10(self.concentration_sum_dist) < self.selection_threshold:
+            self.success_iteration += 1
             self.write_current_state()
             self.flush_output_file()
+            self.update_statistics()
+            self.compute_statistics()
+            self.write_statistics()
         elif self.selection_scheme == "METABOLIC_LOAD" and np.log10(self.concentration_sum_dist) >= self.selection_threshold:
             model.set_mutant_parameter_value(self.param_name, old_param_value)
         ### 4.3) Selection on the sum of target fluxes ###
         elif self.selection_scheme == "BIOMASS_FUNCTION" and np.log10(self.biomass_function_dist) < self.selection_threshold:
+            self.success_iteration += 1
             self.write_current_state()
             self.flush_output_file()
+            self.update_statistics()
+            self.compute_statistics()
+            self.write_statistics()
         elif self.selection_scheme == "BIOMASS_FUNCTION" and np.log10(self.biomass_function_dist) >= self.selection_threshold:
             self.model.set_mutant_parameter_value(self.param_name, old_param_value)
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        # 5) Compute statistics              #
+        # 5) Check the number of iterations  #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        self.update_statistics()
-        self.compute_statistics()
-        self.write_statistics()
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        # 6) Check the number of iterations  #
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        print "> Current iteration = "+str(self.current_iteration)+" (success = "+str(self.success_iteration)+")"
         if self.current_iteration == self.iterations:
             return True
         return False

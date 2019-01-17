@@ -14,7 +14,7 @@ from scipy import stats
 import subprocess
 from SBML_Model import *
 from MCMC import *
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 ### Read command line arguments ###
 def readArgs( argv ):
@@ -24,6 +24,7 @@ def readArgs( argv ):
 	arguments["mutation_size"]       = 0.0
 	arguments["selection_scheme"]    = ""
 	arguments["selection_threshold"] = 0.0
+	arguments["seed"]                = 0
 	for i in range(len(argv)):
 		if argv[i] == "-h" or argv[i] == "--help":
 			printHelp()
@@ -38,15 +39,17 @@ def readArgs( argv ):
 			arguments["selection_scheme"] = argv[i+1]
 		if argv[i] == "-selection-threshold" or argv[i] == "--selection-threshold":
 			arguments["selection_threshold"] = float(argv[i+1])
+		if argv[i] == "-seed" or argv[i] == "--seed":
+			arguments["seed"] = int(argv[i+1])
 	return arguments
 
 ### Assert parameters consistency ###
 def assertArgs( args ):
-	for item in args.items():
-		if item[1] == "" or item[1] == 0 or item[1] == 0.0:
-			print "Some argument values are missing."
-			print "Use option -h (--help) to see the list of mandatory arguments."
-			sys.exit()
+	#for item in args.items():
+	#	if item[1] == "" or item[1] == 0 or item[1] == 0.0:
+	#		print "Some argument values are missing."
+	#		print "Use option -h (--help) to see the list of mandatory arguments."
+	#		sys.exit()
 	if arguments["iterations"] <= 0:
 		print "Error: argument '-iterations' only admits positive integer values."
 		print "(current value: "+str(arguments["iterations"])+")"
@@ -59,9 +62,9 @@ def assertArgs( args ):
 		print "Error: argument '-selection-scheme' only admits 3 options (MUTATION_ACCUMULATION / METABOLIC_LOAD / BIOMASS_FUNCTION)."
 		print "(current value: "+str(arguments["selection_scheme"])+")"
 		sys.exit()
-	if arguments["selection_threshold"] <= 0.0:
-		print "Error: argument '-selection-threshold' only admits positive decimal values."
-		print "(current value: "+str(arguments["selection_threshold"])+")"
+	if arguments["seed"] <= 0:
+		print "Error: argument '-seed' only admits positive integer values."
+		print "(current value: "+str(arguments["seed"])+")"
 		sys.exit()
 		
 ### Print help ###
@@ -87,6 +90,8 @@ def printHelp():
 	print "        Specify the selection scheme (MUTATION_ACCUMULATION / METABOLIC_LOAD / BIOMASS_FUNCTION)"
 	print "  -selection-threshold, --selection-threshold <selection_threshold> (mandatory)"
 	print "        Specify the selection threshold (float > 0.0)"
+	print "  -seed, --seed <prng_seed> (mandatory)"
+	print "        Specify the prng seed (integer > 0.0)"
 	print ""
 
 ### Print header ###
@@ -103,7 +108,7 @@ def printHeader():
 #      MAIN      #
 ##################
 
-plt.ion()
+#plt.ion()
 
 if __name__ == '__main__':
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -113,22 +118,29 @@ if __name__ == '__main__':
 	assertArgs(arguments)
 	printHeader()
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	# 2) Run the MCMC simulation     #
+	# 2) Seed the numpy prng         #
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	np.random.seed(arguments["seed"])
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	# 3) Run the MCMC simulation     #
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	sim = MCMC(arguments["model_filename"], arguments["iterations"], arguments["mutation_size"], arguments["selection_scheme"], arguments["selection_threshold"])
 	sim.initialize()
 	stop_MCMC = False
 	while not stop_MCMC:
 		stop_MCMC = sim.iterate()
-		X = np.log10(sim.WT_conc)
-		Y = np.log10(sim.EV_conc)
-		Rho, Pval = stats.spearmanr(X,Y)
-		#slope, intercept, r_value, p_value, std_err = stats.linregress(X,Y)
-		#line = slope*X+intercept
-		try:
-			plt.clf()
-			plt.plot(X, Y, "o")
-			plt.text(-5.5,-11, "Spearman's rho="+str(round(Rho,5))+"\n(p-val="+str(round(Pval,5))+")", bbox=dict(facecolor='white', alpha=0.5))
-			plt.draw()
-		except:
-			print "no plot"
+		#static = ["Glcout", "Lacex", "PRPP", "Phiex", "Pyrex"]
+		#X = []
+		#Y = []
+		#for i in range(len(sim.WT_concentrations)):
+		#	if not sim.WT_concentrations[i][0] in static:
+		#		X.append(np.log10(sim.WT_conc[i]))
+		#		Y.append(np.log10(sim.EV_conc[i]))
+		#Rho, Pval = stats.spearmanr(X,Y)
+		#try:
+		#	plt.clf()
+		#	plt.plot(X, Y, "o")
+		#	plt.text(-5.5,-11, "Spearman's rho="+str(round(Rho,5))+"\n(p-val="+str(round(Pval,5))+")", bbox=dict(facecolor='white', alpha=0.5))
+		#	plt.draw()
+		#except:
+		#	no_plot = True

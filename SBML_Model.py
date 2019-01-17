@@ -297,7 +297,7 @@ if __name__ == '__main__':
 	# 1) Load the SBML model     #
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	print "> Loading Holzhutter (2004) model ..."
-	model = SBML_Model("resources/holzhutter2004.xml")
+	model = SBML_Model("holzhutter2004.xml")
 	model.load_reaction_to_param_map()
 	print "  - number of species: "+str(model.get_number_of_metabolites())
 	print "  - number of reactions: "+str(model.get_number_of_reactions())
