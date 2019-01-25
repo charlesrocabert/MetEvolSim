@@ -120,6 +120,7 @@ def exit_thread():
 	write_ending_thread_signal()
 	sys.exit()
 
+
 ##################
 #      MAIN      #
 ##################
