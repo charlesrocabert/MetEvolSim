@@ -293,6 +293,7 @@ class SBML_Model:
 ##################
 
 if __name__ == '__main__':
+	print "> This is an example showing how the SBML_Model class works."
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	# 1) Load the SBML model     #
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#

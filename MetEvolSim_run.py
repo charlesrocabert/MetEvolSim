@@ -14,7 +14,6 @@ from scipy import stats
 import subprocess
 from SBML_Model import *
 from MCMC import *
-#import matplotlib.pyplot as plt
 
 ### Read command line arguments ###
 def readArgs( argv ):
@@ -28,7 +27,7 @@ def readArgs( argv ):
 	for i in range(len(argv)):
 		if argv[i] == "-h" or argv[i] == "--help":
 			printHelp()
-			sys.exit()
+			exit_thread()
 		if argv[i] == "-model-filename" or argv[i] == "--model-filename":
 			arguments["model_filename"] = argv[i+1]
 		if argv[i] == "-iterations" or argv[i] == "--iterations":
@@ -53,19 +52,19 @@ def assertArgs( args ):
 	if arguments["iterations"] <= 0:
 		print "Error: argument '-iterations' only admits positive integer values."
 		print "(current value: "+str(arguments["iterations"])+")"
-		sys.exit()
+		exit_thread()
 	if arguments["mutation_size"] <= 0.0:
 		print "Error: argument '-mutation-size' only admits positive decimal values."
 		print "(current value: "+str(arguments["mutation_size"])+")"
-		sys.exit()
+		exit_thread()
 	if arguments["selection_scheme"] != "MUTATION_ACCUMULATION" and arguments["selection_scheme"] != "METABOLIC_LOAD" and arguments["selection_scheme"] != "BIOMASS_FUNCTION":
 		print "Error: argument '-selection-scheme' only admits 3 options (MUTATION_ACCUMULATION / METABOLIC_LOAD / BIOMASS_FUNCTION)."
 		print "(current value: "+str(arguments["selection_scheme"])+")"
-		sys.exit()
+		exit_thread()
 	if arguments["seed"] <= 0:
 		print "Error: argument '-seed' only admits positive integer values."
 		print "(current value: "+str(arguments["seed"])+")"
-		sys.exit()
+		exit_thread()
 		
 ### Print help ###
 def printHelp():
@@ -103,44 +102,56 @@ def printHeader():
 	print "# All rights reserved"
 	print "#*********************************************************************"
 	print ""
-	
+
+### Write the waiting signal for this thread ###
+def write_waiting_thread_signal():
+	f = open("thread_signal.txt", "w")
+	f.write("WAIT\n")
+	f.close()
+
+### Write the ending signal for this thread ###
+def write_ending_thread_signal():
+	f = open("thread_signal.txt", "w")
+	f.write("END\n")
+	f.close()
+
+### Exit thread ###
+def exit_thread():
+	write_ending_thread_signal()
+	sys.exit()
+
 ##################
 #      MAIN      #
 ##################
 
-#plt.ion()
-
 if __name__ == '__main__':
-	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	# 1) Read command line arguments #
-	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	# 1) Write the waiting thread signal #
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	write_waiting_thread_signal()
+	
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	# 2) Read command line arguments     #
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	arguments = readArgs(sys.argv)
 	assertArgs(arguments)
 	printHeader()
-	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	# 2) Seed the numpy prng         #
-	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	# 3) Seed the numpy prng             #
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	np.random.seed(arguments["seed"])
-	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	# 3) Run the MCMC simulation     #
-	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	# 4) Run the MCMC simulation         #
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	sim = MCMC(arguments["model_filename"], arguments["iterations"], arguments["mutation_size"], arguments["selection_scheme"], arguments["selection_threshold"])
 	sim.initialize()
 	stop_MCMC = False
 	while not stop_MCMC:
 		stop_MCMC = sim.iterate()
-		#static = ["Glcout", "Lacex", "PRPP", "Phiex", "Pyrex"]
-		#X = []
-		#Y = []
-		#for i in range(len(sim.WT_concentrations)):
-		#	if not sim.WT_concentrations[i][0] in static:
-		#		X.append(np.log10(sim.WT_conc[i]))
-		#		Y.append(np.log10(sim.EV_conc[i]))
-		#Rho, Pval = stats.spearmanr(X,Y)
-		#try:
-		#	plt.clf()
-		#	plt.plot(X, Y, "o")
-		#	plt.text(-5.5,-11, "Spearman's rho="+str(round(Rho,5))+"\n(p-val="+str(round(Pval,5))+")", bbox=dict(facecolor='white', alpha=0.5))
-		#	plt.draw()
-		#except:
-		#	no_plot = True
+		
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	# 5) Exit the thread                 #
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+	exit_thread()

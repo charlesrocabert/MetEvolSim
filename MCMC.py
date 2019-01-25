@@ -326,6 +326,7 @@ class MCMC:
 ##################
 
 if __name__ == '__main__':
+    print "> This is an example showing how the MCMC class works."
     model_filename      = "holzhutter2004.xml"
     iterations          = 10
     log_mutation_size   = 0.01
@@ -333,7 +334,5 @@ if __name__ == '__main__':
     selection_threshold = 0.0
     algo = MCMC(model_filename, iterations, log_mutation_size, selection_scheme, selection_threshold)
     algo.initialize()
-    print algo.item_to_array()
-    sys.exit()
     for it in range(iterations):
         algo.iterate()
