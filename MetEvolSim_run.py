@@ -10,7 +10,6 @@
 import os
 import sys
 import numpy as np
-from scipy import stats
 import subprocess
 from SBML_Model import *
 from MCMC import *
