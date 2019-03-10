@@ -1,6 +1,6 @@
 # MetEvolSim
 
-Copasi-based numerical tools dedicated to the study of metabolome evolution.
+SBML and Copasi-based simulator of metabolic networks evolution.
 
 ## 1. Authors <a name="authors"></a>
 
