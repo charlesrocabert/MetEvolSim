@@ -3,7 +3,7 @@ SBML and Copasi-based simulator of metabolic networks evolution.
 
 ## 1. Introduction <a name="introduction"></a>
 
-MetEvolSim simulates the long-term evolution of metabolic concentrations, through the mutation of kinetic parameters. The program takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as kinetic parameters and initial metabolic concentrations are specified. Steady-state concentrations are compute thanks to <a href="http://copasi.org/">Copasi</a> software.
+MetEvolSim simulates the long-term evolution of metabolic concentrations, through the mutation of kinetic parameters. The program takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as kinetic parameters and initial metabolic concentrations are specified. Steady-state concentrations are computed thanks to <a href="http://copasi.org/">Copasi</a> software.
 
 ## 2. Authors <a name="authors"></a>
 
