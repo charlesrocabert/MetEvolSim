@@ -1,5 +1,5 @@
 # MetEvolSim
-SBML and Copasi-based simulator of metabolic networks evolution.
+Numerical tool dedicated to the study of metabolic concentrations evolution.
 
 ## 1. Introduction <a name="introduction"></a>
 
