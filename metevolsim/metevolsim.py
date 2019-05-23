@@ -78,6 +78,12 @@ class Model:
 		Map of species identifiers from species names.
 	> reaction_name_to_id : dict
 		Map of reaction identifiers from reaction names.
+	> WT_SUM : float
+		Sum of evolvable metabolic abundances in wild-type.
+	> mutant_SUM : float
+		Sum of evolvable metabolic abundances in mutant.
+	> SUM_distance : float
+		Absolute distance between wild-type and mutant metabolic sums.
 	> objective_function : list of [str, float]
 		Objective function (list of reaction identifiers and coefficients).
 	> MOMA_distance : float
@@ -150,6 +156,8 @@ class Model:
 		Compute mutant steady-state.	
 	> update_initial_concentrations()
 		Update species initial concentrations.
+	> compute_SUM_distance()
+		Compute the metabolic sum distance between the WT and the mutant.
 	> compute_MOMA_distance()
 		Compute the MOMA distance between the WT and the mutant, based on target
 		fluxes (MOMA: Minimization Of Metabolic Adjustment).
@@ -199,6 +207,9 @@ class Model:
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Model evaluation                                         #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		self.WT_SUM             = 0.0
+		self.mutant_SUM         = 0.0
+		self.SUM_distance       = 0.0
 		self.objective_function = objective_function
 		self.MOMA_distance      = 0.0
 		for target_flux in objective_function:
@@ -957,14 +968,16 @@ class Model:
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Update model and lists               #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		self.WT_SUM = 0.0
 		for elmt in concentrations:
 			species_name  = elmt[0]
 			species_value = float(elmt[1])
 			species_id    = self.species_name_to_id[species_name]
 			assert species_id in self.species
 			if not self.species[species_id]["constant"]:
-				self.species[species_id]["WT_value"]     = species_value
-				self.species[species_id]["mutant_value"] = species_value
+				self.species[species_id]["WT_value"]      = species_value
+				self.species[species_id]["mutant_value"]  = species_value
+				self.WT_SUM                              += species_value
 		for elmt in fluxes:
 			reaction_name  = elmt[0]
 			reaction_value = float(elmt[1])
@@ -1002,13 +1015,15 @@ class Model:
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Update model and lists               #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		self.mutant_SUM = 0.0
 		for elmt in concentrations:
 			species_name  = elmt[0]
 			species_value = float(elmt[1])
 			species_id    = self.species_name_to_id[species_name]
 			assert species_id in self.species
 			if not self.species[species_id]["constant"]:
-				self.species[species_id]["mutant_value"] = species_value
+				self.species[species_id]["mutant_value"]  = species_value
+				self.mutant_SUM                          += species_value
 		for elmt in fluxes:
 			reaction_name  = elmt[0]
 			reaction_value = float(elmt[1])
@@ -1033,6 +1048,21 @@ class Model:
 			species_id = species_item[0]
 			if not self.species[species_id]["constant"]:
 				self.set_species_initial_value(species_id, self.species[species_id]["mutant_value"])
+	
+	### Compute the metabolic sum distance between the wild-type and the mutant ###
+	def compute_SUM_distance( self ):
+		"""
+		Compute the metabolic sum distance between the WT and the mutant.
+		
+		Parameters
+		----------
+		None
+		
+		Returns
+		-------
+		None
+		"""
+		self.SUM_distance = abs(self.WT_SUM-self.mutant_SUM)
 	
 	### Compute the MOMA distance between the wild-type and the mutant ###
 	def compute_MOMA_distance( self ):
@@ -1080,7 +1110,7 @@ class MCMC:
 	> sigma : float > 0.0
 		Standard deviation of the Log10-normal mutational distribution.
 	> selection_scheme : str
-		Selection scheme ('MUTATION_ACCUMULATION' or 'SELECTION').
+		Selection scheme ('MUTATION_ACCUMULATION'/'METABOLIC_SUM_SELECTION'/'TARGET_FLUXES_SELECTION').
 	> selection_threshold : str
 		Selection threshold applied on the MOMA distance.
 	> model : Model
@@ -1168,7 +1198,7 @@ class MCMC:
 		sigma : float > 0.0
 			Standard deviation of the Log10-normal mutational distribution.
 		selection_scheme : str
-			Selection scheme ('MUTATION_ACCUMULATION' or 'SELECTION').
+			Selection scheme ('MUTATION_ACCUMULATION'/'METABOLIC_SUM_SELECTION'/'TARGET_FLUXES_SELECTION').
 		selection_threshold : float > 0.0
 			Selection threshold applied on the MOMA distance.
 		
@@ -1180,7 +1210,7 @@ class MCMC:
 		assert len(objective_function) > 0, "You must provide at least one reaction in the objective function. Exit."
 		assert total_iterations > 0, "The total number of iterations must be a positive nonzero value. Exit."
 		assert sigma > 0.0, "The mutation size 'sigma' must be a positive nonzero value. Exit."
-		assert selection_scheme=="MUTATION_ACCUMULATION" or selection_scheme=="SELECTION", "The selection scheme takes two values only (MUTATION_ACCUMULATION/SELECTION). Exit."
+		assert selection_scheme=="MUTATION_ACCUMULATION" or selection_scheme=="METABOLIC_SUM_SELECTION" or selection_scheme=="TARGET_FLUXES_SELECTION", "The selection scheme takes two values only (MUTATION_ACCUMULATION/METABOLIC_SUM_SELECTION/TARGET_FLUXES_SELECTION). Exit."
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Main MCMC parameters   #
@@ -1262,7 +1292,7 @@ class MCMC:
 				header += " "+species_id
 		for reaction_id in self.model.reactions:
 			header += " "+reaction_id
-		header += " moma_dist\n"
+		header += " wt_sum mutant_sum sum_dist moma_dist\n"
 		self.output_file = open("output/iterations.txt", "a")
 		self.output_file.write(header)
 		self.output_file.close()
@@ -1305,7 +1335,7 @@ class MCMC:
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Write MOMA distance      #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		line += " "+str(self.model.MOMA_distance)
+		line += " "+str(self.model.WT_SUM)+" "+str(self.model.mutant_SUM)+" "+str(self.model.SUM_distance)+" "+str(self.model.MOMA_distance)
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 4) Write in file            #
@@ -1406,10 +1436,13 @@ class MCMC:
 		"""
 		self.model.compute_WT_steady_state()
 		self.model.compute_mutant_steady_state()
+		self.model.compute_SUM_distance()
 		self.model.compute_MOMA_distance()
 		self.initialize_output_file()
-		self.WT_abund = self.model.get_WT_species_array()
-	
+		self.WT_abund     = self.model.get_WT_species_array()
+		self.mutant_abund = self.model.get_mutant_species_array()
+		self.mutant_flux  = self.model.get_mutant_reaction_array()
+		
 	### Reload the previous MCMC state ###
 	def reload_previous_state( self ):
 		"""
@@ -1474,35 +1507,60 @@ class MCMC:
 		# 3) Compute the new steady-state    #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.model.compute_mutant_steady_state()
+		self.model.compute_SUM_distance()
 		self.model.compute_MOMA_distance()
 		self.mutant_abund = self.model.get_mutant_species_array()
+		self.mutant_flux  = self.model.get_mutant_reaction_array()
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 4) Select the new iteration event  #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		
-		#---------------------------------------------------------------#
-		# 4.1) If the simulation is a mutation accumulation experiment, #
-		#      keep all the mutational events.                          #
-		#---------------------------------------------------------------#
+		#-----------------------------------------------------------------#
+		# 4.1) If the simulation is a mutation accumulation experiment,   #
+		#      keep all the mutational events.                            #
+		#-----------------------------------------------------------------#
 		if self.selection_scheme == "MUTATION_ACCUMULATION":
 			self.nb_iterations += 1
 			self.nb_accepted   += 1
 			self.update_statistics()
 			self.compute_statistics()
-			self.model.update_initial_concentrations()
-		#---------------------------------------------------------------#
-		# 4.2) If the simulation is a selection experiment, keep only   #
-		#      mutations for which the MOMA distance is lower than a    #
-		#      given selection threshold.                               #
-		#---------------------------------------------------------------#
-		elif self.selection_scheme == "SELECTION" and self.model.MOMA_distance < self.selection_threshold:
+			#self.model.update_initial_concentrations()
+		#-----------------------------------------------------------------#
+		# 4.2) If the simulation is a metabolic sum selection experiment, #
+		#      keep only mutations for which the SUM distance is lower    #
+		#      than a given selection threshold.                          #
+		#-----------------------------------------------------------------#
+		elif self.selection_scheme == "METABOLIC_SUM_SELECTION" and self.model.SUM_distance < self.selection_threshold:
+			print(self.model.SUM_distance, "(", self.model.WT_SUM, ",", self.model.mutant_SUM, ")")
 			self.nb_iterations += 1
 			self.nb_accepted   += 1
 			self.update_statistics()
 			self.compute_statistics()
-			self.model.update_initial_concentrations()
-		elif self.selection_scheme == "SELECTION" and self.model.MOMA_distance >= self.selection_threshold:
+			#self.model.update_initial_concentrations()
+		elif self.selection_scheme == "METABOLIC_SUM_SELECTION" and self.model.SUM_distance >= self.selection_threshold:
+			print(self.model.SUM_distance, "(", self.model.WT_SUM, ",", self.model.mutant_SUM, ")")
+			self.nb_iterations += 1
+			self.nb_rejected   += 1
+			self.reload_previous_state()
+			self.update_statistics()
+			self.compute_statistics()
+			self.param_metaid   = "_"
+			self.param_id       = "_"
+			self.param_value    = 0.0
+			self.param_previous = 0.0
+		#-----------------------------------------------------------------#
+		# 4.3) If the simulation is a target fluxes selection experiment, #
+		#      keep only mutations for which the MOMA distance is lower   #
+		#      than a given selection threshold.                          #
+		#-----------------------------------------------------------------#
+		elif self.selection_scheme == "TARGET_FLUXES_SELECTION" and self.model.MOMA_distance < self.selection_threshold:
+			self.nb_iterations += 1
+			self.nb_accepted   += 1
+			self.update_statistics()
+			self.compute_statistics()
+			#self.model.update_initial_concentrations()
+		elif self.selection_scheme == "TARGET_FLUXES_SELECTION" and self.model.MOMA_distance >= self.selection_threshold:
 			self.nb_iterations += 1
 			self.nb_rejected   += 1
 			self.reload_previous_state()
