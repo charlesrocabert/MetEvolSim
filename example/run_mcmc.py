@@ -53,6 +53,7 @@ def readArgs( argv ):
 	arguments["selection-scheme"]    = ""
 	arguments["selection-threshold"] = 0.0
 	arguments["seed"]                = 0
+	arguments["copasiSE"]            = ""
 	for i in range(len(argv)):
 		if argv[i] == "-h" or argv[i] == "--help":
 			printHelp()
@@ -71,6 +72,8 @@ def readArgs( argv ):
 			arguments["selection-threshold"] = float(argv[i+1])
 		if argv[i] == "-seed" or argv[i] == "--seed":
 			arguments["seed"] = int(argv[i+1])
+		if argv[i] == "-copasiSE" or argv[i] == "--copasiSE":
+			arguments["copasiSE"] = argv[i+1]
 	return arguments
 
 ### Assert arguments consistency ###
@@ -108,6 +111,9 @@ def assertArgs( arguments ):
 	if arguments["seed"] <= 0:
 		print("Error: argument '-seed' only admits positive integer values (seed > 0).")
 		print("(current value: "+str(arguments["seed"])+")")
+		exit_thread()
+	if not os.path.isfile(arguments["copasiSE"]):
+		print("The executable \""+arguments["copasiSE"]+"\" does not exist. Exit.")
 		exit_thread()
 		
 ### Print help ###
@@ -166,6 +172,8 @@ def printHelp():
 	print("        Specify the selection threshold (float > 0.0).")
 	print("  -seed, --seed <prng_seed> (mandatory)")
 	print("        Specify the prng seed (integer > 0.0)")
+	print("  -copasiSE, --copasiSE <copasiSE_path> (mandatory)")
+	print("        Specify the location of copasiSE executable.")
 	print("")
 
 ### Print header ###
@@ -307,6 +315,7 @@ if __name__ == '__main__':
 	arguments["selection-scheme"]    = "MUTATION_ACCUMULATION"
 	arguments["selection-threshold"] = 1e-4
 	arguments["seed"]                = 123
+	arguments["copasiSE"]            = "/Applications/COPASI/CopasiSE"
 	
 	assertArgs(arguments)
 	printHeader(arguments)
@@ -324,7 +333,7 @@ if __name__ == '__main__':
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	# 5) Run the MCMC algorithm          #
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	mcmc       = metevolsim.MCMC(arguments["sbml-filename"], objective_function, arguments["iterations"], arguments["selection-sigma"], arguments["selection-scheme"], arguments["selection-threshold"])
+	mcmc       = metevolsim.MCMC(arguments["sbml-filename"], objective_function, arguments["iterations"], arguments["selection-sigma"], arguments["selection-scheme"], arguments["selection-threshold"], arguments["copasiSE"])
 	stop_mcmc  = False
 	start_time = time.time()
 	mcmc.initialize()

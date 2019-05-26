@@ -43,6 +43,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(
 	name                          = "metevolsim",
 	version                       = "0.1.0",
+	license                       = "GPLv3",
 	description                   = "MetEvolSim (Metabolome Evolution Simulator) Python Package",
 	long_description              = long_description,
 	long_description_content_type = "text/markdown",
@@ -58,18 +59,10 @@ setup(
 		"Topic :: Scientific/Engineering :: Bio-Informatics",
 	],
 	keywords         = "metabolism abundances evolution metabolic-network kinetic-model evolution-rate",
-	packages         = find_packages(exclude = ["contrib", "docs", "tests"]),
+	packages         = find_packages(exclude=["contrib", "docs", "tests"]),
 	python_requires  = ">=3",
-	install_requires = ["libsbml", "numpy"],
-	# If there are data files included in your packages that need to be
-	# installed, specify them here.
-	#
-	# If using Python 2.6 or earlier, then these have to be included in
-	# MANIFEST.in as well.
-	package_data = {  # Optional
-		"examples": ["package_data.dat"], # ======TODO======
-	},
-	project_urls = {
+	install_requires = ["python-libsbml", "numpy"],
+	project_urls     = {
 	"Source": "https://github.com/charlesrocabert/MetEvolSim"
 	},
 )

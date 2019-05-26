@@ -89,6 +89,8 @@ class Model:
 	> MOMA_distance : float
 		Distance between the wild-type and the mutant, based on the
 		Minimization Of Metabolic Adjustment (MOMA).
+	> copasiSE_path: str
+		Location of CopasiSE executable.
 	
 	Methods
     -------
@@ -164,7 +166,7 @@ class Model:
 	"""
 	
 	### Constructor ###
-	def __init__( self, SBML_filename, objective_function ):
+	def __init__( self, SBML_filename, objective_function, CopasiSE ):
 		"""
 		Model class constructor.
 		
@@ -174,12 +176,15 @@ class Model:
 			Path of the SBML model file. The SBML model is automatically loaded.
 		objective_function : list of [str, float]
 			Objective function (list of reaction identifiers and coefficients).
+		CopasiSE : str
+			Location of CopasiSE executable.
 		
 		Returns
 		-------
 		None
 		"""
 		assert os.path.isfile(SBML_filename), "The SBML file \""+SBML_filename+"\" does not exist. Exit."
+		assert os.path.isfile(CopasiSE), "The executable \""+copasiSE+"\" does not exist. Exit."
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Main SBML data                                           #
@@ -214,6 +219,11 @@ class Model:
 		self.MOMA_distance      = 0.0
 		for target_flux in objective_function:
 			assert target_flux[0] in self.reactions
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 4) CopasiSE path                                            #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		self.copasiSE = CopasiSE
 		
 	### Rebuilt the unique metaids for all the model variables ###
 	def rebuild_metaids( self ):
@@ -752,7 +762,7 @@ class Model:
 		-------
 		None
 		"""
-		cmd_line = "./resources/CopasiSE -i ./output/WT.xml"
+		cmd_line = self.copasiSE_path+" -i ./output/WT.xml"
 		process  = subprocess.call([cmd_line], stdout=subprocess.PIPE, shell=True)
 
 	### Create mutant CPS file ###
@@ -768,7 +778,7 @@ class Model:
 		-------
 		None
 		"""
-		cmd_line = "./resources/CopasiSE -i ./output/mutant.xml"
+		cmd_line = self.copasiSE_path+" -i ./output/mutant.xml"
 		process = subprocess.call([cmd_line], stdout=subprocess.PIPE, shell=True)
 
 	### Edit wild-type CPS file to schedule steady-state calculation ###
@@ -876,7 +886,7 @@ class Model:
 		"""
 		if os.path.isfile("./output/WT_output.txt"):
 			os.system("rm ./output/WT_output.txt")
-		cmd_line = "./resources/CopasiSE ./output/WT.cps"
+		cmd_line = self.copasiSE_path+" ./output/WT.cps"
 		process  = subprocess.call([cmd_line], stdout=subprocess.PIPE, shell=True)
 
 	### Run Copasi for the mutant model ###
@@ -894,7 +904,7 @@ class Model:
 		"""
 		if os.path.isfile("./output/mutant_output.txt"):
 			os.system("rm ./output/mutant_output.txt")
-		cmd_line = "./resources/CopasiSE ./output/mutant.cps"
+		cmd_line = self.copasiSE_path+" ./output/mutant.cps"
 		process  = subprocess.call([cmd_line], stdout=subprocess.PIPE, shell=True)
 	
 	### Parse Copasi output file ###
@@ -1183,7 +1193,7 @@ class MCMC:
 	"""
 	
 	### Constructor ###
-	def __init__( self, SBML_filename, objective_function, total_iterations, sigma, selection_scheme, selection_threshold ):
+	def __init__( self, SBML_filename, objective_function, total_iterations, sigma, selection_scheme, selection_threshold, CopasiSE ):
 		"""
 		MCMC class constructor.
 		
@@ -1201,6 +1211,8 @@ class MCMC:
 			Selection scheme ('MUTATION_ACCUMULATION'/'METABOLIC_SUM_SELECTION'/'TARGET_FLUXES_SELECTION').
 		selection_threshold : float > 0.0
 			Selection threshold applied on the MOMA distance.
+		CopasiSE : str
+			Location of CopasiSE executable.
 		
 		Returns
 		-------
@@ -1211,6 +1223,7 @@ class MCMC:
 		assert total_iterations > 0, "The total number of iterations must be a positive nonzero value. Exit."
 		assert sigma > 0.0, "The mutation size 'sigma' must be a positive nonzero value. Exit."
 		assert selection_scheme=="MUTATION_ACCUMULATION" or selection_scheme=="METABOLIC_SUM_SELECTION" or selection_scheme=="TARGET_FLUXES_SELECTION", "The selection scheme takes two values only (MUTATION_ACCUMULATION/METABOLIC_SUM_SELECTION/TARGET_FLUXES_SELECTION). Exit."
+		assert os.path.isfile(CopasiSE), "The executable \""+copasiSE+"\" does not exist. Exit."
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Main MCMC parameters   #
@@ -1224,7 +1237,7 @@ class MCMC:
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) SBML model             #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		self.model = Model(SBML_filename, objective_function)
+		self.model = Model(SBML_filename, objective_function, CopasiSE)
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Current state tracking #
@@ -1633,7 +1646,7 @@ class SensitivityAnalysis:
 	"""
 	
 	### Constructor ###
-	def __init__( self, SBML_filename, factor_range, factor_step ):
+	def __init__( self, SBML_filename, factor_range, factor_step, CopasiSE ):
 		"""
 		SensitivityAnalysis class constructor.
 		
@@ -1646,6 +1659,8 @@ class SensitivityAnalysis:
 		factor_step : float > 0.0
 			Exploration step of the log10-scaling factor.
 			x' = x*10^(factor)
+		CopasiSE : str
+			Location of CopasiSE executable.
 		
 		Returns
 		-------
@@ -1654,6 +1669,7 @@ class SensitivityAnalysis:
 		assert os.path.isfile(SBML_filename), "The SBML file \""+SBML_filename+"\" does not exist. Exit."
 		assert factor_range > 0.0, "The factor range 'factor_range' must be a positive nonzero value. Exit."
 		assert factor_step > 0.0, "The factor step 'factor_step' must be a positive nonzero value. Exit."
+		assert os.path.isfile(CopasiSE), "The executable \""+copasiSE+"\" does not exist. Exit."
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Main sensitivity analysis parameters #
@@ -1665,7 +1681,7 @@ class SensitivityAnalysis:
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) SBML model                           #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		self.model = Model(SBML_filename, [])
+		self.model = Model(SBML_filename, [], copasiSE)
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Parameter tracking                   #
