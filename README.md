@@ -2,9 +2,9 @@
 <p align="center">
     Numerical tools dedicated to the evolution of metabolic concentrations
     <br/><br/>
-    <a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest"><img src="https://img.shields.io/badge/pypi package- 0.1.0-orange.svg" /></a>&nbsp;<a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/license-GPL v3-blue.svg" /></a>&nbsp;
+    <a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest"><img src="https://img.shields.io/badge/PyPI package- 0.1.0-orange.svg" /></a>&nbsp;<a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/license-GPL v3-blue.svg" /></a>&nbsp;
     <br/>
-    <img src="logo/metevolsim_logo.png" width=150>
+    <img src="logos/metevolsim_logo.png" width=150>
 </p>
 
 -----------------
@@ -19,7 +19,7 @@ MetEvolSim is being developed by Charles Rocabert, Gábor Boross and Balázs Pap
 </p>
 
 <p align="center">
-<img src="logo/BRC_logo.png" height="100px"></a>&nbsp;&nbsp;&nbsp;<img src="logo/MTA_logo.png" height="100px"></a>
+<img src="logos/BRC_logo.png" height="100px"></a>&nbsp;&nbsp;&nbsp;<img src="logos/MTA_logo.png" height="100px"></a>
 </p>
 
 ## Table of contents
@@ -33,16 +33,25 @@ MetEvolSim is being developed by Charles Rocabert, Gábor Boross and Balázs Pap
 &bullet; To install Copasi software, visit http://copasi.org/.
 
 &bullet; To install Python dependencies:
-```
+```shell
 pip install numpy python-libsbml
 ```
 
 &bullet; To install the current release of MetEvolSim:
 <strike>
-```
+```shell
 pip install metevolsim
 ```
 </strike>
+
+Alternatively, download the <a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest">latest release</a> in the folder of your choice and unzip it. Then follow the instructions below:
+```shell
+# Navigate to the MetEvolSim folder
+cd /path/to/MetEvolSim
+
+# Install metevolsim Python package
+python3 setup.py install
+```
 
 ## First usage <a name="first_usage"></a>
 MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as kinetic parameters and initial metabolic concentrations are specified. MetEvolSim provides a class to manipulate SBML models: the class <code>Model</code>. It is also necessary to define an objective function (a list of reaction names and coefficients), and to provide the path of CopasiSE software.
@@ -77,6 +86,8 @@ MetEvolSim allows two types of numerical analyses on a SBML metabolic model:
 - <strong>Evolution experiments</strong>, based on a Markov Chain Monte Carlo (MCMC) algorithm,
 - <strong>Sensitivity analysis</strong>, by exploring every kinetic parameters in a given range and recording associated fluxes and metabolic abundances changes.
 
+All numerical analyses output files are saved in a subfolder <code>output</code>, automatically created by MetEvolSim.
+
 ### Evolution experiments:
 Three types of evolution experiments are availables:
 - <code>MUTATION_ACCUMULATION</code>: Run a mutation accumulation experiment by keeping all new mutations without any selection,
@@ -85,7 +96,7 @@ Three types of evolution experiments are availables:
 
 ```python
 # Load a Markov Chain Monte Carlo (MCMC) instance
-mcmc = metevolsim.MCMC('glycolysis.xml', objective_function, total_iterations=10000, sigma=0.01, selection_scheme="MUTATION_ACCUMULATION", selection_threshold=1e-4)
+mcmc = metevolsim.MCMC('glycolysis.xml', objective_function, total_iterations=10000, sigma=0.01, selection_scheme="MUTATION_ACCUMULATION", selection_threshold=1e-4, copasiSE='/Applications/COPASI/CopasiSE')
 
 # Initialize the MCMC instance 
 mcmc.initialize()
@@ -101,7 +112,7 @@ while not stop_MCMC:
 ### Sensitivity analysis:
 ```python
 # Load a sensitivity analysis instance
-sa = metevolsim.SensitivityAnalysis('glycolysis.xml', factor_range=1.0, factor_step=0.01)
+sa = metevolsim.SensitivityAnalysis('glycolysis.xml', factor_range=1.0, factor_step=0.01, copasiSE='/Applications/COPASI/CopasiSE')
 
 # Initialize the sensitivity analysis instance 
 sa.initialize()

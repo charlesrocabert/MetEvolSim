@@ -7,11 +7,10 @@ setwd("/Users/charlesrocabert/git/MetEvolSim-development/example")
 d = read.table("output/sensitivity_analysis.txt", h=T, sep=" ")
 names(d)
 
-#ggplot(d, aes(x=param_dln, y=v_1, color=param_id)) +
-#geom_line() +
-#theme_classic() +
-#ylim(-0.03, 0.03) +
-#theme(legend.position="none")
+ggplot(d, aes(x=param_dln, y=ADPf, color=param_id)) +
+geom_line() +
+theme_classic() +
+theme(legend.position="none")
 
 PARAM_IDS  = unique(d$param_id)
 FLUX       = seq(46,83)
