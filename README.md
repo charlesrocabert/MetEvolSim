@@ -4,7 +4,7 @@
     <br/><br/>
     <a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest"><img src="https://img.shields.io/badge/pypi package- 0.1.0-orange.svg" /></a>&nbsp;<a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/license-GPL v3-blue.svg" /></a>&nbsp;
     <br/>
-    <img src="logo/metevolsim_logo.png" width=150>
+    <img src="logos/metevolsim_logo.png" width=150>
 </p>
 
 -----------------
@@ -19,7 +19,7 @@ MetEvolSim is being developed by Charles Rocabert, Gábor Boross and Balázs Pap
 </p>
 
 <p align="center">
-<img src="logo/BRC_logo.png" height="100px"></a>&nbsp;&nbsp;&nbsp;<img src="logo/MTA_logo.png" height="100px"></a>
+<img src="logos/BRC_logo.png" height="100px"></a>&nbsp;&nbsp;&nbsp;<img src="logos/MTA_logo.png" height="100px"></a>
 </p>
 
 ## Table of contents
