@@ -34,7 +34,7 @@ MetEvolSim is being developed by Charles Rocabert, Gábor Boross and Balázs Pap
 - Python &ge; 3,
 - Numpy &ge; 1.15 (automatically installed when using pip),
 - Python-libsbml &ge; 5.17 (automatically installed when using pip),
-<strike>- pip &ge; 19.1 (optional).</strike>
+- <strike>pip &ge; 19.1 (optional).</strike>
 
 ## Installation <a name="installation"></a>
 &bullet; To install Copasi software, visit http://copasi.org/.
