@@ -49,7 +49,7 @@ def readArgs( argv ):
 	arguments["sbml-filename"] = ""
 	arguments["factor-range"]  = 0.0
 	arguments["factor-step"]   = 0.0
-	arguments["copasiSE"]      = ""
+	arguments["copasi-path"]   = ""
 	for i in range(len(argv)):
 		if argv[i] == "-h" or argv[i] == "--help":
 			printHelp()
@@ -60,8 +60,8 @@ def readArgs( argv ):
 			arguments["factor-range"] = float(argv[i+1])
 		if argv[i] == "-factor-step" or argv[i] == "--factor-step":
 			arguments["factor-step"] = float(argv[i+1])
-		if argv[i] == "-copasiSE" or argv[i] == "--copasiSE":
-			arguments["copasiSE"] = argv[i+1]
+		if argv[i] == "-copasi-path" or argv[i] == "--copasi-path":
+			arguments["copasi-path"] = argv[i+1]
 	return arguments
 
 ### Assert arguments consistency ###
@@ -89,8 +89,8 @@ def assertArgs( arguments ):
 		print("Error: argument '-factor-step' only admits positive decimal values (factor_step > 0.0).")
 		print("(current value: "+str(arguments["factor-step"])+")")
 		exit_thread()
-	if not os.path.isfile(arguments["copasiSE"]):
-		print("The executable \""+arguments["copasiSE"]+"\" does not exist. Exit.")
+	if not os.path.isfile(arguments["copasi-path"]):
+		print("The executable \""+arguments["copasi-path"]+"\" does not exist. Exit.")
 		exit_thread()
 		
 ### Print help ###
@@ -142,7 +142,7 @@ def printHelp():
 	print("  -factor-step, --factor-step <factor_step> (mandatory)")
 	print("        Specify the step of the parameter exploration factor (float > 0.0)")
 	print("        (factor' = factor -+ step)")
-	print("  -copasiSE, --copasiSE <copasiSE_path> (mandatory)")
+	print("  -copasi-path, --copasi-path <copasi_path> (mandatory)")
 	print("        Specify the location of copasiSE executable.")
 	print("")
 
@@ -258,14 +258,14 @@ if __name__ == '__main__':
 	arguments["sbml-filename"] = "resources/holzhutter2004.xml"
 	arguments["factor-range"]  = 0.01
 	arguments["factor-step"]   = 0.001
-	arguments["copasiSE"]      = "/Applications/COPASI/CopasiSE"
+	arguments["copasi-path"]   = "/Applications/COPASI/CopasiSE"
 	assertArgs(arguments)
 	printHeader(arguments)
 	
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	# 3) Run the sensitivity analysis    #
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	sa         = MetEvolSim.SensitivityAnalysis(arguments["sbml-filename"], arguments["factor-range"], arguments["factor-step"], arguments["copasiSE"])
+	sa         = MetEvolSim.SensitivityAnalysis(arguments["sbml-filename"], arguments["factor-range"], arguments["factor-step"], arguments["copasi-path"])
 	stop_sa    = False
 	start_time = time.time()
 	sa.initialize()

@@ -1,8 +1,8 @@
 <h1 align="center">MetEvolSim</h1>
 <p align="center">
-    Numerical tools dedicated to the evolution of metabolic concentrations
+    Python package dedicated to the evolution of metabolic concentrations
     <br/><br/>
-    <a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest"><img src="https://img.shields.io/badge/PyPI package- 0.1.0-orange.svg" /></a>&nbsp;<a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/license-GPL v3-blue.svg" /></a>&nbsp;
+    <a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest"><img src="https://img.shields.io/badge/PyPI package- 0.2.0-orange.svg" /></a>&nbsp;<a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/license-GPL v3-blue.svg" /></a>&nbsp;
     <br/>
     <img src="logos/metevolsim_logo.png" width=150>
 </p>
@@ -11,7 +11,7 @@
 
 <p align="justify">
 MetEvolSim is a Python package providing numerical tools to study the long-term evolution of metabolic concentrations.
-MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as kinetic parameters and initial metabolic concentrations are specified. Steady-state concentrations are computed thanks to <a href="http://copasi.org/">Copasi</a> software.
+MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as kinetic parameters and initial metabolic concentrations are specified, and a stable steady-state exists. Steady-state concentrations are computed thanks to <a href="http://copasi.org/">Copasi</a> software.
 </p>
 
 <p align="justify">
@@ -23,11 +23,18 @@ MetEvolSim is being developed by Charles Rocabert, Gábor Boross and Balázs Pap
 </p>
 
 ## Table of contents
+- [Dependencies](#dependencies)
 - [Installation](#installation)
 - [First usage](#first_usage)
 - [Help](#help)
 - [Copyright](#copyright)
 - [License](#license)
+
+## Dependencies <a name="dependencies"></a>
+- Python &ge; 3,
+- Numpy &ge; 1.15 (automatically installed when using pip),
+- Python-libsbml &ge; 5.17 (automatically installed when using pip),
+- <strike>pip &ge; 19.1 (optional).</strike>
 
 ## Installation <a name="installation"></a>
 &bullet; To install Copasi software, visit http://copasi.org/.
@@ -54,17 +61,17 @@ python3 setup.py install
 ```
 
 ## First usage <a name="first_usage"></a>
-MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as kinetic parameters and initial metabolic concentrations are specified. MetEvolSim provides a class to manipulate SBML models: the class <code>Model</code>. It is also necessary to define an objective function (a list of reaction names and coefficients), and to provide the path of CopasiSE software.
+MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as kinetic parameters and initial metabolic concentrations are specified, and a stable steady-state exists. MetEvolSim provides a class to manipulate SBML models: the class <code>Model</code>. It is also necessary to define an objective function (a list of reaction names and coefficients), and to provide the path of CopasiSE software.
 
 ```python
 # Import metevolsim package
 import metevolsim
 
 # Create an objective function
-objective_function = [['ATPase', 1.0], ['PDC', 1.0]]
+target_fluxes = [['ATPase', 1.0], ['PDC', 1.0]]
 
 # Load the SBML metabolic model
-model = metevolsim.Model('glycolysis.xml', objective_function, '/Applications/COPASI/CopasiSE')
+model = metevolsim.Model(sbml_filename='glycolysis.xml', objective_function=target_fluxes, copasi_path='/Applications/COPASI/CopasiSE')
 
 # Print some informations on the metabolic model
 print(model.get_number_of_species())
@@ -89,14 +96,14 @@ MetEvolSim allows two types of numerical analyses on a SBML metabolic model:
 All numerical analyses output files are saved in a subfolder <code>output</code>, automatically created by MetEvolSim.
 
 ### Evolution experiments:
-Three types of evolution experiments are availables:
-- <code>MUTATION_ACCUMULATION</code>: Run a mutation accumulation experiment by keeping all new mutations without any selection,
+Three types of evolution experiments are available:
+- <code>MUTATION_ACCUMULATION</code>: Run a mutation accumulation experiment by accepting all new mutations without any selection threshold,
 - <code>METABOLIC_SUM_SELECTION</code>: Run an evolution experiment by applying a stabilizing selection on the sum of metabolic abundances,
 - <code>TARGET_FLUXES_SELECTION</code>: Run an evolution experiment by applying a stabilizing selection on the objective function.
 
 ```python
 # Load a Markov Chain Monte Carlo (MCMC) instance
-mcmc = metevolsim.MCMC('glycolysis.xml', objective_function, total_iterations=10000, sigma=0.01, selection_scheme="MUTATION_ACCUMULATION", selection_threshold=1e-4, copasiSE='/Applications/COPASI/CopasiSE')
+mcmc = metevolsim.MCMC(sbml_filename='glycolysis.xml', objective_function=target_fluxes, total_iterations=10000, sigma=0.01, selection_scheme="MUTATION_ACCUMULATION", selection_threshold=1e-4, copasi_path='/Applications/COPASI/CopasiSE')
 
 # Initialize the MCMC instance 
 mcmc.initialize()
@@ -112,7 +119,7 @@ while not stop_MCMC:
 ### Sensitivity analysis:
 ```python
 # Load a sensitivity analysis instance
-sa = metevolsim.SensitivityAnalysis('glycolysis.xml', factor_range=1.0, factor_step=0.01, copasiSE='/Applications/COPASI/CopasiSE')
+sa = metevolsim.SensitivityAnalysis(sbml_filename='glycolysis.xml', factor_range=1.0, factor_step=0.01, copasi_path='/Applications/COPASI/CopasiSE')
 
 # Initialize the sensitivity analysis instance 
 sa.initialize()

@@ -42,7 +42,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
 	name                          = "metevolsim",
-	version                       = "0.1.0",
+	version                       = "0.2.0",
 	license                       = "GPLv3",
 	description                   = "MetEvolSim (Metabolome Evolution Simulator) Python Package",
 	long_description              = long_description,
@@ -51,7 +51,7 @@ setup(
 	author                        = "Charles Rocabert, Gábor Boross, Balázs Papp",
 	author_email                  = "",
 	classifiers = [
-		"Development Status :: 2 - Pre-Alpha",
+		"Development Status :: 4 - Beta",
 		"Programming Language :: Python :: 3",
 		"License :: OSI Approved :: Gnu General Public License v3 (GPLv3)",
 		"Operating System :: OS Independent",

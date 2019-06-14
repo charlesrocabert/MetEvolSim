@@ -48,12 +48,12 @@ def readArgs( argv ):
 	arguments                        = {}
 	arguments["sbml-filename"]       = ""
 	arguments["objective-function"]  = ""
-	arguments["iterations"]          = 0
+	arguments["nb-iterations"]       = 0
 	arguments["selection-sigma"]     = 0.0
 	arguments["selection-scheme"]    = ""
 	arguments["selection-threshold"] = 0.0
 	arguments["seed"]                = 0
-	arguments["copasiSE"]            = ""
+	arguments["copasi-path"]         = ""
 	for i in range(len(argv)):
 		if argv[i] == "-h" or argv[i] == "--help":
 			printHelp()
@@ -62,8 +62,8 @@ def readArgs( argv ):
 			arguments["sbml-filename"] = argv[i+1]
 		if argv[i] == "-objective-function" or argv[i] == "--objective-function":
 			arguments["objective-function"] = argv[i+1]
-		if argv[i] == "-iterations" or argv[i] == "--iterations":
-			arguments["iterations"] = int(argv[i+1])
+		if argv[i] == "-nb-iterations" or argv[i] == "--nb-iterations":
+			arguments["nb-iterations"] = int(argv[i+1])
 		if argv[i] == "-selection-sigma" or argv[i] == "--selection-sigma":
 			arguments["selection-sigma"] = float(argv[i+1])
 		if argv[i] == "-selection-scheme" or argv[i] == "--selection-scheme":
@@ -72,8 +72,8 @@ def readArgs( argv ):
 			arguments["selection-threshold"] = float(argv[i+1])
 		if argv[i] == "-seed" or argv[i] == "--seed":
 			arguments["seed"] = int(argv[i+1])
-		if argv[i] == "-copasiSE" or argv[i] == "--copasiSE":
-			arguments["copasiSE"] = argv[i+1]
+		if argv[i] == "-copasi-path" or argv[i] == "--copasi-path":
+			arguments["copasi-path"] = argv[i+1]
 	return arguments
 
 ### Assert arguments consistency ###
@@ -96,24 +96,25 @@ def assertArgs( arguments ):
 	if not os.path.isfile(arguments["objective-function"]):
 		print("The objective function file \""+arguments["objective-function"]+"\" does not exist. Exit.")
 		exit_thread()
-	if arguments["iterations"] <= 0:
-		print("Error: argument '-iterations' only admits positive integer values (iterations > 0).")
-		print("(current value: "+str(arguments["iterations"])+")")
+	if arguments["nb-iterations"] <= 0:
+		print("Error: argument '-nb-iterations' only admits positive integer values (iterations > 0).")
+		print("(current value: "+str(arguments["nb-iterations"])+")")
 		exit_thread()
 	if arguments["selection-sigma"] <= 0.0:
 		print("Error: argument '-selection-sigma' only admits positive decimal values (selection-sigma > 0.0).")
 		print("(current value: "+str(arguments["selection-sigma"])+")")
 		exit_thread()
-	if arguments["selection-scheme"] != "MUTATION_ACCUMULATION" and arguments["selection-scheme"] != "SELECTION":
-		print("Error: argument '-selection-scheme' only admits 2 options (MUTATION_ACCUMULATION / SELECTION).")
+	# METABOLIC_SUM_SELECTION / TARGET_FLUXES_SELECTION
+	if not arguments["selection-scheme"] in ["MUTATION_ACCUMULATION", "METABOLIC_SUM_SELECTION", "TARGET_FLUXES_SELECTION"]:
+		print("Error: argument '-selection-scheme' only admits 3 options (MUTATION_ACCUMULATION / METABOLIC_SUM_SELECTION / TARGET_FLUXES_SELECTION).")
 		print("(current value: "+str(arguments["selection-scheme"])+")")
 		exit_thread()
 	if arguments["seed"] <= 0:
 		print("Error: argument '-seed' only admits positive integer values (seed > 0).")
 		print("(current value: "+str(arguments["seed"])+")")
 		exit_thread()
-	if not os.path.isfile(arguments["copasiSE"]):
-		print("The executable \""+arguments["copasiSE"]+"\" does not exist. Exit.")
+	if not os.path.isfile(arguments["copasi-path"]):
+		print("The executable \""+arguments["copasi-path"]+"\" does not exist. Exit.")
 		exit_thread()
 		
 ### Print help ###
@@ -161,19 +162,19 @@ def printHelp():
 	print("        Specify the SBML model filename")
 	print("  -objective-function, --objective-function <objective_function> (mandatory)")
 	print("        Specify the objective function filename")
-	print("  -iterations, --iterations <iterations> (mandatory)")
+	print("  -nb-iterations, --nb-iterations <nb_iterations> (mandatory)")
 	print("        Specify the number of MCMC iterations (integer > 0)")
 	print("  -selection-sigma, --selection-sigma <selection_sigma> (mandatory)")
 	print("        Specify the log10 mutation size (float > 0.0)")
 	print("  -selection-scheme, --selection-scheme <selection_scheme> (mandatory)")
 	print("        Specify the selection scheme")
-	print("        (MUTATION_ACCUMULATION / SELECTION)")
+	print("        (MUTATION_ACCUMULATION / METABOLIC_SUM_SELECTION / TARGET_FLUXES_SELECTION)")
 	print("  -selection-threshold, --selection-threshold <selection_threshold> (mandatory)")
 	print("        Specify the selection threshold (float > 0.0).")
 	print("  -seed, --seed <prng_seed> (mandatory)")
 	print("        Specify the prng seed (integer > 0.0)")
-	print("  -copasiSE, --copasiSE <copasiSE_path> (mandatory)")
-	print("        Specify the location of copasiSE executable.")
+	print("  -copasi-path, --copasi-path <copasi_path> (mandatory)")
+	print("        Specify the location of Copasi executable.")
 	print("")
 
 ### Print header ###
@@ -308,14 +309,14 @@ if __name__ == '__main__':
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	arguments = readArgs(sys.argv)
 	
-	arguments["sbml-filename"]       = "resources/bordbar2015.xml"
-	arguments["objective-function"]  = "resources/bordbar2015_objective_function.txt"
-	arguments["iterations"]          = 10000
+	arguments["sbml-filename"]       = "models/holzhutter2004.xml"
+	arguments["objective-function"]  = "models/holzhutter2004_objective_function.txt"
+	arguments["nb-iterations"]       = 10000
 	arguments["selection-sigma"]     = 0.01
 	arguments["selection-scheme"]    = "MUTATION_ACCUMULATION"
 	arguments["selection-threshold"] = 1e-4
 	arguments["seed"]                = 123
-	arguments["copasiSE"]            = "/Applications/COPASI/CopasiSE"
+	arguments["copasi-path"]         = "/Applications/COPASI/CopasiSE"
 	
 	assertArgs(arguments)
 	printHeader(arguments)
@@ -333,7 +334,7 @@ if __name__ == '__main__':
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	# 5) Run the MCMC algorithm          #
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	mcmc       = metevolsim.MCMC(arguments["sbml-filename"], objective_function, arguments["iterations"], arguments["selection-sigma"], arguments["selection-scheme"], arguments["selection-threshold"], arguments["copasiSE"])
+	mcmc       = metevolsim.MCMC(arguments["sbml-filename"], objective_function, arguments["nb-iterations"], arguments["selection-sigma"], arguments["selection-scheme"], arguments["selection-threshold"], arguments["copasi-path"])
 	stop_mcmc  = False
 	start_time = time.time()
 	mcmc.initialize()
@@ -342,7 +343,7 @@ if __name__ == '__main__':
 		mcmc.write_output_file()
 		mcmc.write_statistics()
 		ongoing_time   = time.time()
-		estimated_time = (ongoing_time-start_time)*float(arguments["iterations"]-mcmc.nb_iterations)/float(mcmc.nb_iterations)
+		estimated_time = (ongoing_time-start_time)*float(arguments["nb-iterations"]-mcmc.nb_iterations)/float(mcmc.nb_iterations)
 		print("   Estimated remaining time "+str(int(round(estimated_time/60)))+" min.")
 		
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
