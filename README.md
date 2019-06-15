@@ -4,7 +4,7 @@
     <br/><br/>
     <a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest"><img src="https://img.shields.io/badge/PyPI package- 0.2.0-orange.svg" /></a>&nbsp;<a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/license-GPL v3-blue.svg" /></a>&nbsp;
     <br/>
-    <img src="logos/metevolsim_logo.png" width=150>
+    <img src="./logos/metevolsim_logo.png" width=150>
 </p>
 
 -----------------
@@ -19,7 +19,7 @@ MetEvolSim is being developed by Charles Rocabert, Gábor Boross and Balázs Pap
 </p>
 
 <p align="center">
-<img src="logos/BRC_logo.png" height="100px"></a>&nbsp;&nbsp;&nbsp;<img src="logos/MTA_logo.png" height="100px"></a>
+<img src="./logos/BRC_logo.png" height="100px"></a>&nbsp;&nbsp;&nbsp;<img src="./logos/MTA_logo.png" height="100px"></a>
 </p>
 
 ## Table of contents
@@ -34,7 +34,7 @@ MetEvolSim is being developed by Charles Rocabert, Gábor Boross and Balázs Pap
 - Python &ge; 3,
 - Numpy &ge; 1.15 (automatically installed when using pip),
 - Python-libsbml &ge; 5.17 (automatically installed when using pip),
-- <strike>pip &ge; 19.1 (optional).</strike>
+- pip &ge; 19.1 (optional).
 
 ## Installation <a name="installation"></a>
 &bullet; To install Copasi software, visit http://copasi.org/.
@@ -45,11 +45,9 @@ pip install numpy python-libsbml
 ```
 
 &bullet; To install the current release of MetEvolSim:
-<strike>
 ```shell
-pip install metevolsim
+pip install python-metevolsim
 ```
-</strike>
 
 Alternatively, download the <a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest">latest release</a> in the folder of your choice and unzip it. Then follow the instructions below:
 ```shell
@@ -65,7 +63,7 @@ MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> me
 
 ```python
 # Import metevolsim package
-import metevolsim
+import python-metevolsim as metevolsim
 
 # Create an objective function
 target_fluxes = [['ATPase', 1.0], ['PDC', 1.0]]
