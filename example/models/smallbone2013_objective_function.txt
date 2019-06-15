@@ -1,3 +1,0 @@
-reaction coefficient
-ATPase 1.0
-PYK_CDC19 1.0
