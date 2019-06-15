@@ -3,6 +3,8 @@ MANIFEST.in
 README.md
 setup.cfg
 setup.py
+MetEvolSim/MetEvolSim.py
+MetEvolSim/__init__.py
 MetEvolSim.egg-info/PKG-INFO
 MetEvolSim.egg-info/SOURCES.txt
 MetEvolSim.egg-info/dependency_links.txt
