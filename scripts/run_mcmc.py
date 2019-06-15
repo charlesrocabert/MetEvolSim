@@ -28,7 +28,7 @@ import os
 import sys
 import time
 import numpy as np
-import metevolsim
+import MetEvolSim
 
 ### Read command line arguments ###
 def readArgs( argv ):
@@ -334,7 +334,7 @@ if __name__ == '__main__':
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	# 5) Run the MCMC algorithm          #
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	mcmc       = metevolsim.MCMC(arguments["sbml-filename"], objective_function, arguments["nb-iterations"], arguments["selection-sigma"], arguments["selection-scheme"], arguments["selection-threshold"], arguments["copasi-path"])
+	mcmc       = MetEvolSim.MCMC(arguments["sbml-filename"], objective_function, arguments["nb-iterations"], arguments["selection-sigma"], arguments["selection-scheme"], arguments["selection-threshold"], arguments["copasi-path"])
 	stop_mcmc  = False
 	start_time = time.time()
 	mcmc.initialize()

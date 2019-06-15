@@ -41,8 +41,8 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 	long_description = f.read()
 
 setup(
-	name                          = "python-metevolsim",
-	version                       = "0.2.1",
+	name                          = "MetEvolSim",
+	version                       = "0.2.2",
 	license                       = "GNU General Public License v3 (GPLv3)",
 	description                   = "MetEvolSim (Metabolome Evolution Simulator) Python Package",
 	long_description              = long_description,

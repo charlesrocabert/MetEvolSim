@@ -46,7 +46,7 @@ pip install numpy python-libsbml
 
 &bullet; To install the current release of MetEvolSim:
 ```shell
-pip install python-metevolsim
+pip install MetEvolSim
 ```
 
 Alternatively, download the <a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest">latest release</a> in the folder of your choice and unzip it. Then follow the instructions below:
@@ -63,13 +63,13 @@ MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> me
 
 ```python
 # Import metevolsim package
-import python-metevolsim as metevolsim
+import MetEvolSim
 
 # Create an objective function
 target_fluxes = [['ATPase', 1.0], ['PDC', 1.0]]
 
 # Load the SBML metabolic model
-model = metevolsim.Model(sbml_filename='glycolysis.xml', objective_function=target_fluxes, copasi_path='/Applications/COPASI/CopasiSE')
+model = MetEvolSim.Model(sbml_filename='glycolysis.xml', objective_function=target_fluxes, copasi_path='/Applications/COPASI/CopasiSE')
 
 # Print some informations on the metabolic model
 print(model.get_number_of_species())
@@ -101,7 +101,7 @@ Three types of evolution experiments are available:
 
 ```python
 # Load a Markov Chain Monte Carlo (MCMC) instance
-mcmc = metevolsim.MCMC(sbml_filename='glycolysis.xml', objective_function=target_fluxes, total_iterations=10000, sigma=0.01, selection_scheme="MUTATION_ACCUMULATION", selection_threshold=1e-4, copasi_path='/Applications/COPASI/CopasiSE')
+mcmc = MetEvolSim.MCMC(sbml_filename='glycolysis.xml', objective_function=target_fluxes, total_iterations=10000, sigma=0.01, selection_scheme="MUTATION_ACCUMULATION", selection_threshold=1e-4, copasi_path='/Applications/COPASI/CopasiSE')
 
 # Initialize the MCMC instance 
 mcmc.initialize()
@@ -117,7 +117,7 @@ while not stop_MCMC:
 ### Sensitivity analysis:
 ```python
 # Load a sensitivity analysis instance
-sa = metevolsim.SensitivityAnalysis(sbml_filename='glycolysis.xml', factor_range=1.0, factor_step=0.01, copasi_path='/Applications/COPASI/CopasiSE')
+sa = MetEvolSim.SensitivityAnalysis(sbml_filename='glycolysis.xml', factor_range=1.0, factor_step=0.01, copasi_path='/Applications/COPASI/CopasiSE')
 
 # Initialize the sensitivity analysis instance 
 sa.initialize()
@@ -131,11 +131,11 @@ while not stop_SA:
 ## Help <a name="help"></a>
 To get some help on a MetEvolSim class or method, use the Python help function:
 ```python
-help(metevolsim.Model.set_species_initial_value)
+help(MetEvolSim.Model.set_species_initial_value)
 ```
 to obtain a quick description and the list of parameters and outputs:
 ```
-Help on function set_species_initial_value in module metevolsim:
+Help on function set_species_initial_value in module MetEvolSim:
 
 set_species_initial_value(self, species_id, value)
     Set the initial concentration of the species 'species_id' in the
