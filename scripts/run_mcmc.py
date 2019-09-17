@@ -105,8 +105,8 @@ def assertArgs( arguments ):
 		print("(current value: "+str(arguments["selection-sigma"])+")")
 		exit_thread()
 	# METABOLIC_SUM_SELECTION / TARGET_FLUXES_SELECTION
-	if not arguments["selection-scheme"] in ["MUTATION_ACCUMULATION", "METABOLIC_SUM_SELECTION", "TARGET_FLUXES_SELECTION"]:
-		print("Error: argument '-selection-scheme' only admits 3 options (MUTATION_ACCUMULATION / METABOLIC_SUM_SELECTION / TARGET_FLUXES_SELECTION).")
+	if not arguments["selection-scheme"] in ["MUTATION_ACCUMULATION", "ABSOLUTE_METABOLIC_SUM_SELECTION", "RELATIVE_METABOLIC_SUM_SELECTION", "ABSOLUTE_TARGET_FLUXES_SELECTION", "RELATIVE_TARGET_FLUXES_SELECTION"]:
+		print("Error: argument '-selection-scheme' only admits 3 options (MUTATION_ACCUMULATION / ABSOLUTE_METABOLIC_SUM_SELECTION / RELATIVE_METABOLIC_SUM_SELECTION / ABSOLUTE_TARGET_FLUXES_SELECTION / RELATIVE_TARGET_FLUXES_SELECTION).")
 		print("(current value: "+str(arguments["selection-scheme"])+")")
 		exit_thread()
 	if arguments["seed"] <= 0:
@@ -168,7 +168,7 @@ def printHelp():
 	print("        Specify the log10 mutation size (float > 0.0)")
 	print("  -selection-scheme, --selection-scheme <selection_scheme> (mandatory)")
 	print("        Specify the selection scheme")
-	print("        (MUTATION_ACCUMULATION / METABOLIC_SUM_SELECTION / TARGET_FLUXES_SELECTION)")
+	print("        (MUTATION_ACCUMULATION / ABSOLUTE_METABOLIC_SUM_SELECTION / RELATIVE_METABOLIC_SUM_SELECTION / ABSOLUTE_TARGET_FLUXES_SELECTION / RELATIVE_TARGET_FLUXES_SELECTION)")
 	print("  -selection-threshold, --selection-threshold <selection_threshold> (mandatory)")
 	print("        Specify the selection threshold (float > 0.0).")
 	print("  -seed, --seed <prng_seed> (mandatory)")
@@ -313,7 +313,7 @@ if __name__ == '__main__':
 	arguments["objective-function"]  = "models/holzhutter2004_objective_function.txt"
 	arguments["nb-iterations"]       = 10000
 	arguments["selection-sigma"]     = 0.01
-	arguments["selection-scheme"]    = "MUTATION_ACCUMULATION"
+	arguments["selection-scheme"]    = "RELATIVE_TARGET_FLUXES_SELECTION"
 	arguments["selection-threshold"] = 1e-4
 	arguments["seed"]                = 123
 	arguments["copasi-path"]         = "/Applications/COPASI/CopasiSE"

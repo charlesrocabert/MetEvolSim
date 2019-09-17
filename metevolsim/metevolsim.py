@@ -213,11 +213,15 @@ class Model:
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Model evaluation                                         #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		self.WT_SUM             = 0.0
-		self.mutant_SUM         = 0.0
-		self.SUM_distance       = 0.0
-		self.objective_function = objective_function
-		self.MOMA_distance      = 0.0
+		self.objective_function     = objective_function
+		self.WT_ABSOLUTE_SUM        = 0.0
+		self.mutant_ABSOLUTE_SUM    = 0.0
+		self.WT_RELATIVE_SUM        = 0.0
+		self.mutant_RELATIVE_SUM    = 0.0
+		self.ABSOLUTE_SUM_distance  = 0.0
+		self.RELATIVE_SUM_distance  = 0.0
+		self.ABSOLUTE_MOMA_distance = 0.0
+		self.RELATIVE_MOMA_distance = 0.0
 		for target_flux in objective_function:
 			assert target_flux[0] in self.reactions
 		
@@ -974,7 +978,8 @@ class Model:
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Update model and lists               #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		self.WT_SUM = 0.0
+		self.WT_ABSOLUTE_SUM = 0.0
+		self.WT_RELATIVE_SUM = 0.0
 		for elmt in concentrations:
 			species_name  = elmt[0]
 			species_value = float(elmt[1])
@@ -983,7 +988,8 @@ class Model:
 			if not self.species[species_id]["constant"]:
 				self.species[species_id]["WT_value"]      = species_value
 				self.species[species_id]["mutant_value"]  = species_value
-				self.WT_SUM                              += species_value
+				self.WT_ABSOLUTE_SUM                     += species_value
+				self.WT_RELATIVE_SUM                     += 1.0
 		for elmt in fluxes:
 			reaction_name  = elmt[0]
 			reaction_value = float(elmt[1])
@@ -1021,7 +1027,8 @@ class Model:
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Update model and lists               #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		self.mutant_SUM = 0.0
+		self.mutant_ABSOLUTE_SUM = 0.0
+		self.mutant_RELATIVE_SUM = 0.0
 		for elmt in concentrations:
 			species_name  = elmt[0]
 			species_value = float(elmt[1])
@@ -1029,7 +1036,8 @@ class Model:
 			assert species_id in self.species
 			if not self.species[species_id]["constant"]:
 				self.species[species_id]["mutant_value"]  = species_value
-				self.mutant_SUM                          += species_value
+				self.mutant_ABSOLUTE_SUM                 += species_value
+				self.mutant_RELATIVE_SUM                 += species_value/self.species[species_id]["WT_value"]
 		for elmt in fluxes:
 			reaction_name  = elmt[0]
 			reaction_value = float(elmt[1])
@@ -1068,7 +1076,8 @@ class Model:
 		-------
 		None
 		"""
-		self.SUM_distance = abs(self.WT_SUM-self.mutant_SUM)
+		self.ABSOLUTE_SUM_distance = abs(self.WT_ABSOLUTE_SUM-self.mutant_ABSOLUTE_SUM)
+		self.RELATIVE_SUM_distance = abs(self.WT_RELATIVE_SUM-self.mutant_RELATIVE_SUM)
 	
 	### Compute the MOMA distance between the wild-type and the mutant ###
 	def compute_MOMA_distance( self ):
@@ -1085,14 +1094,17 @@ class Model:
 		-------
 		None
 		"""
-		self.MOMA_distance = 0.0
+		self.ABSOLUTE_MOMA_distance = 0.0
+		self.RELATIVE_MOMA_distance = 0.0
 		for target_flux in self.objective_function:
 			reaction_id  = target_flux[0]
 			coefficient  = target_flux[1]
 			wt_value     = self.reactions[reaction_id]["WT_value"]
 			mutant_value = self.reactions[reaction_id]["mutant_value"]
-			self.MOMA_distance += (wt_value-mutant_value)*(wt_value-mutant_value)
-		self.MOMA_distance = np.sqrt(self.MOMA_distance)
+			self.ABSOLUTE_MOMA_distance += (wt_value-mutant_value)*(wt_value-mutant_value)
+			self.RELATIVE_MOMA_distance += (wt_value-mutant_value)/wt_value*(wt_value-mutant_value)/wt_value
+		self.ABSOLUTE_MOMA_distance = np.sqrt(self.ABSOLUTE_MOMA_distance)
+		self.RELATIVE_MOMA_distance = np.sqrt(self.RELATIVE_MOMA_distance)
 		
 #********************************************************************
 # MCMC class
@@ -1116,7 +1128,9 @@ class MCMC:
 	> sigma : float > 0.0
 		Standard deviation of the Log10-normal mutational distribution.
 	> selection_scheme : str
-		Selection scheme ('MUTATION_ACCUMULATION'/'METABOLIC_SUM_SELECTION'/'TARGET_FLUXES_SELECTION').
+		Selection scheme ('MUTATION_ACCUMULATION'/'ABSOLUTE_METABOLIC_SUM_SELECTION'/
+		                  'RELATIVE_METABOLIC_SUM_SELECTION'/'ABSOLUTE_TARGET_FLUXES_SELECTION'/
+						  'RELATIVE_TARGET_FLUXES_SELECTION').
 	> selection_threshold : str
 		Selection threshold applied on the MOMA distance.
 	> copasi_path : str
@@ -1141,6 +1155,8 @@ class MCMC:
 		Number of variable species.
 	> WT_abund : numpy array
 		Wild-type abundances tracker.
+	> WT_flux : numpy array
+		Wild-type fluxes tracker.
 	> mutant_abund : numpy array
 		Mutant abundances tracker.
 	> mutant_flux : numpy array
@@ -1153,6 +1169,14 @@ class MCMC:
 		Square sum of abundances tracker.
 	> relsqsum_abund : numpy array
 		Square sum of abundances relatively to the wild-type tracker.
+	> sum_flux : numpy array
+		Sum of fluxes tracker.
+	> relsum_flux : numpy array
+		Sum of fluxes relatively to the wild-type tracker.
+	> sqsum_flux : numpy array
+		Square sum of fluxes tracker.
+	> relsqsum_flux : numpy array
+		Square sum of fluxes relatively to the wild-type tracker.
 	> mean_abund : numpy array
 		Mean abundances tracker.
 	> var_abund : numpy array
@@ -1161,6 +1185,14 @@ class MCMC:
 		Coefficient of variation of abundances tracker.
 	> ER_abund : numpy array
 		Evolution rate of abundances tracker.
+	> mean_flux : numpy array
+		Mean fluxes tracker.
+	> var_flux : numpy array
+		Variance of fluxes tracker.
+	> CV_flux : numpy array
+		Coefficient of variation of fluxes tracker.
+	> ER_flux : numpy array
+		Evolution rate of fluxes tracker.
 	> previous_abund : numpy array
 		Previous abundances tracker.
 	> previous_flux : numpy array
@@ -1206,7 +1238,9 @@ class MCMC:
 		sigma : float > 0.0
 			Standard deviation of the Log10-normal mutational distribution.
 		selection_scheme : str
-			Selection scheme ('MUTATION_ACCUMULATION'/'METABOLIC_SUM_SELECTION'/'TARGET_FLUXES_SELECTION').
+			Selection scheme ('MUTATION_ACCUMULATION'/'ABSOLUTE_METABOLIC_SUM_SELECTION'/
+			                  'RELATIVE_METABOLIC_SUM_SELECTION'/'ABSOLUTE_TARGET_FLUXES_SELECTION'/
+							  'RELATIVE_TARGET_FLUXES_SELECTION').
 		selection_threshold : float > 0.0
 			Selection threshold applied on the MOMA distance.
 		copasi_path : str
@@ -1220,7 +1254,7 @@ class MCMC:
 		assert len(objective_function) > 0, "You must provide at least one reaction in the objective function. Exit."
 		assert total_iterations > 0, "The total number of iterations must be a positive nonzero value. Exit."
 		assert sigma > 0.0, "The mutation size 'sigma' must be a positive nonzero value. Exit."
-		assert selection_scheme in ["MUTATION_ACCUMULATION", "METABOLIC_SUM_SELECTION", "TARGET_FLUXES_SELECTION"], "The selection scheme takes two values only (MUTATION_ACCUMULATION/METABOLIC_SUM_SELECTION/TARGET_FLUXES_SELECTION). Exit."
+		assert selection_scheme in ["MUTATION_ACCUMULATION", "ABSOLUTE_METABOLIC_SUM_SELECTION", "RELATIVE_METABOLIC_SUM_SELECTION", "ABSOLUTE_TARGET_FLUXES_SELECTION", "RELATIVE_TARGET_FLUXES_SELECTION"], "The selection scheme takes two values only (MUTATION_ACCUMULATION/ABSOLUTE_METABOLIC_SUM_SELECTION/RELATIVE_METABOLIC_SUM_SELECTION/ABSOLUTE_TARGET_FLUXES_SELECTION/RELATIVE_TARGET_FLUXES_SELECTION). Exit."
 		assert os.path.isfile(copasi_path), "The executable \""+copasi_path+"\" does not exist. Exit."
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -1259,6 +1293,7 @@ class MCMC:
 		### Arrays ###
 		self.WT_abund     = np.zeros(self.N_abund)
 		self.mutant_abund = np.zeros(self.N_abund)
+		self.WT_flux      = np.zeros(self.N_flux)
 		self.mutant_flux  = np.zeros(self.N_flux)
 		
 		### Sum vectors ###
@@ -1266,12 +1301,20 @@ class MCMC:
 		self.relsum_abund   = np.zeros(self.N_abund)
 		self.sqsum_abund    = np.zeros(self.N_abund)
 		self.relsqsum_abund = np.zeros(self.N_abund)
+		self.sum_flux       = np.zeros(self.N_flux)
+		self.relsum_flux    = np.zeros(self.N_flux)
+		self.sqsum_flux     = np.zeros(self.N_flux)
+		self.relsqsum_flux  = np.zeros(self.N_flux)
 		
 		### Final statistics ###
 		self.mean_abund = np.zeros(self.N_abund)
 		self.var_abund  = np.zeros(self.N_abund)
 		self.CV_abund   = np.zeros(self.N_abund)
 		self.ER_abund   = np.zeros(self.N_abund)
+		self.mean_flux  = np.zeros(self.N_flux)
+		self.var_flux   = np.zeros(self.N_flux)
+		self.CV_flux    = np.zeros(self.N_flux)
+		self.ER_flux    = np.zeros(self.N_flux)
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 5) Previous state         #
@@ -1304,7 +1347,7 @@ class MCMC:
 				header += " "+species_id
 		for reaction_id in self.model.reactions:
 			header += " "+reaction_id
-		header += " wt_sum mutant_sum sum_dist moma_dist\n"
+		header += " wt_absolute_sum mutant_absolute_sum wt_relative_sum mutant_relative_sum absolute_sum_dist relative_sum_dist absolute_moma_dist relative_moma_dist\n"
 		self.output_file = open("output/iterations.txt", "a")
 		self.output_file.write(header)
 		self.output_file.close()
@@ -1345,9 +1388,9 @@ class MCMC:
 			line += " "+str(self.model.reactions[reaction_id]["mutant_value"])
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		# 3) Write MOMA distance      #
+		# 3) Write scores             #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		line += " "+str(self.model.WT_SUM)+" "+str(self.model.mutant_SUM)+" "+str(self.model.SUM_distance)+" "+str(self.model.MOMA_distance)
+		line += " "+str(self.model.WT_ABSOLUTE_SUM)+" "+str(self.model.mutant_ABSOLUTE_SUM)+" "+str(self.model.WT_RELATIVE_SUM)+" "+str(self.model.mutant_RELATIVE_SUM)+" "+str(self.model.ABSOLUTE_SUM_distance)+" "+str(self.model.RELATIVE_SUM_distance)+" "+str(self.model.ABSOLUTE_MOMA_distance)+" "+str(self.model.RELATIVE_MOMA_distance)
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 4) Write in file            #
@@ -1369,10 +1412,24 @@ class MCMC:
 		-------
 		None
 		"""
+		###########
 		self.sum_abund      += self.mutant_abund
 		self.sqsum_abund    += self.mutant_abund*self.mutant_abund
-		self.relsum_abund   += (self.mutant_abund/self.WT_abund)
-		self.relsqsum_abund += (self.mutant_abund/self.WT_abund)*(self.mutant_abund/self.WT_abund)
+		#self.relsum_abund   += (self.mutant_abund/self.WT_abund)
+		#self.relsqsum_abund += (self.mutant_abund/self.WT_abund)*(self.mutant_abund/self.WT_abund)
+		for i in range(self.N_abund):
+			if self.WT_abund[i] > 0.0:
+				self.relsum_abund[i]   += (self.mutant_abund[i]/self.WT_abund[i])
+				self.relsqsum_abund[i] += (self.mutant_abund[i]/self.WT_abund[i])*(self.mutant_abund[i]/self.WT_abund[i])
+		###########
+		self.sum_flux      += self.mutant_flux
+		self.sqsum_flux    += self.mutant_flux*self.mutant_flux
+		#self.relsum_flux   += (self.mutant_flux/self.WT_flux)
+		#self.relsqsum_flux += (self.mutant_flux/self.WT_flux)*(self.mutant_flux/self.WT_flux)
+		for i in range(self.N_flux):
+			if self.WT_flux[i] > 0.0:
+				self.relsum_flux[i]   += (self.mutant_flux[i]/self.WT_flux[i])
+				self.relsqsum_flux[i] += (self.mutant_flux[i]/self.WT_flux[i])*(self.mutant_flux[i]/self.WT_flux[i])
 		
 	### Compute statistics for the current iteration ###
 	def compute_statistics( self ):
@@ -1387,23 +1444,62 @@ class MCMC:
 		-------
 		None
 		"""
-		### Compute mean ###
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 1) Compute mean                     #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.mean_abund  = np.copy(self.sum_abund)
 		self.mean_abund /= float(self.nb_iterations)
-		### Compute variance ###
+		###########
+		self.mean_flux  = np.copy(self.sum_flux)
+		self.mean_flux /= float(self.nb_iterations)
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 2) Compute variance                 #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.var_abund  = np.copy(self.sqsum_abund)
 		self.var_abund /= float(self.nb_iterations)
 		self.var_abund -= self.mean_abund*self.mean_abund
-		### Compute coefficient of variation ###
+		###########
+		self.var_flux  = np.copy(self.sqsum_flux)
+		self.var_flux /= float(self.nb_iterations)
+		self.var_flux -= self.mean_flux*self.mean_flux
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 3) Compute coefficient of variation #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.CV_abund  = np.copy(self.sqsum_abund)
 		self.CV_abund /= float(self.nb_iterations)
 		self.CV_abund -= self.mean_abund*self.mean_abund
-		self.CV_abund  = np.sqrt(self.CV_abund)/self.mean_abund
-		### Compute evolution rate ###
+		#self.CV_abund  = np.sqrt(self.CV_abund)/self.mean_abund
+		for i in range(self.N_abund):
+			if self.mean_abund[i] > 0.0:
+				self.CV_abund[i] = np.sqrt(self.CV_abund[i])/self.mean_abund[i]
+			else:
+				self.CV_abund[i] = 0.0
+		
+		###########
+		self.CV_flux  = np.copy(self.sqsum_flux)
+		self.CV_flux /= float(self.nb_iterations)
+		self.CV_flux -= self.mean_flux*self.mean_flux
+		#self.CV_flux  = np.sqrt(self.CV_flux)/self.mean_flux
+		for i in range(self.N_flux):
+			if self.mean_flux[i] > 0.0:
+				self.CV_flux[i] = np.sqrt(self.CV_flux[i])/self.mean_flux[i]
+			else:
+				self.CV_flux[i] = 0.0
+				
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 4) Compute evolution rate           #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.ER_abund  = np.copy(self.relsqsum_abund)
 		self.ER_abund /= float(self.nb_iterations)
 		self.ER_abund -= (self.relsum_abund/float(self.nb_iterations))*(self.relsum_abund/float(self.nb_iterations))
 		self.ER_abund /= float(self.nb_iterations)
+		###########
+		self.ER_flux  = np.copy(self.relsqsum_flux)
+		self.ER_flux /= float(self.nb_iterations)
+		self.ER_flux -= (self.relsum_flux/float(self.nb_iterations))*(self.relsum_flux/float(self.nb_iterations))
+		self.ER_flux /= float(self.nb_iterations)
 
 	### Write statistics in a file ###
 	def write_statistics( self ):
@@ -1420,6 +1516,10 @@ class MCMC:
 		"""
 		f = open("output/statistics.txt", "w")
 		f.write("species_id WT mean var CV ER\n")
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 1) Write species statistics #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		index = 0
 		for species_id in self.model.species:
 			if not self.model.species[species_id]["constant"]:
@@ -1431,6 +1531,20 @@ class MCMC:
 				line  += str(self.ER_abund[index])+"\n"
 				index += 1
 				f.write(line)
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 2) Write fluxes statistics  #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		index = 0
+		for reaction_id in self.model.reactions:
+			line   = reaction_id+" "
+			line  += str(self.WT_flux[index])+" "
+			line  += str(self.mean_flux[index])+" "
+			line  += str(self.var_flux[index])+" "
+			line  += str(self.CV_flux[index])+" "
+			line  += str(self.ER_flux[index])+"\n"
+			index += 1
+			f.write(line)
 		f.close()
 	
 	### Initialize MCMC algorithm ###
@@ -1453,6 +1567,7 @@ class MCMC:
 		self.initialize_output_file()
 		self.WT_abund     = self.model.get_WT_species_array()
 		self.mutant_abund = self.model.get_mutant_species_array()
+		self.WT_flux      = self.model.get_WT_reaction_array()
 		self.mutant_flux  = self.model.get_mutant_reaction_array()
 		
 	### Reload the previous MCMC state ###
@@ -1537,21 +1652,17 @@ class MCMC:
 			self.nb_accepted   += 1
 			self.update_statistics()
 			self.compute_statistics()
-			#self.model.update_initial_concentrations()
 		#-----------------------------------------------------------------#
-		# 4.2) If the simulation is a metabolic sum selection experiment, #
-		#      keep only mutations for which the SUM distance is lower    #
-		#      than a given selection threshold.                          #
+		# 4.2) If the simulation is a absolute metabolic sum selection    #
+		#      experiment, keep only mutations for which the SUM distance #
+		#      is lower than a given selection threshold.                 #
 		#-----------------------------------------------------------------#
-		elif self.selection_scheme == "METABOLIC_SUM_SELECTION" and self.model.SUM_distance < self.selection_threshold:
-			print(self.model.SUM_distance, "(", self.model.WT_SUM, ",", self.model.mutant_SUM, ")")
+		elif self.selection_scheme == "ABSOLUTE_METABOLIC_SUM_SELECTION" and self.model.ABSOLUTE_SUM_distance < self.selection_threshold:
 			self.nb_iterations += 1
 			self.nb_accepted   += 1
 			self.update_statistics()
 			self.compute_statistics()
-			#self.model.update_initial_concentrations()
-		elif self.selection_scheme == "METABOLIC_SUM_SELECTION" and self.model.SUM_distance >= self.selection_threshold:
-			print(self.model.SUM_distance, "(", self.model.WT_SUM, ",", self.model.mutant_SUM, ")")
+		elif self.selection_scheme == "ABSOLUTE_METABOLIC_SUM_SELECTION" and self.model.ABSOLUTE_SUM_distance >= self.selection_threshold:
 			self.nb_iterations += 1
 			self.nb_rejected   += 1
 			self.reload_previous_state()
@@ -1562,17 +1673,56 @@ class MCMC:
 			self.param_value    = 0.0
 			self.param_previous = 0.0
 		#-----------------------------------------------------------------#
-		# 4.3) If the simulation is a target fluxes selection experiment, #
-		#      keep only mutations for which the MOMA distance is lower   #
-		#      than a given selection threshold.                          #
+		# 4.3) If the simulation is a relative metabolic sum selection    #
+		#      experiment, keep only mutations for which the SUM distance #
+		#      is lower than a given selection threshold.                 #
 		#-----------------------------------------------------------------#
-		elif self.selection_scheme == "TARGET_FLUXES_SELECTION" and self.model.MOMA_distance < self.selection_threshold:
+		elif self.selection_scheme == "RELATIVE_METABOLIC_SUM_SELECTION" and self.model.RELATIVE_SUM_distance < self.selection_threshold:
 			self.nb_iterations += 1
 			self.nb_accepted   += 1
 			self.update_statistics()
 			self.compute_statistics()
-			#self.model.update_initial_concentrations()
-		elif self.selection_scheme == "TARGET_FLUXES_SELECTION" and self.model.MOMA_distance >= self.selection_threshold:
+		elif self.selection_scheme == "RELATIVE_METABOLIC_SUM_SELECTION" and self.model.RELATIVE_SUM_distance >= self.selection_threshold:
+			self.nb_iterations += 1
+			self.nb_rejected   += 1
+			self.reload_previous_state()
+			self.update_statistics()
+			self.compute_statistics()
+			self.param_metaid   = "_"
+			self.param_id       = "_"
+			self.param_value    = 0.0
+			self.param_previous = 0.0
+		#-----------------------------------------------------------------#
+		# 4.4) If the simulation is a absolute target fluxes selection    #
+		#      experiment, keep only mutations for which the MOMA         #
+		#      distance is lower than a given selection threshold.        #
+		#-----------------------------------------------------------------#
+		elif self.selection_scheme == "ABSOLUTE_TARGET_FLUXES_SELECTION" and self.model.ABSOLUTE_MOMA_distance < self.selection_threshold:
+			self.nb_iterations += 1
+			self.nb_accepted   += 1
+			self.update_statistics()
+			self.compute_statistics()
+		elif self.selection_scheme == "ABSOLUTE_TARGET_FLUXES_SELECTION" and self.model.ABSOLUTE_MOMA_distance >= self.selection_threshold:
+			self.nb_iterations += 1
+			self.nb_rejected   += 1
+			self.reload_previous_state()
+			self.update_statistics()
+			self.compute_statistics()
+			self.param_metaid   = "_"
+			self.param_id       = "_"
+			self.param_value    = 0.0
+			self.param_previous = 0.0
+		#-----------------------------------------------------------------#
+		# 4.5) If the simulation is a relative target fluxes selection    #
+		#      experiment, keep only mutations for which the MOMA         #
+		#      distance is lower than a given selection threshold.        #
+		#-----------------------------------------------------------------#
+		elif self.selection_scheme == "RELATIVE_TARGET_FLUXES_SELECTION" and self.model.RELATIVE_MOMA_distance < self.selection_threshold:
+			self.nb_iterations += 1
+			self.nb_accepted   += 1
+			self.update_statistics()
+			self.compute_statistics()
+		elif self.selection_scheme == "RELATIVE_TARGET_FLUXES_SELECTION" and self.model.RELATIVE_MOMA_distance >= self.selection_threshold:
 			self.nb_iterations += 1
 			self.nb_rejected   += 1
 			self.reload_previous_state()

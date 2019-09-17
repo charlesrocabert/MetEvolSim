@@ -2,7 +2,7 @@
 <p align="center">
     Python package dedicated to the evolution of metabolic concentrations
     <br/><br/>
-    <a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest"><img src="https://img.shields.io/badge/PyPI package- 0.2.0-orange.svg" /></a>&nbsp;<a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/license-GPL v3-blue.svg" /></a>&nbsp;
+    <a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest"><img src="https://img.shields.io/badge/PyPI package- 0.3.0-orange.svg" /></a>&nbsp;<a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/license-GPL v3-blue.svg" /></a>&nbsp;
     <br/>
     <img src="./logos/metevolsim_logo.png" width=150>
 </p>
@@ -96,8 +96,10 @@ All numerical analyses output files are saved in a subfolder <code>output</code>
 ### Evolution experiments:
 Three types of evolution experiments are available:
 - <code>MUTATION_ACCUMULATION</code>: Run a mutation accumulation experiment by accepting all new mutations without any selection threshold,
-- <code>METABOLIC_SUM_SELECTION</code>: Run an evolution experiment by applying a stabilizing selection on the sum of metabolic abundances,
-- <code>TARGET_FLUXES_SELECTION</code>: Run an evolution experiment by applying a stabilizing selection on the objective function.
+- <code>ABSOLUTE_METABOLIC_SUM_SELECTION</code>: Run an evolution experiment by applying a stabilizing selection on the sum of absolute metabolic abundances,
+- <code>RELATIVE_METABOLIC_SUM_SELECTION</code>: Run an evolution experiment by applying a stabilizing selection on the sum of relative metabolic abundances,
+- <code>ABSOLUTE_TARGET_FLUXES_SELECTION</code>: Run an evolution experiment by applying a stabilizing selection on the MOMA distance of absolute target fluxes,
+- <code>RELATIVE_TARGET_FLUXES_SELECTION</code>: Run an evolution experiment by applying a stabilizing selection on the MOMA distance of relative target fluxes.
 
 ```python
 # Load a Markov Chain Monte Carlo (MCMC) instance
