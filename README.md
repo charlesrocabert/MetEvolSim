@@ -2,7 +2,7 @@
 <p align="center">
     Python package dedicated to the evolution of metabolic concentrations
     <br/><br/>
-    <a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest"><img src="https://img.shields.io/badge/pypi - 0.4.0-orange.svg" /></a>&nbsp;<a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/license-GPL v3-blue.svg" /></a>&nbsp;
+    <a href="https://pypi.org/project/MetEvolSim/"><img src="https://img.shields.io/badge/pypi - 0.4.0-orange.svg" /></a>&nbsp;<a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest"><img src="https://img.shields.io/badge/build - passing-green.svg" /></a>&nbsp;<a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/license-GPL v3-blue.svg" /></a>&nbsp;
     <br/>
     <img src="https://github.com/charlesrocabert/MetEvolSim-development/blob/master/pic/metevolsim_logo.png" width=150>
 </p>
