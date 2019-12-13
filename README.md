@@ -2,9 +2,9 @@
 <p align="center">
     Python package dedicated to the evolution of metabolic concentrations
     <br/><br/>
-    <a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest"><img src="https://img.shields.io/badge/PyPI package- 0.3.0-orange.svg" /></a>&nbsp;<a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/license-GPL v3-blue.svg" /></a>&nbsp;
+    <a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest"><img src="https://img.shields.io/badge/pypi - 0.4.0-orange.svg" /></a>&nbsp;<a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/license-GPL v3-blue.svg" /></a>&nbsp;
     <br/>
-    <img src="./logos/metevolsim_logo.png" width=150>
+    <img src="./pic/metevolsim_logo.png" width=150>
 </p>
 
 -----------------
@@ -15,11 +15,11 @@ MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> me
 </p>
 
 <p align="justify">
-MetEvolSim is being developed by Charles Rocabert, Gábor Boross and Balázs Papp.
+MetEvolSim is being developed by <a href="https://github.com/charlesrocabert">Charles Rocabert</a>, <a href="https://scholar.google.com/citations?user=8ZmiMp4AAAAJ&hl=da">Gábor Boross</a> and <a href="group.szbk.u-szeged.hu › papp-balazs-lab-index">Balázs Papp</a>.
 </p>
 
 <p align="center">
-<img src="./logos/BRC_logo.png" height="100px"></a>&nbsp;&nbsp;&nbsp;<img src="./logos/MTA_logo.png" height="100px"></a>
+<img src="./pic/BRC_logo.png" height="100px"></a>&nbsp;&nbsp;&nbsp;<img src="./pic/MTA_logo.png" height="100px"></a>
 </p>
 
 ## Table of contents
@@ -34,15 +34,11 @@ MetEvolSim is being developed by Charles Rocabert, Gábor Boross and Balázs Pap
 - Python &ge; 3,
 - Numpy &ge; 1.15 (automatically installed when using pip),
 - Python-libsbml &ge; 5.17 (automatically installed when using pip),
+- NetworkX &ge; 2.2 (automatically installed when using pip),
 - pip &ge; 19.1 (optional).
 
 ## Installation <a name="installation"></a>
 &bullet; To install Copasi software, visit http://copasi.org/.
-
-&bullet; To install Python dependencies:
-```shell
-pip install numpy python-libsbml
-```
 
 &bullet; To install the current release of MetEvolSim:
 ```shell
@@ -85,16 +81,35 @@ model.random_parameter_mutation(param, sigma=0.01)
 # Compute wild-type and mutant steady-states
 model.compute_WT_steady_state()
 model.compute_mutant_steady_state()
+
+# Run a metabolic control analysis on the wild-type
+model.compute_WT_metabolic_control_analysis()
+# This function will output two datasets:
+# - output/WT_MCA_unscaled.txt containing unscaled control coefficients,
+# - output/WT_MCA_scaled.txt containing scaled control coefficients.
+
+# Compute all pairwise metabolite shortest paths
+model.build_species_graph()
+model.save_shortest_paths(filename="glycolysis_shortest_paths.txt")
 ```
 
-MetEvolSim allows two types of numerical analyses on a SBML metabolic model:
+MetEvolSim offers two specific numerical approaches to analyze the evolution of metabolic abundances:
 - <strong>Evolution experiments</strong>, based on a Markov Chain Monte Carlo (MCMC) algorithm,
 - <strong>Sensitivity analysis</strong>, by exploring every kinetic parameters in a given range and recording associated fluxes and metabolic abundances changes.
 
 All numerical analyses output files are saved in a subfolder <code>output</code>, automatically created by MetEvolSim.
 
 ### Evolution experiments:
-Three types of evolution experiments are available:
+<p align="center">
+<img src="./pic/mcmc_algorithm.png" height="200px">
+</p>
+<p align="justify">
+<strong>Algorithm overview:</strong> <strong>A.</strong> The model of interest is loaded as a wild-type from a SBML file (kinetic equations, kinetic parameter values and initial metabolic concentrations must be specified). <strong>B.</strong> At each iteration <em>t</em>, a single kinetic parameter is selected at random and mutated through a log10-normal distribution of standard deviation &sigma;. <strong>C.</strong> The new steady-state is computed using Copasi software, and the MOMA distance <em>z</em> between the mutant and the wild-type target fluxes is computed. <strong>D.</strong> If <em>z</em> is under a given selection threshold &omega;, the mutation is accepted. Else, the mutation is discarded. <strong>E.</strong> A new iteration <em>t+1</em> is computed.
+</p>
+
+<br/>
+Six types of selection are available:
+
 - <code>MUTATION_ACCUMULATION</code>: Run a mutation accumulation experiment by accepting all new mutations without any selection threshold,
 - <code>ABSOLUTE_METABOLIC_SUM_SELECTION</code>: Run an evolution experiment by applying a stabilizing selection on the sum of absolute metabolic abundances,
 - <code>RELATIVE_METABOLIC_SUM_SELECTION</code>: Run an evolution experiment by applying a stabilizing selection on the sum of relative metabolic abundances,
@@ -117,6 +132,8 @@ while not stop_MCMC:
 ```
 
 ### Sensitivity analysis:
+For each kinetic parameter p, each metabolic abundance [X<sub>i</sub>] and each flux &nu;<sub>j</sub>, the algorithm numerically computes relative derivatives and control coefficients.
+
 ```python
 # Load a sensitivity analysis instance
 sa = MetEvolSim.SensitivityAnalysis(sbml_filename='glycolysis.xml', factor_range=1.0, factor_step=0.01, copasi_path='/Applications/COPASI/CopasiSE')

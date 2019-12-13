@@ -42,7 +42,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
 	name                          = "MetEvolSim",
-	version                       = "0.3.0",
+	version                       = "0.4.0",
 	license                       = "GNU General Public License v3 (GPLv3)",
 	description                   = "MetEvolSim (Metabolome Evolution Simulator) Python Package",
 	long_description              = long_description,
@@ -61,7 +61,7 @@ setup(
 	keywords         = "metabolism abundances evolution metabolic-network kinetic-model evolution-rate",
 	packages         = find_packages(exclude=["contrib", "docs", "tests"]),
 	python_requires  = ">=3",
-	install_requires = ["python-libsbml", "numpy"],
+	install_requires = ["python-libsbml", "numpy", "networkx"],
 	project_urls     = {
 	"Source": "https://github.com/charlesrocabert/MetEvolSim"
 	},

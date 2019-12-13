@@ -29,6 +29,7 @@ import sys
 import subprocess
 import libsbml
 import numpy as np
+import networkx as nx
 
 #********************************************************************
 # Model class
@@ -41,8 +42,8 @@ import numpy as np
 class Model:
 	"""
 	The Model class loads, saves and manipulates SBML models.
-	Manipulations include kinetic parameter mutations and steady-state computing
-	with Copasi software.
+	Manipulations include kinetic parameter mutations, steady-state computing,
+	metabolic control analysis (MCA) and shortest paths calculation.
 	Some constraints exist on the SBML model format:
 	- Species identifiers and names must be unique. All names must be specied,
 	  or none of them (in this case, identifiers will be used as names).
@@ -80,17 +81,34 @@ class Model:
 		Map of species identifiers from species names.
 	> reaction_name_to_id : dict
 		Map of reaction identifiers from reaction names.
-	> WT_SUM : float
-		Sum of evolvable metabolic abundances in wild-type.
-	> mutant_SUM : float
-		Sum of evolvable metabolic abundances in mutant.
-	> SUM_distance : float
-		Absolute distance between wild-type and mutant metabolic sums.
+	> species_graph: networkx.Graph
+		A networkx Graph describing the metabolite-to-metabolite network.
 	> objective_function : list of [str, float]
 		Objective function (list of reaction identifiers and coefficients).
-	> MOMA_distance : float
+	> WT_ABSOLUTE_SUM : float
+		Sum of evolvable metabolic absolute abundances in wild-type.
+	> mutant_ABSOLUTE_SUM : float
+		Sum of evolvable metabolic abundances in mutant.
+	> WT_RELATIVE_SUM : float
+		Sum of evolvable metabolic relative abundances in wild-type.
+	> mutant_RELATIVE_SUM : float
+		Sum of evolvable metabolic relative in mutant.
+	> ABSOLUTE_SUM_distance : float
+		Distance between wild-type and mutant absolute metabolic sums.
+	> RELATIVE_SUM_distance : float
+		Distance between wild-type and mutant relative metabolic sums.
+	> ABSOLUTE_MOMA_distance : float
 		Distance between the wild-type and the mutant, based on the
-		Minimization Of Metabolic Adjustment (MOMA).
+		Minimization Of Metabolic Adjustment on absolute target fluxes.
+	> RELATIVE_MOMA_distance : float
+		Distance between the wild-type and the mutant, based on the
+		Minimization Of Metabolic Adjustment on relative target fluxes.
+	> ABSOLUTE_MOMA_ALL_distance : float
+		Distance between the wild-type and the mutant, based on the
+		Minimization Of Metabolic Adjustment on ALL absolute fluxes.
+	> RELATIVE_MOMA_ALL_distance : float
+		Distance between the wild-type and the mutant, based on the
+		Minimization Of Metabolic Adjustment on ALL relative fluxes.
 	
 	Methods
     -------
@@ -142,15 +160,15 @@ class Model:
 		Create ancestor CPS file.
 	> create_mutant_cps_file()
 		Create mutant CPS file.
-	> edit_WT_cps_file()
+	> edit_WT_cps_file(task)
 		Edit ancestor CPS file to schedule steady-state calculation.
-	> edit_mutant_cps_file()
+	> edit_mutant_cps_file(task)
 		Edit mutant CPS file to schedule steady-state calculation.
 	> run_copasi_for_WT()
 		Run Copasi for the WT model.
 	> run_copasi_for_mutant()
 		Run Copasi for the mutant model.
-	> parse_copasi_output(filename)
+	> parse_copasi_output(filename, task)
 		Parse Copasi output file.
 	> compute_WT_steady_state()
 		Compute WT steady-state.
@@ -163,6 +181,16 @@ class Model:
 	> compute_MOMA_distance()
 		Compute the MOMA distance between the WT and the mutant, based on target
 		fluxes (MOMA: Minimization Of Metabolic Adjustment).
+	> compute_WT_metabolic_control_analysis()
+		Compute and save the wild-type metabolic control analysis (MCA).
+	> compute_mutant_metabolic_control_analysis()
+		Compute and save the mutant metabolic control analysis (MCA).
+	> build_species_graph():
+		Build the metabolite-to-metabolite graph (mainly to compute shortest
+		paths afterward).
+	> save_shortest_paths(filename):
+		Save the matrix of all pairwise metabolites shortest paths (assuming an
+		undirected graph).
 	"""
 	
 	### Constructor ###
@@ -211,17 +239,24 @@ class Model:
 		self.build_reaction_list()
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		# 3) Model evaluation                                         #
+		# 3) Graph analysis                                           #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		self.objective_function     = objective_function
-		self.WT_ABSOLUTE_SUM        = 0.0
-		self.mutant_ABSOLUTE_SUM    = 0.0
-		self.WT_RELATIVE_SUM        = 0.0
-		self.mutant_RELATIVE_SUM    = 0.0
-		self.ABSOLUTE_SUM_distance  = 0.0
-		self.RELATIVE_SUM_distance  = 0.0
-		self.ABSOLUTE_MOMA_distance = 0.0
-		self.RELATIVE_MOMA_distance = 0.0
+		self.species_graph = nx.Graph()
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 4) Model evaluation                                         #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		self.objective_function         = objective_function
+		self.WT_ABSOLUTE_SUM            = 0.0
+		self.mutant_ABSOLUTE_SUM        = 0.0
+		self.WT_RELATIVE_SUM            = 0.0
+		self.mutant_RELATIVE_SUM        = 0.0
+		self.ABSOLUTE_SUM_distance      = 0.0
+		self.RELATIVE_SUM_distance      = 0.0
+		self.ABSOLUTE_MOMA_distance     = 0.0
+		self.RELATIVE_MOMA_distance     = 0.0
+		self.ABSOLUTE_MOMA_ALL_distance = 0.0
+		self.RELATIVE_MOMA_ALL_distance = 0.0
 		for target_flux in objective_function:
 			assert target_flux[0] in self.reactions
 		
@@ -782,18 +817,19 @@ class Model:
 		process = subprocess.call([cmd_line], stdout=subprocess.PIPE, shell=True)
 
 	### Edit wild-type CPS file to schedule steady-state calculation ###
-	def edit_WT_cps_file( self ):
+	def edit_WT_cps_file( self, task ):
 		"""
 		Edit wild-type CPS file to schedule steady-state calculation.
 		
 		Parameters
 		----------
-		None
-		
+		task: str
+			Define Copasi task (STEADY_STATE/MCA).
 		Returns
 		-------
 		None
 		"""
+		assert task in ["STEADY_STATE", "MCA"]
 		f = open("./output/WT.cps", "r")
 		cps = f.read()
 		f.close()
@@ -801,44 +837,79 @@ class Model:
 		lower_text  = cps.split("</ListOfTasks>")[1]
 		edited_file = ""
 		edited_file += upper_text
-		edited_file += '  <ListOfTasks>\n'
-		edited_file += '    <Task key="Task_14" name="Steady-State" type="steadyState" scheduled="true" updateModel="false">\n'
-		edited_file += '      <Report reference="Report_9" target="WT_output.txt" append="1" confirmOverwrite="1"/>\n'
-		edited_file += '      <Problem>\n'
-		edited_file += '        <Parameter name="JacobianRequested" type="bool" value="1"/>\n'
-		edited_file += '        <Parameter name="StabilityAnalysisRequested" type="bool" value="1"/>\n'
-		edited_file += '      </Problem>\n'
-		edited_file += '      <Method name="Enhanced Newton" type="EnhancedNewton">\n'
-		edited_file += '        <Parameter name="Resolution" type="unsignedFloat" value="1.0000000000000001e-12"/>\n'
-		edited_file += '        <Parameter name="Derivation Factor" type="unsignedFloat" value="0.001"/>\n'
-		edited_file += '        <Parameter name="Use Newton" type="bool" value="1"/>\n'
-		edited_file += '        <Parameter name="Use Integration" type="bool" value="1"/>\n'
-		edited_file += '        <Parameter name="Use Back Integration" type="bool" value="0"/>\n'
-		edited_file += '        <Parameter name="Accept Negative Concentrations" type="bool" value="0"/>\n'
-		edited_file += '        <Parameter name="Iteration Limit" type="unsignedInteger" value="50"/>\n'
-		edited_file += '        <Parameter name="Maximum duration for forward integration" type="unsignedFloat" value="1000000000"/>\n'
-		edited_file += '        <Parameter name="Maximum duration for backward integration" type="unsignedFloat" value="1000000"/>\n'
-		edited_file += '      </Method>\n'
-		edited_file += '    </Task>\n'
-		edited_file += '  </ListOfTasks>\n'
+		if task == "STEADY_STATE":
+			edited_file += '  <ListOfTasks>\n'
+			edited_file += '    <Task key="Task_14" name="Steady-State" type="steadyState" scheduled="true" updateModel="false">\n'
+			edited_file += '      <Report reference="Report_9" target="WT_output.txt" append="1" confirmOverwrite="1"/>\n'
+			edited_file += '      <Problem>\n'
+			edited_file += '        <Parameter name="JacobianRequested" type="bool" value="1"/>\n'
+			edited_file += '        <Parameter name="StabilityAnalysisRequested" type="bool" value="1"/>\n'
+			edited_file += '      </Problem>\n'
+			edited_file += '      <Method name="Enhanced Newton" type="EnhancedNewton">\n'
+			edited_file += '        <Parameter name="Resolution" type="unsignedFloat" value="1.0000000000000001e-12"/>\n'
+			edited_file += '        <Parameter name="Derivation Factor" type="unsignedFloat" value="0.001"/>\n'
+			edited_file += '        <Parameter name="Use Newton" type="bool" value="1"/>\n'
+			edited_file += '        <Parameter name="Use Integration" type="bool" value="1"/>\n'
+			edited_file += '        <Parameter name="Use Back Integration" type="bool" value="0"/>\n'
+			edited_file += '        <Parameter name="Accept Negative Concentrations" type="bool" value="0"/>\n'
+			edited_file += '        <Parameter name="Iteration Limit" type="unsignedInteger" value="50"/>\n'
+			edited_file += '        <Parameter name="Maximum duration for forward integration" type="unsignedFloat" value="1000000000"/>\n'
+			edited_file += '        <Parameter name="Maximum duration for backward integration" type="unsignedFloat" value="1000000"/>\n'
+			edited_file += '      </Method>\n'
+			edited_file += '    </Task>\n'
+			edited_file += '  </ListOfTasks>\n'
+		elif task == "MCA":
+			edited_file += '  <ListOfTasks>\n'
+			edited_file += '    <Task key="Task_14" name="Steady-State" type="steadyState" scheduled="false" updateModel="false">\n'
+			edited_file += '      <Report reference="Report_10" target="test.txt" append="1" confirmOverwrite="1"/>\n'
+			edited_file += '      <Problem>\n'
+			edited_file += '        <Parameter name="JacobianRequested" type="bool" value="1"/>\n'
+			edited_file += '        <Parameter name="StabilityAnalysisRequested" type="bool" value="1"/>\n'
+			edited_file += '      </Problem>\n'
+			edited_file += '      <Method name="Enhanced Newton" type="EnhancedNewton">\n'
+			edited_file += '        <Parameter name="Resolution" type="unsignedFloat" value="1.0000000000000001e-09"/>\n'
+			edited_file += '        <Parameter name="Derivation Factor" type="unsignedFloat" value="0.001"/>\n'
+			edited_file += '        <Parameter name="Use Newton" type="bool" value="1"/>\n'
+			edited_file += '        <Parameter name="Use Integration" type="bool" value="1"/>\n'
+			edited_file += '        <Parameter name="Use Back Integration" type="bool" value="0"/>\n'
+			edited_file += '        <Parameter name="Accept Negative Concentrations" type="bool" value="0"/>\n'
+			edited_file += '        <Parameter name="Iteration Limit" type="unsignedInteger" value="50"/>\n'
+			edited_file += '        <Parameter name="Maximum duration for forward integration" type="unsignedFloat" value="1000000000"/>\n'
+			edited_file += '        <Parameter name="Maximum duration for backward integration" type="unsignedFloat" value="1000000"/>\n'
+			edited_file += '      </Method>\n'
+			edited_file += '    </Task>\n'
+			edited_file += '    <Task key="Task_20" name="Metabolic Control Analysis" type="metabolicControlAnalysis" scheduled="true" updateModel="false">\n'
+			edited_file += '      <Report reference="Report_14" target="test.txt" append="1" confirmOverwrite="1"/>\n'
+			edited_file += '      <Problem>\n'
+			edited_file += '        <Parameter name="Steady-State" type="key" value="Task_14"/>\n'
+			edited_file += '      </Problem>\n'
+			edited_file += '      <Method name="MCA Method (Reder)" type="MCAMethod(Reder)">\n'
+			edited_file += '        <Parameter name="Modulation Factor" type="unsignedFloat" value="1.0000000000000001e-09"/>\n'
+			edited_file += '        <Parameter name="Use Reder" type="bool" value="1"/>\n'
+			edited_file += '        <Parameter name="Use Smallbone" type="bool" value="1"/>\n'
+			edited_file += '      </Method>\n'
+			edited_file += '    </Task>\n'
+			edited_file += '  </ListOfTasks>\n'
 		edited_file += lower_text
 		f = open("./output/WT.cps", "w")
 		f.write(edited_file)
 		f.close()
 
 	### Edit mutant CPS file to schedule steady-state calculation ###
-	def edit_mutant_cps_file( self ):
+	def edit_mutant_cps_file( self, task ):
 		"""
 		Edit mutant CPS file to schedule steady-state calculation.
 		
 		Parameters
 		----------
-		None
+		task: str
+			Define Copasi task (STEADY_STATE/MCA).
 		
 		Returns
 		-------
 		None
 		"""
+		assert task in ["STEADY_STATE", "MCA"]
 		f = open("./output/mutant.cps", "r")
 		cps = f.read()
 		f.close()
@@ -846,26 +917,59 @@ class Model:
 		lower_text  = cps.split("</ListOfTasks>")[1]
 		edited_file = ""
 		edited_file += upper_text
-		edited_file += '  <ListOfTasks>\n'
-		edited_file += '    <Task key="Task_14" name="Steady-State" type="steadyState" scheduled="true" updateModel="false">\n'
-		edited_file += '      <Report reference="Report_9" target="mutant_output.txt" append="1" confirmOverwrite="1"/>\n'
-		edited_file += '      <Problem>\n'
-		edited_file += '        <Parameter name="JacobianRequested" type="bool" value="1"/>\n'
-		edited_file += '        <Parameter name="StabilityAnalysisRequested" type="bool" value="1"/>\n'
-		edited_file += '      </Problem>\n'
-		edited_file += '      <Method name="Enhanced Newton" type="EnhancedNewton">\n'
-		edited_file += '        <Parameter name="Resolution" type="unsignedFloat" value="1.0000000000000001e-12"/>\n'
-		edited_file += '        <Parameter name="Derivation Factor" type="unsignedFloat" value="0.001"/>\n'
-		edited_file += '        <Parameter name="Use Newton" type="bool" value="1"/>\n'
-		edited_file += '        <Parameter name="Use Integration" type="bool" value="1"/>\n'
-		edited_file += '        <Parameter name="Use Back Integration" type="bool" value="0"/>\n'
-		edited_file += '        <Parameter name="Accept Negative Concentrations" type="bool" value="0"/>\n'
-		edited_file += '        <Parameter name="Iteration Limit" type="unsignedInteger" value="50"/>\n'
-		edited_file += '        <Parameter name="Maximum duration for forward integration" type="unsignedFloat" value="1000000000"/>\n'
-		edited_file += '        <Parameter name="Maximum duration for backward integration" type="unsignedFloat" value="1000000"/>\n'
-		edited_file += '      </Method>\n'
-		edited_file += '    </Task>\n'
-		edited_file += '  </ListOfTasks>\n'
+		if task == "STEADY_STATE":
+			edited_file += '  <ListOfTasks>\n'
+			edited_file += '    <Task key="Task_14" name="Steady-State" type="steadyState" scheduled="true" updateModel="false">\n'
+			edited_file += '      <Report reference="Report_9" target="WT_output.txt" append="1" confirmOverwrite="1"/>\n'
+			edited_file += '      <Problem>\n'
+			edited_file += '        <Parameter name="JacobianRequested" type="bool" value="1"/>\n'
+			edited_file += '        <Parameter name="StabilityAnalysisRequested" type="bool" value="1"/>\n'
+			edited_file += '      </Problem>\n'
+			edited_file += '      <Method name="Enhanced Newton" type="EnhancedNewton">\n'
+			edited_file += '        <Parameter name="Resolution" type="unsignedFloat" value="1.0000000000000001e-12"/>\n'
+			edited_file += '        <Parameter name="Derivation Factor" type="unsignedFloat" value="0.001"/>\n'
+			edited_file += '        <Parameter name="Use Newton" type="bool" value="1"/>\n'
+			edited_file += '        <Parameter name="Use Integration" type="bool" value="1"/>\n'
+			edited_file += '        <Parameter name="Use Back Integration" type="bool" value="0"/>\n'
+			edited_file += '        <Parameter name="Accept Negative Concentrations" type="bool" value="0"/>\n'
+			edited_file += '        <Parameter name="Iteration Limit" type="unsignedInteger" value="50"/>\n'
+			edited_file += '        <Parameter name="Maximum duration for forward integration" type="unsignedFloat" value="1000000000"/>\n'
+			edited_file += '        <Parameter name="Maximum duration for backward integration" type="unsignedFloat" value="1000000"/>\n'
+			edited_file += '      </Method>\n'
+			edited_file += '    </Task>\n'
+			edited_file += '  </ListOfTasks>\n'
+		elif task == "MCA":
+			edited_file += '  <ListOfTasks>\n'
+			edited_file += '    <Task key="Task_14" name="Steady-State" type="steadyState" scheduled="false" updateModel="false">\n'
+			edited_file += '      <Report reference="Report_10" target="test.txt" append="1" confirmOverwrite="1"/>\n'
+			edited_file += '      <Problem>\n'
+			edited_file += '        <Parameter name="JacobianRequested" type="bool" value="1"/>\n'
+			edited_file += '        <Parameter name="StabilityAnalysisRequested" type="bool" value="1"/>\n'
+			edited_file += '      </Problem>\n'
+			edited_file += '      <Method name="Enhanced Newton" type="EnhancedNewton">\n'
+			edited_file += '        <Parameter name="Resolution" type="unsignedFloat" value="1.0000000000000001e-09"/>\n'
+			edited_file += '        <Parameter name="Derivation Factor" type="unsignedFloat" value="0.001"/>\n'
+			edited_file += '        <Parameter name="Use Newton" type="bool" value="1"/>\n'
+			edited_file += '        <Parameter name="Use Integration" type="bool" value="1"/>\n'
+			edited_file += '        <Parameter name="Use Back Integration" type="bool" value="0"/>\n'
+			edited_file += '        <Parameter name="Accept Negative Concentrations" type="bool" value="0"/>\n'
+			edited_file += '        <Parameter name="Iteration Limit" type="unsignedInteger" value="50"/>\n'
+			edited_file += '        <Parameter name="Maximum duration for forward integration" type="unsignedFloat" value="1000000000"/>\n'
+			edited_file += '        <Parameter name="Maximum duration for backward integration" type="unsignedFloat" value="1000000"/>\n'
+			edited_file += '      </Method>\n'
+			edited_file += '    </Task>\n'
+			edited_file += '    <Task key="Task_20" name="Metabolic Control Analysis" type="metabolicControlAnalysis" scheduled="true" updateModel="false">\n'
+			edited_file += '      <Report reference="Report_14" target="test.txt" append="1" confirmOverwrite="1"/>\n'
+			edited_file += '      <Problem>\n'
+			edited_file += '        <Parameter name="Steady-State" type="key" value="Task_14"/>\n'
+			edited_file += '      </Problem>\n'
+			edited_file += '      <Method name="MCA Method (Reder)" type="MCAMethod(Reder)">\n'
+			edited_file += '        <Parameter name="Modulation Factor" type="unsignedFloat" value="1.0000000000000001e-09"/>\n'
+			edited_file += '        <Parameter name="Use Reder" type="bool" value="1"/>\n'
+			edited_file += '        <Parameter name="Use Smallbone" type="bool" value="1"/>\n'
+			edited_file += '      </Method>\n'
+			edited_file += '    </Task>\n'
+			edited_file += '  </ListOfTasks>\n'
 		edited_file += lower_text
 		f = open("./output/mutant.cps", "w")
 		f.write(edited_file)
@@ -908,7 +1012,7 @@ class Model:
 		process  = subprocess.call([cmd_line], stdout=subprocess.PIPE, shell=True)
 	
 	### Parse Copasi output file ###
-	def parse_copasi_output( self, filename ):
+	def parse_copasi_output( self, filename, task ):
 		"""
 		Parse the Copasi output 'filename'.
 		
@@ -916,38 +1020,83 @@ class Model:
 		----------
 		filename: str
 			Name of the Copasi output (txt file).
+		task: str
+			Define Copasi task (STEADY_STATE/MCA).
 		
 		Returns
 		-------
-		list of [str, float] lists, list of [str, float] lists
+		- list of [str, float] lists, list of [str, float] lists if task == "STEADY_STATE"
+		- list of [str], list of [str], list of list of [str] if task == "MCA"
 		"""
 		assert os.path.isfile(filename), "The Copasi output \""+filename+"\" does not exist. Exit."
-		concentrations       = []
-		fluxes               = []
-		parse_concentrations = False
-		parse_fluxes         = False
-		f = open(filename, "r")
-		l = f.readline()
-		while l:
-			if l == "\n" and parse_concentrations:
-				 parse_concentrations = False
-			if l == "\n" and parse_fluxes:
-				 parse_fluxes = False
-			if parse_concentrations:
-				name = l.split("\t")[0]
-				val  = l.split("\t")[1]
-				concentrations.append([name, val])
-			if parse_fluxes:
-				name = l.split("\t")[0]
-				val  = l.split("\t")[1]
-				fluxes.append([name, val])
-			if l.startswith("Species"):
-				parse_concentrations = True
-			if l.startswith("Reaction"):
-				parse_fluxes = True
+		assert task in ["STEADY_STATE", "MCA"]
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 1) Parse to extract the steady-state #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		if task == "STEADY_STATE":
+			concentrations       = []
+			fluxes               = []
+			parse_concentrations = False
+			parse_fluxes         = False
+			f = open(filename, "r")
 			l = f.readline()
-		f.close()
-		return concentrations, fluxes
+			while l:
+				if l == "\n" and parse_concentrations:
+					 parse_concentrations = False
+				if l == "\n" and parse_fluxes:
+					 parse_fluxes = False
+				if parse_concentrations:
+					name = l.split("\t")[0]
+					val  = l.split("\t")[1]
+					concentrations.append([name, val])
+				if parse_fluxes:
+					name = l.split("\t")[0]
+					val  = l.split("\t")[1]
+					fluxes.append([name, val])
+				if l.startswith("Species"):
+					parse_concentrations = True
+				if l.startswith("Reaction"):
+					parse_fluxes = True
+				l = f.readline()
+			f.close()
+			return concentrations, fluxes
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 2) Parse to extract the MCA result   #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		elif task == "MCA":
+			colnames = []
+			rownames = []
+			unscaled = []
+			scaled   = []
+			f = open(filename, "r")
+			l = f.readline()
+			while l:
+				if l.startswith("Unscaled concentration control coefficients"):
+					l        = f.readline()
+					l        = f.readline()
+					l        = f.readline()
+					l        = f.readline()
+					colnames = l.strip("\n\t").split("\t")
+					while l != "\n":
+						l = l.strip("\n\t").split("\t")
+						N = len(l)
+						rownames.append(l[0].strip("()"))
+						unscaled.append(l[1:N])
+						l = f.readline()
+				if l.startswith("Scaled concentration control coefficients"):
+					l        = f.readline()
+					l        = f.readline()
+					l        = f.readline()
+					l        = f.readline()
+					while l != "\n":
+						l = l.strip("\n\t").split("\t")
+						N = len(l)
+						scaled.append(l[1:N])
+						l = f.readline()
+					break
+				l = f.readline()
+			f.close()
+			return rownames, colnames, unscaled, scaled
 	
 	### Compute wild-type steady-state ###
 	def compute_WT_steady_state( self ):
@@ -967,13 +1116,13 @@ class Model:
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.write_WT_SBML_file()
 		self.create_WT_cps_file()
-		self.edit_WT_cps_file()
+		self.edit_WT_cps_file("STEADY_STATE")
 		self.run_copasi_for_WT()
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Extract steady-state                 #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		concentrations, fluxes = self.parse_copasi_output("./output/WT_output.txt")
+		concentrations, fluxes = self.parse_copasi_output("./output/WT_output.txt", "STEADY_STATE")
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Update model and lists               #
@@ -1016,13 +1165,13 @@ class Model:
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.write_mutant_SBML_file()
 		self.create_mutant_cps_file()
-		self.edit_mutant_cps_file()
+		self.edit_mutant_cps_file("STEADY_STATE")
 		self.run_copasi_for_mutant()
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Extract steady-state                 #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		concentrations, fluxes = self.parse_copasi_output("./output/mutant_output.txt")
+		concentrations, fluxes = self.parse_copasi_output("./output/mutant_output.txt", "STEADY_STATE")
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Update model and lists               #
@@ -1094,6 +1243,9 @@ class Model:
 		-------
 		None
 		"""
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 1) Compute absolute and relative MOMA distance on target fluxes  #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.ABSOLUTE_MOMA_distance = 0.0
 		self.RELATIVE_MOMA_distance = 0.0
 		for target_flux in self.objective_function:
@@ -1105,6 +1257,205 @@ class Model:
 			self.RELATIVE_MOMA_distance += (wt_value-mutant_value)/wt_value*(wt_value-mutant_value)/wt_value
 		self.ABSOLUTE_MOMA_distance = np.sqrt(self.ABSOLUTE_MOMA_distance)
 		self.RELATIVE_MOMA_distance = np.sqrt(self.RELATIVE_MOMA_distance)
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 2) Compute absolute and relative MOMA distance on all the fluxes #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		self.ABSOLUTE_MOMA_ALL_distance = 0.0
+		self.RELATIVE_MOMA_ALL_distance = 0.0
+		WT_flux_array                   = self.get_WT_reaction_array()
+		mutant_flux_array               = self.get_mutant_reaction_array()
+		for i in range(self.get_number_of_reactions()):
+			wt_value     = WT_flux_array[i]
+			mutant_value = mutant_flux_array[i]
+			if wt_value > 1e-10:
+				self.ABSOLUTE_MOMA_ALL_distance += (wt_value-mutant_value)*(wt_value-mutant_value)
+				self.RELATIVE_MOMA_ALL_distance += (wt_value-mutant_value)/wt_value*(wt_value-mutant_value)/wt_value
+		self.ABSOLUTE_MOMA_ALL_distance = np.sqrt(self.ABSOLUTE_MOMA_ALL_distance)
+		self.RELATIVE_MOMA_ALL_distance = np.sqrt(self.RELATIVE_MOMA_ALL_distance)
+	
+	### Compute wild-type metabolic control analysis (MCA) ###
+	def compute_WT_metabolic_control_analysis( self ):
+		"""
+		Compute and save the wild-type metabolic control analysis (MCA).
+		
+		Parameters
+		----------
+		None
+		
+		Returns
+		-------
+		None
+		"""
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 1) Compute the steady-state with Copasi #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		self.write_WT_SBML_file()
+		self.create_WT_cps_file()
+		self.edit_WT_cps_file("MCA")
+		self.run_copasi_for_WT()
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 2) Extract the MCA result               #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		rownames, colnames, unscaled, scaled = self.parse_copasi_output("./output/WT_output.txt", "MCA")
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 3) Write control coefficients matrices  #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		f = open("./output/WT_MCA_unscaled.txt", "w")
+		for colname in colnames:
+			f.write(" "+colname)
+		f.write("\n")
+		for i in range(len(rownames)):
+			f.write(rowname)
+			for elmt in unscaled[i]:
+				f.write(" "+elmt)
+			f.write("\n")
+		f.close()
+		f = open("./output/WT_MCA_scaled.txt", "w")
+		for colname in colnames:
+			f.write(" "+colname)
+		f.write("\n")
+		for i in range(len(rownames)):
+			f.write(rowname)
+			for elmt in scaled[i]:
+				f.write(" "+elmt)
+			f.write("\n")
+		f.close()
+		
+	### Compute mutant metabolic control analysis (MCA) ###
+	def compute_mutant_metabolic_control_analysis( self ):
+		"""
+		Compute and save the mutant metabolic control analysis (MCA).
+		
+		Parameters
+		----------
+		None
+		
+		Returns
+		-------
+		None
+		"""
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 1) Compute the steady-state with Copasi #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		self.write_mutant_SBML_file()
+		self.create_mutant_cps_file()
+		self.edit_mutant_cps_file("MCA")
+		self.run_copasi_for_mutant()
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 2) Extract the MCA result               #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		rownames, colnames, unscaled, scaled = self.parse_copasi_output("./output/mutant_output.txt", "MCA")
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 3) Write control coefficients matrices  #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		f = open("./output/mutant_MCA_unscaled.txt", "w")
+		for colname in colnames:
+			f.write(" "+colname)
+		f.write("\n")
+		for i in range(len(rownames)):
+			f.write(rowname)
+			for elmt in unscaled[i]:
+				f.write(" "+elmt)
+			f.write("\n")
+		f.close()
+		f = open("./output/mutant_MCA_scaled.txt", "w")
+		for colname in colnames:
+			f.write(" "+colname)
+		f.write("\n")
+		for i in range(len(rownames)):
+			f.write(rowname)
+			for elmt in scaled[i]:
+				f.write(" "+elmt)
+			f.write("\n")
+		f.close()
+		
+	### Build the graph of species ###
+	def build_species_graph( self ):
+		"""
+		Build the metabolite-to-metabolite graph (mainly to compute shortest
+		paths afterward).
+		
+		Parameters
+		----------
+		None
+		
+		Returns
+		-------
+		None
+		"""
+		self.species_graph.clear()
+		species_metaid = {}
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 1) Create nodes from species names #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		for species_id in self.species.keys():
+			self.species_graph.add_node(self.species[species_id]["name"])
+			species_metaid[self.species[species_id]["metaid"]] = self.species[species_id]["name"]
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 2) Create edges from reactions     #
+		#   (All the species involved in the #
+		#    reaction are connected)         #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		for reaction in self.WT_model.getListOfReactions():
+			list_of_metabolites = []
+			for reactant in reaction.getListOfReactants():
+				list_of_metabolites.append(reactant.getSpecies())
+			for product in reaction.getListOfProducts():
+				list_of_metabolites.append(product.getSpecies())
+			#for modifier in reaction.getListOfModifiers():
+			#	list_of_metabolites.append(modifier.getSpecies())
+			for i in range(len(list_of_metabolites)):
+				for j in range(i+1, len(list_of_metabolites)):
+					self.species_graph.add_edge(list_of_metabolites[i], list_of_metabolites[j])
+		del species_metaid
+	
+	### Save shortest path lengths matrix ###
+	def save_shortest_paths( self, filename ):
+		"""
+		Save the matrix of all pairwise metabolites shortest paths (assuming an
+		undirected graph).
+		
+		Parameters
+		----------
+		filename: str
+			Name of the Copasi output (txt file).
+		
+		Returns
+		-------
+		None
+		"""
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 1) Extract shortest path lengths      #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		sp = nx.shortest_path_length(self.species_graph)
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 2) Build the matrix of shortest paths #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		sp_dict             = {}
+		list_of_metabolites = []
+		header              = ""
+		for line in sp:
+			sp_dict[line[0]]  = {}
+			list_of_metabolites.append(line[0])
+			header           += line[0]+" "
+			for species in line[1]:
+				sp_dict[line[0]][species] = line[1][species]
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 3) Write the file                     #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		f = open(filename, "w")
+		f.write(header.strip(" ")+"\n")
+		for sp1 in list_of_metabolites:
+			line = sp1
+			for sp2 in list_of_metabolites:
+				line += " "+str(sp_dict[sp1][sp2])
+			f.write(line+"\n")
+		f.close()
 		
 #********************************************************************
 # MCMC class
@@ -1254,7 +1605,7 @@ class MCMC:
 		assert len(objective_function) > 0, "You must provide at least one reaction in the objective function. Exit."
 		assert total_iterations > 0, "The total number of iterations must be a positive nonzero value. Exit."
 		assert sigma > 0.0, "The mutation size 'sigma' must be a positive nonzero value. Exit."
-		assert selection_scheme in ["MUTATION_ACCUMULATION", "ABSOLUTE_METABOLIC_SUM_SELECTION", "RELATIVE_METABOLIC_SUM_SELECTION", "ABSOLUTE_TARGET_FLUXES_SELECTION", "RELATIVE_TARGET_FLUXES_SELECTION"], "The selection scheme takes two values only (MUTATION_ACCUMULATION/ABSOLUTE_METABOLIC_SUM_SELECTION/RELATIVE_METABOLIC_SUM_SELECTION/ABSOLUTE_TARGET_FLUXES_SELECTION/RELATIVE_TARGET_FLUXES_SELECTION). Exit."
+		assert selection_scheme in ["MUTATION_ACCUMULATION", "ABSOLUTE_METABOLIC_SUM_SELECTION", "RELATIVE_METABOLIC_SUM_SELECTION", "ABSOLUTE_TARGET_FLUXES_SELECTION", "RELATIVE_TARGET_FLUXES_SELECTION", "ABSOLUTE_ALL_FLUXES_SELECTION", "RELATIVE_ALL_FLUXES_SELECTION"], "The selection scheme takes two values only (MUTATION_ACCUMULATION / ABSOLUTE_METABOLIC_SUM_SELECTION / RELATIVE_METABOLIC_SUM_SELECTION / ABSOLUTE_TARGET_FLUXES_SELECTION / RELATIVE_TARGET_FLUXES_SELECTION / ABSOLUTE_ALL_FLUXES_SELECTION / RELATIVE_ALL_FLUXES_SELECTION). Exit."
 		assert os.path.isfile(copasi_path), "The executable \""+copasi_path+"\" does not exist. Exit."
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -1347,7 +1698,7 @@ class MCMC:
 				header += " "+species_id
 		for reaction_id in self.model.reactions:
 			header += " "+reaction_id
-		header += " wt_absolute_sum mutant_absolute_sum wt_relative_sum mutant_relative_sum absolute_sum_dist relative_sum_dist absolute_moma_dist relative_moma_dist\n"
+		header += " wt_absolute_sum mutant_absolute_sum wt_relative_sum mutant_relative_sum absolute_sum_dist relative_sum_dist absolute_moma_dist relative_moma_dist absolute_moma_all_dist relative_moma_all_dist\n"
 		self.output_file = open("output/iterations.txt", "a")
 		self.output_file.write(header)
 		self.output_file.close()
@@ -1390,7 +1741,7 @@ class MCMC:
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Write scores             #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		line += " "+str(self.model.WT_ABSOLUTE_SUM)+" "+str(self.model.mutant_ABSOLUTE_SUM)+" "+str(self.model.WT_RELATIVE_SUM)+" "+str(self.model.mutant_RELATIVE_SUM)+" "+str(self.model.ABSOLUTE_SUM_distance)+" "+str(self.model.RELATIVE_SUM_distance)+" "+str(self.model.ABSOLUTE_MOMA_distance)+" "+str(self.model.RELATIVE_MOMA_distance)
+		line += " "+str(self.model.WT_ABSOLUTE_SUM)+" "+str(self.model.mutant_ABSOLUTE_SUM)+" "+str(self.model.WT_RELATIVE_SUM)+" "+str(self.model.mutant_RELATIVE_SUM)+" "+str(self.model.ABSOLUTE_SUM_distance)+" "+str(self.model.RELATIVE_SUM_distance)+" "+str(self.model.ABSOLUTE_MOMA_distance)+" "+str(self.model.RELATIVE_MOMA_distance)+" "+str(self.model.ABSOLUTE_MOMA_ALL_distance)+" "+str(self.model.RELATIVE_MOMA_ALL_distance)
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 4) Write in file            #
@@ -1723,6 +2074,46 @@ class MCMC:
 			self.update_statistics()
 			self.compute_statistics()
 		elif self.selection_scheme == "RELATIVE_TARGET_FLUXES_SELECTION" and self.model.RELATIVE_MOMA_distance >= self.selection_threshold:
+			self.nb_iterations += 1
+			self.nb_rejected   += 1
+			self.reload_previous_state()
+			self.update_statistics()
+			self.compute_statistics()
+			self.param_metaid   = "_"
+			self.param_id       = "_"
+			self.param_value    = 0.0
+			self.param_previous = 0.0
+		#-----------------------------------------------------------------#
+		# 4.6) If the simulation is a absolute ALL fluxes selection       #
+		#      experiment, keep only mutations for which the MOMA         #
+		#      distance is lower than a given selection threshold.        #
+		#-----------------------------------------------------------------#
+		elif self.selection_scheme == "ABSOLUTE_ALL_FLUXES_SELECTION" and self.model.ABSOLUTE_MOMA_ALL_distance < self.selection_threshold:
+			self.nb_iterations += 1
+			self.nb_accepted   += 1
+			self.update_statistics()
+			self.compute_statistics()
+		elif self.selection_scheme == "ABSOLUTE_ALL_FLUXES_SELECTION" and self.model.ABSOLUTE_MOMA_ALL_distance >= self.selection_threshold:
+			self.nb_iterations += 1
+			self.nb_rejected   += 1
+			self.reload_previous_state()
+			self.update_statistics()
+			self.compute_statistics()
+			self.param_metaid   = "_"
+			self.param_id       = "_"
+			self.param_value    = 0.0
+			self.param_previous = 0.0
+		#-----------------------------------------------------------------#
+		# 4.7) If the simulation is a relative ALL fluxes selection       #
+		#      experiment, keep only mutations for which the MOMA         #
+		#      distance is lower than a given selection threshold.        #
+		#-----------------------------------------------------------------#
+		elif self.selection_scheme == "RELATIVE_ALL_FLUXES_SELECTION" and self.model.RELATIVE_MOMA_ALL_distance < self.selection_threshold:
+			self.nb_iterations += 1
+			self.nb_accepted   += 1
+			self.update_statistics()
+			self.compute_statistics()
+		elif self.selection_scheme == "RELATIVE_ALL_FLUXES_SELECTION" and self.model.RELATIVE_MOMA_ALL_distance >= self.selection_threshold:
 			self.nb_iterations += 1
 			self.nb_rejected   += 1
 			self.reload_previous_state()
