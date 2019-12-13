@@ -2,9 +2,9 @@
 <p align="center">
     Python package dedicated to the evolution of metabolic concentrations
     <br/><br/>
-    <a href="https://pypi.org/project/MetEvolSim/"><img src="https://img.shields.io/badge/pypi - 0.4.0-orange.svg" /></a>&nbsp;<a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest"><img src="https://img.shields.io/badge/build - passing-green.svg" /></a>&nbsp;<a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/license-GPL v3-blue.svg" /></a>&nbsp;
+    <a href="https://pypi.org/project/MetEvolSim/"><img src="https://img.shields.io/badge/pypi - 0.4.1-orange.svg" /></a>&nbsp;<a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest"><img src="https://img.shields.io/badge/build - passing-green.svg" /></a>&nbsp;<a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/license-GPL v3-blue.svg" /></a>&nbsp;
     <br/>
-    <img src="https://github.com/charlesrocabert/MetEvolSim-development/blob/master/pic/metevolsim_logo.png" width=150>
+    <img src="https://github.com/charlesrocabert/MetEvolSim-development/raw/master/pic/metevolsim_logo.png" width=150>
 </p>
 
 -----------------
@@ -19,7 +19,7 @@ MetEvolSim is being developed by <a href="https://github.com/charlesrocabert">Ch
 </p>
 
 <p align="center">
-<img src="https://github.com/charlesrocabert/MetEvolSim-development/blob/master/pic/BRC_logo.png" height="100px"></a>&nbsp;&nbsp;&nbsp;<img src="https://github.com/charlesrocabert/MetEvolSim-development/blob/master/pic/MTA_logo.png" height="100px"></a>
+<img src="https://github.com/charlesrocabert/MetEvolSim-development/raw/master/pic/BRC_logo.png" height="100px"></a>&nbsp;&nbsp;&nbsp;<img src="https://github.com/charlesrocabert/MetEvolSim-development/raw/master/pic/MTA_logo.png" height="100px"></a>
 </p>
 
 ## Table of contents
@@ -101,7 +101,7 @@ All numerical analyses output files are saved in a subfolder <code>output</code>
 
 ### Evolution experiments:
 <p align="center">
-<img src="https://github.com/charlesrocabert/MetEvolSim-development/blob/master/pic/mcmc_algorithm.png" height="200px">
+<img src="https://github.com/charlesrocabert/MetEvolSim-development/raw/master/pic/mcmc_algorithm.png" height="200px">
 </p>
 <p align="justify">
 <strong>Algorithm overview:</strong> <strong>A.</strong> The model of interest is loaded as a wild-type from a SBML file (kinetic equations, kinetic parameter values and initial metabolic concentrations must be specified). <strong>B.</strong> At each iteration <em>t</em>, a single kinetic parameter is selected at random and mutated through a log10-normal distribution of standard deviation &sigma;. <strong>C.</strong> The new steady-state is computed using Copasi software, and the MOMA distance <em>z</em> between the mutant and the wild-type target fluxes is computed. <strong>D.</strong> If <em>z</em> is under a given selection threshold &omega;, the mutation is accepted. Else, the mutation is discarded. <strong>E.</strong> A new iteration <em>t+1</em> is computed.

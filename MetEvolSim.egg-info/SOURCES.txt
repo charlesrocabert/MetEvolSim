@@ -17,7 +17,5 @@ example/models/holzhutter2004_objective_function.txt
 metevolsim/__init__.py
 metevolsim/metevolsim.py
 scripts/.DS_Store
-scripts/plot_evolution_rate.R
-scripts/plot_sensitivity_analysis.R
 scripts/run_mcmc.py
 scripts/run_sensitivity_analysis.py
