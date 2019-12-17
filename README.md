@@ -99,7 +99,7 @@ MetEvolSim offers two specific numerical approaches to analyze the evolution of 
 - <strong>Evolution experiments</strong>, based on a Markov Chain Monte Carlo (MCMC) algorithm,
 - <strong>Sensitivity analysis</strong>, by exploring every kinetic parameters in a given range and recording associated fluxes and metabolic abundances changes.
 
-All numerical analyses output files are saved in a subfolder <code>output</code>, automatically created by MetEvolSim.
+All numerical analyses output files are saved in a subfolder <code>output</code>.
 
 ### Evolution experiments:
 <p align="center">
