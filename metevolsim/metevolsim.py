@@ -861,7 +861,7 @@ class Model:
 		elif task == "MCA":
 			edited_file += '  <ListOfTasks>\n'
 			edited_file += '    <Task key="Task_14" name="Steady-State" type="steadyState" scheduled="false" updateModel="false">\n'
-			edited_file += '      <Report reference="Report_10" target="test.txt" append="1" confirmOverwrite="1"/>\n'
+			edited_file += '      <Report reference="Report_10" target="" append="1" confirmOverwrite="1"/>\n'
 			edited_file += '      <Problem>\n'
 			edited_file += '        <Parameter name="JacobianRequested" type="bool" value="1"/>\n'
 			edited_file += '        <Parameter name="StabilityAnalysisRequested" type="bool" value="1"/>\n'
@@ -879,7 +879,7 @@ class Model:
 			edited_file += '      </Method>\n'
 			edited_file += '    </Task>\n'
 			edited_file += '    <Task key="Task_20" name="Metabolic Control Analysis" type="metabolicControlAnalysis" scheduled="true" updateModel="false">\n'
-			edited_file += '      <Report reference="Report_14" target="test.txt" append="1" confirmOverwrite="1"/>\n'
+			edited_file += '      <Report reference="Report_14" target="WT_output.txt" append="1" confirmOverwrite="1"/>\n'
 			edited_file += '      <Problem>\n'
 			edited_file += '        <Parameter name="Steady-State" type="key" value="Task_14"/>\n'
 			edited_file += '      </Problem>\n'
@@ -920,7 +920,7 @@ class Model:
 		if task == "STEADY_STATE":
 			edited_file += '  <ListOfTasks>\n'
 			edited_file += '    <Task key="Task_14" name="Steady-State" type="steadyState" scheduled="true" updateModel="false">\n'
-			edited_file += '      <Report reference="Report_9" target="WT_output.txt" append="1" confirmOverwrite="1"/>\n'
+			edited_file += '      <Report reference="Report_9" target="mutant_output.txt" append="1" confirmOverwrite="1"/>\n'
 			edited_file += '      <Problem>\n'
 			edited_file += '        <Parameter name="JacobianRequested" type="bool" value="1"/>\n'
 			edited_file += '        <Parameter name="StabilityAnalysisRequested" type="bool" value="1"/>\n'
@@ -941,7 +941,7 @@ class Model:
 		elif task == "MCA":
 			edited_file += '  <ListOfTasks>\n'
 			edited_file += '    <Task key="Task_14" name="Steady-State" type="steadyState" scheduled="false" updateModel="false">\n'
-			edited_file += '      <Report reference="Report_10" target="test.txt" append="1" confirmOverwrite="1"/>\n'
+			edited_file += '      <Report reference="Report_10" target="" append="1" confirmOverwrite="1"/>\n'
 			edited_file += '      <Problem>\n'
 			edited_file += '        <Parameter name="JacobianRequested" type="bool" value="1"/>\n'
 			edited_file += '        <Parameter name="StabilityAnalysisRequested" type="bool" value="1"/>\n'
@@ -959,7 +959,7 @@ class Model:
 			edited_file += '      </Method>\n'
 			edited_file += '    </Task>\n'
 			edited_file += '    <Task key="Task_20" name="Metabolic Control Analysis" type="metabolicControlAnalysis" scheduled="true" updateModel="false">\n'
-			edited_file += '      <Report reference="Report_14" target="test.txt" append="1" confirmOverwrite="1"/>\n'
+			edited_file += '      <Report reference="Report_14" target="mutant_output.txt" append="1" confirmOverwrite="1"/>\n'
 			edited_file += '      <Problem>\n'
 			edited_file += '        <Parameter name="Steady-State" type="key" value="Task_14"/>\n'
 			edited_file += '      </Problem>\n'
@@ -1068,6 +1068,7 @@ class Model:
 			rownames = []
 			unscaled = []
 			scaled   = []
+			N        = 0
 			f = open(filename, "r")
 			l = f.readline()
 			while l:
@@ -1077,21 +1078,24 @@ class Model:
 					l        = f.readline()
 					l        = f.readline()
 					colnames = l.strip("\n\t").split("\t")
+					N        = len(colnames)
+					l        = f.readline()
+					for i in range(len(colnames)):
+						colnames[i] = colnames[i].strip("()")
 					while l != "\n":
 						l = l.strip("\n\t").split("\t")
-						N = len(l)
-						rownames.append(l[0].strip("()"))
-						unscaled.append(l[1:N])
+						rownames.append(l[0])
+						unscaled.append(l[1:(N+1)])
 						l = f.readline()
 				if l.startswith("Scaled concentration control coefficients"):
 					l        = f.readline()
 					l        = f.readline()
 					l        = f.readline()
 					l        = f.readline()
+					l        = f.readline()
 					while l != "\n":
 						l = l.strip("\n\t").split("\t")
-						N = len(l)
-						scaled.append(l[1:N])
+						scaled.append(l[1:(N+1)])
 						l = f.readline()
 					break
 				l = f.readline()
@@ -1300,27 +1304,30 @@ class Model:
 		rownames, colnames, unscaled, scaled = self.parse_copasi_output("./output/WT_output.txt", "MCA")
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		# 3) Write control coefficients matrices  #
+		# 3) Write control coefficients data      #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		f = open("./output/WT_MCA_unscaled.txt", "w")
-		for colname in colnames:
-			f.write(" "+colname)
-		f.write("\n")
+		f.write("species_id species_value flux_id flux_value control_coef\n")
 		for i in range(len(rownames)):
-			f.write(rowname)
-			for elmt in unscaled[i]:
-				f.write(" "+elmt)
-			f.write("\n")
+			for j in range(len(colnames)):
+				species_id    = rownames[i]
+				flux_id       = colnames[j]
+				print(species_id, flux_id)
+				species_value = self.species[species_id]["WT_value"]
+				flux_value    = self.reactions[flux_id]["WT_value"]
+				control_coef  = unscaled[i][j]
+				f.write(species_id+" "+str(species_value)+" "+flux_id+" "+str(flux_value)+" "+control_coef+"\n")
 		f.close()
 		f = open("./output/WT_MCA_scaled.txt", "w")
-		for colname in colnames:
-			f.write(" "+colname)
-		f.write("\n")
+		f.write("species_id species_value flux_id flux_value control_coef\n")
 		for i in range(len(rownames)):
-			f.write(rowname)
-			for elmt in scaled[i]:
-				f.write(" "+elmt)
-			f.write("\n")
+			for j in range(len(colnames)):
+				species_id    = rownames[i]
+				flux_id       = colnames[j]
+				species_value = self.species[species_id]["WT_value"]
+				flux_value    = self.reactions[flux_id]["WT_value"]
+				control_coef  = scaled[i][j]
+				f.write(species_id+" "+str(species_value)+" "+flux_id+" "+str(flux_value)+" "+control_coef+"\n")
 		f.close()
 		
 	### Compute mutant metabolic control analysis (MCA) ###
