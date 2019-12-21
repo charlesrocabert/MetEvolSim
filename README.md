@@ -61,7 +61,7 @@ MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> me
 
 ```python
 # Import metevolsim package
-import MetEvolSim
+import metevolsim
 
 # Create an objective function
 target_fluxes = [['ATPase', 1.0], ['PDC', 1.0]]
