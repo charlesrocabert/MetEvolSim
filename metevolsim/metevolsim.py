@@ -7,7 +7,7 @@
 # MetEvolSim is a numerical framework dedicated to the study of metabolic
 # abundances evolution.
 #
-# Copyright (c) 2018-2019 Charles Rocabert, Gábor Boross, Balázs Papp
+# Copyright (c) 2018-2020 Charles Rocabert, Gábor Boross, Balázs Papp
 # Web: https://github.com/charlesrocabert/MetEvolSim
 #
 # This program is free software: you can redistribute it and/or modify
@@ -26,6 +26,7 @@
 
 import os
 import sys
+import time
 import subprocess
 import libsbml
 import numpy as np
@@ -111,7 +112,7 @@ class Model:
 		Minimization Of Metabolic Adjustment on ALL relative fluxes.
 	
 	Methods
-    -------
+	-------
 	> __init__(sbml_filename, objective_function, copasi_path)
 		Constructor.
 	> rebuild_metaids()
@@ -1559,7 +1560,7 @@ class MCMC:
 		Output file tracking each MCMC algorithm iteration.
 	
 	Methods
-    -------
+	-------
 	> __init__(sbml_filename, target_fluxes, total_iterations, sigma, selection_scheme, selection_threshold, copasi_path)
 		MCMC class constructor.
 	> initialize_output_file()
@@ -2142,9 +2143,13 @@ class MCMC:
 #********************************************************************
 # SensitivityAnalysis class
 # -------------------------
-# This class runs a sensitivity analysis by exploring a range of
-# values for each kinetic parameter and tracking the change for all
-# fluxes and species.
+# This class runs two types of sensitivity analysis:
+# - "One-at-a-time analysis" (OAT): the program explores a range of
+#   values independently for each kinetic parameter and tracks the
+#   change for all fluxes and species.
+# - "Random analysis": the program explores the parameters space by
+#   performing many independent random draws where a single kinetic
+#   parameter mutate at random.
 #********************************************************************
 class SensitivityAnalysis:
 	"""
@@ -2156,46 +2161,66 @@ class SensitivityAnalysis:
 	----------
 	> sbml_filename : str
 		Path of the SBML model file. The SBML model is automatically loaded.
+	> copasi_path : str
+		Location of Copasi executable.
+	> model : Model
+		SBML model (automatically loaded).
 	> factor_range : float > 0.0
 		Half-range of the log10-scaling factor (total range=2*factor_range)
 	> factor_step : float > 0.0
 		Exploration step of the log10-scaling factor.
 		x' = x*10^(factor)
-	> copasi_path : str
-		Location of Copasi executable.
-	> model : Model
-		SBML model (automatically loaded).
 	> param_index : int
 		Current parameter index.
 	> param_metaid : str
 		Current parameter meta identifier.
 	> param_id : str
 		Current parameter identifier.
-	> param_wt : 0.0
+	> param_wt : float
 		Current parameter wild-type value.
-	> param_val : 0.0
+	> param_val : float
 		Current parameter mutant value.
-	> output_file : file
-		Output file.
+	> sigma : float > 0.0
+		Kinetic parameters mutation size.
+	> nb_iterations : int > 0
+		Number of iterations of the multivariate random analysis.
+	> iteration : int > 0
+		Current iteration of the multivariate random analysis.
+	> OAT_output_file : file
+		Output file for the One-at-a-time analysis.
+	> random_output_file : file
+		Output file for the multivariate random analysis.	
 	
 	Methods
-    -------
-	> __init__(sbml_filename, factor_range, factor_step, copasi_path)
+	-------
+	> __init__(sbml_filename, copasi_path)
 		SensitivityAnalysis class constructor.
-	> initialize_output_file()
-		Initialize the output file (write the header).
-	> write_output_file()
-		Write the current sensitivity analysis state in the output file.
-	> initialize()
-		Initialize the sensitivity analysis algorithm.
+	> initialize_OAT_output_file()
+		Initialize the One-At-a-Time sensitivity analysis output file (write the header).
+	> initialize_random_output_file()
+		Initialize the random sensitivity analysis output file (write the header).
+	> write_OAT_output_file()
+		Write the current One-At-a-Time sensitivity analysis state in the output file.
+	> write_random_output_file()
+		Write the current random sensitivity analysis state in the output file.
+	> initialize_OAT_analysis(factor_range, factor_step)
+		Initialize the One-At-a-Time sensitivity analysis algorithm.
+	> initialize_random_analysis(sigma, nb_iterations)
+		Initialize the random sensitivity analysis algorithm.
 	> reload_WT_state()
 		Reload the wild-type state into the mutant model.
-	> explore_next_parameter()
+	> next_parameter()
 		Run a full parameter exploration for the next kinetic parameter.
+	> next_iteration()
+		Run the random parametric exploration for the next iteration.
+	> run_OAT_analysis(factor_range, factor_step)
+		Run the complete One-At-a-Time sensitivity analysis.
+	> run_random_analysis(sigma, nb_iterations)
+		Run the complete random sensitivity analysis.
 	"""
 	
 	### Constructor ###
-	def __init__( self, sbml_filename, factor_range, factor_step, copasi_path ):
+	def __init__( self, sbml_filename, copasi_path ):
 		"""
 		SensitivityAnalysis class constructor.
 		
@@ -2203,11 +2228,6 @@ class SensitivityAnalysis:
 		----------
 		sbml_filename : str
 			Path of the SBML model file. The SBML model is automatically loaded.
-		factor_range : float > 0.0
-			Half-range of the log10-scaling factor (total range=2*factor_range)
-		factor_step : float > 0.0
-			Exploration step of the log10-scaling factor.
-			x' = x*10^(factor)
 		copasi_path : str
 			Location of Copasi executable.
 		
@@ -2216,16 +2236,12 @@ class SensitivityAnalysis:
 		None
 		"""
 		assert os.path.isfile(sbml_filename), "The SBML file \""+sbml_filename+"\" does not exist. Exit."
-		assert factor_range > 0.0, "The factor range 'factor_range' must be a positive nonzero value. Exit."
-		assert factor_step > 0.0, "The factor step 'factor_step' must be a positive nonzero value. Exit."
 		assert os.path.isfile(copasi_path), "The executable \""+copasi_path+"\" does not exist. Exit."
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Main sensitivity analysis parameters #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.sbml_filename = sbml_filename
-		self.factor_range  = factor_range
-		self.factor_step   = factor_step
 		self.copasi_path   = copasi_path
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2234,8 +2250,10 @@ class SensitivityAnalysis:
 		self.model = Model(sbml_filename, [], copasi_path)
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		# 3) Parameter tracking                   #
+		# 3) One-at-a-time analysis               #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		self.factor_range = 0.0
+		self.factor_step  = 0.0
 		self.param_index  = 0
 		self.param_metaid = "WT"
 		self.param_id     = "WT"
@@ -2243,15 +2261,24 @@ class SensitivityAnalysis:
 		self.param_val    = 0.0
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		# 4) Output file                          #
+		# 4) Multivariate random analysis         #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		self.output_file = open("output/sensitivity_analysis.txt", "w")
-		self.output_file.close()
+		self.sigma         = 0.0
+		self.nb_iterations = 0.0
+		self.iteration     = 0
 		
-	### Initialize the output file ###
-	def initialize_output_file( self ):
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 5) Output files                         #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		self.OAT_output_file = open("output/OAT_sensitivity_analysis.txt", "w")
+		self.OAT_output_file.close()
+		self.random_output_file = open("output/random_sensitivity_analysis.txt", "w")
+		self.random_output_file.close()
+		
+	### Initialize the OAT output file ###
+	def initialize_OAT_output_file( self ):
 		"""
-		Initialize the output file (write the header).
+		Initialize the OAT output file (write the header).
 	
 		Parameters
 		----------
@@ -2285,14 +2312,55 @@ class SensitivityAnalysis:
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Save in output file              #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		self.output_file = open("output/sensitivity_analysis.txt", "a")
+		self.OAT_output_file = open("output/OAT_sensitivity_analysis.txt", "a")
+		self.OAT_output_file.write(header+"\n"+first_line+"\n")
+		self.OAT_output_file.close()
+	
+	### Initialize the multivariate random output file ###
+	def initialize_random_output_file( self ):
+		"""
+		Initialize the multivariate random output file (write the header).
+	
+		Parameters
+		----------
+		None
+	
+		Returns
+		-------
+		None
+		"""
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 1) Write the header                 #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		header = "iteration"
+		for species_id in self.model.species:
+			if not self.model.species[species_id]["constant"]:
+				header += " "+species_id
+		for reaction_id in self.model.reactions:
+			header += " "+reaction_id
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 2) Write the wild-type steady-state #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		first_line = "WT"
+		for species_id in self.model.species:
+			if not self.model.species[species_id]["constant"]:
+				first_line += " "+str(self.model.species[species_id]["WT_value"])
+		for reaction_id in self.model.reactions:
+			first_line += " "+str(self.model.reactions[reaction_id]["WT_value"])
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 3) Save in output file              #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		self.output_file = open("output/random_sensitivity_analysis.txt", "a")
 		self.output_file.write(header+"\n"+first_line+"\n")
 		self.output_file.close()
 	
-	### Write the sensitivity analysis state in the output file ###
-	def write_output_file( self ):
+	### Write the sensitivity analysis state in the OAT output file ###
+	def write_OAT_output_file( self ):
 		"""
-		Write the current sensitivity analysis state in the output file.
+		Write the current OAT sensitivity analysis state in the output file.
 	
 		Parameters
 		----------
@@ -2304,18 +2372,18 @@ class SensitivityAnalysis:
 		"""
 		line = ""
 		
-		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		# 1) Write current MCMC state #
-		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 1) Write current OAT state #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		line += str(self.param_metaid)+" "
 		line += str(self.param_id)+" "
 		line += str(self.param_wt)+" "
 		line += str(self.param_val)+" "
 		line += str((self.param_val-self.param_wt)/self.param_wt)
 		
-		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		# 2) Write steady-state       #
-		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 2) Write steady-state      #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		for species_id in self.model.species:
 			if not self.model.species[species_id]["constant"]:
 				wt_val  = self.model.species[species_id]["WT_value"]
@@ -2332,17 +2400,17 @@ class SensitivityAnalysis:
 				dln_val = (mut_val-wt_val)/wt_val
 			line   += " "+str(dln_val)
 		
-		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		# 3) Write in file            #
-		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		self.output_file = open("output/sensitivity_analysis.txt", "a")
-		self.output_file.write(line+"\n")
-		self.output_file.close()
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 3) Write in file           #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		self.OAT_output_file = open("output/OAT_sensitivity_analysis.txt", "a")
+		self.OAT_output_file.write(line+"\n")
+		self.OAT_output_file.close()
 	
-	### Initialize sensitivity analysis algorithm ###
-	def initialize( self ):
+	### Write the sensitivity analysis state in the random output file ###
+	def write_random_output_file( self ):
 		"""
-		Initialize the sensitivity analysis algorithm.
+		Write the current multivariate random sensitivity analysis state in the output file.
 	
 		Parameters
 		----------
@@ -2352,10 +2420,88 @@ class SensitivityAnalysis:
 		-------
 		None
 		"""
+		line = ""
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 1) Write current multivariate random state #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		line += str(self.iteration)
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 2) Write steady-state                      #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		for species_id in self.model.species:
+			if not self.model.species[species_id]["constant"]:
+				wt_val  = self.model.species[species_id]["WT_value"]
+				mut_val = self.model.species[species_id]["mutant_value"]
+				dln_val = "NA"
+				if wt_val != 0.0:
+					dln_val = (mut_val-wt_val)/wt_val
+				line   += " "+str(dln_val)
+		for reaction_id in self.model.reactions:
+			wt_val  = self.model.reactions[reaction_id]["WT_value"]
+			mut_val = self.model.reactions[reaction_id]["mutant_value"]
+			dln_val = "NA"
+			if wt_val != 0.0:
+				dln_val = (mut_val-wt_val)/wt_val
+			line   += " "+str(dln_val)
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 3) Write in file                           #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		self.random_output_file = open("output/random_sensitivity_analysis.txt", "a")
+		self.random_output_file.write(line+"\n")
+		self.random_output_file.close()
+	
+	### Initialize OAT sensitivity analysis algorithm ###
+	def initialize_OAT_analysis( self, factor_range, factor_step ):
+		"""
+		Initialize the OAT sensitivity analysis algorithm.
+	
+		Parameters
+		----------
+		factor_range : float > 0.0
+			Half-range of the log10-scaling factor (total range=2*factor_range)
+		factor_step : float > 0.0
+			Exploration step of the log10-scaling factor.
+			x' = x*10^(factor)
+	
+		Returns
+		-------
+		None
+		"""
+		assert factor_range > 0.0, "The factor range 'factor_range' must be a positive nonzero value. Exit."
+		assert factor_step > 0.0, "The factor step 'factor_step' must be a positive nonzero value. Exit."
+		self.factor_range = factor_range
+		self.factor_step  = factor_step
 		self.model.compute_WT_steady_state()
 		self.model.compute_mutant_steady_state()
-		self.initialize_output_file()
+		self.initialize_OAT_output_file()
 		self.param_index = 0
+	
+	### Initialize multivariate random sensitivity analysis algorithm ###
+	def initialize_random_analysis( self, sigma, nb_iterations ):
+		"""
+		Initialize the multivariate random sensitivity analysis algorithm.
+	
+		Parameters
+		----------
+		sigma : float > 0.0
+			Kinetic parameters mutation size.
+		nb_iterations : int > 0
+			Number of iterations of the multivariate random analysis.
+		Returns
+		-------
+		None
+		"""
+		assert sigma > 0.0, "The mutation size sigma must be positive. Exit."
+		assert nb_iterations > 0, "The number of iterations must be positive. Exit."
+		self.sigma         = sigma
+		self.nb_iterations = nb_iterations
+		self.model.compute_WT_steady_state()
+		self.model.compute_mutant_steady_state()
+		self.initialize_random_output_file()
+		self.iterations = 0
 	
 	### Reload the wild-type state into the mutant model ###
 	def reload_WT_state( self ):
@@ -2379,9 +2525,9 @@ class SensitivityAnalysis:
 			self.model.set_mutant_parameter_value(parameter_metaid, self.model.get_WT_parameter_value(parameter_metaid))
 		for reaction_id in self.model.reactions:
 			self.model.reactions[reaction_id]["mutant_value"] = self.model.reactions[reaction_id]["WT_value"]
-		
-	### Explore the next parameter ###
-	def explore_next_parameter( self ):
+	
+	### Explore the next parameter (OAT analysis) ###
+	def next_parameter( self ):
 		"""
 		Run a full parameter exploration for the next kinetic parameter.
 		
@@ -2413,7 +2559,7 @@ class SensitivityAnalysis:
 			self.param_val = self.param_wt*10**factor
 			self.model.set_mutant_parameter_value(self.param_metaid, self.param_val)
 			self.model.compute_mutant_steady_state()
-			self.write_output_file()
+			self.write_OAT_output_file()
 			#self.model.update_initial_concentrations()
 			factor += self.factor_step
 		self.reload_WT_state()
@@ -2426,7 +2572,7 @@ class SensitivityAnalysis:
 			self.param_val = self.param_wt*10**factor
 			self.model.set_mutant_parameter_value(self.param_metaid, self.param_val)
 			self.model.compute_mutant_steady_state()
-			self.write_output_file()
+			self.write_OAT_output_file()
 			#self.model.update_initial_concentrations()
 			factor -= self.factor_step
 		self.reload_WT_state()
@@ -2438,3 +2584,94 @@ class SensitivityAnalysis:
 		if self.param_index == len(self.model.parameters):
 			return True
 		return False
+	
+	### Run the next iteration (multivariate random analysis) ###
+	def next_iteration( self ):
+		"""
+		Run the next multivariate random iteration
+		
+		Parameters
+		----------
+		None
+		
+		Returns
+		-------
+		bool
+			Returns True if the last iteration has been done. Returns False
+			else.
+		"""
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 1) Mutate each parameter at random with mutation size "sigma" #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		print("> Current iteration: "+str(self.iteration+1)+"/"+str(self.nb_iterations))
+		#for param_metaid in self.model.parameters.keys():
+		#	self.model.random_parameter_mutation(param_metaid, self.sigma)
+		param_metaid = self.model.get_random_parameter()
+		self.model.random_parameter_mutation(param_metaid, self.sigma)
+		self.model.compute_mutant_steady_state()
+		self.write_random_output_file()
+		self.reload_WT_state()
+		
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 2) Increment the current iteration                            #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		self.iteration += 1
+		if self.iteration == self.nb_iterations:
+			return True
+		return False
+	
+	### Run the OAT sensitivity analysis ###
+	def run_OAT_analysis( self, factor_range, factor_step ):
+		"""
+		Run the OAT sensitivity analysis algorithm.
+	
+		Parameters
+		----------
+		factor_range : float > 0.0
+			Half-range of the log10-scaling factor (total range=2*factor_range)
+		factor_step : float > 0.0
+			Exploration step of the log10-scaling factor.
+			x' = x*10^(factor)
+	
+		Returns
+		-------
+		None
+		"""
+		assert factor_range > 0.0, "The factor range 'factor_range' must be a positive nonzero value. Exit."
+		assert factor_step > 0.0, "The factor step 'factor_step' must be a positive nonzero value. Exit."
+		self.initialize_OAT_analysis(factor_range, factor_step)
+		stop_sa    = False
+		start_time = time.time()
+		while not stop_sa:
+			stop_sa        = self.next_parameter()
+			ongoing_time   = time.time()
+			estimated_time = (ongoing_time-start_time)*float(self.model.get_number_of_parameters()-self.param_index-1)/float(self.param_index+1)
+			print("   Estimated remaining time "+str(int(round(estimated_time/60)))+" min.")
+	
+	### Run the multivariate random sensitivity analysis ###
+	def run_random_analysis( self, sigma, nb_iterations ):
+		"""
+		Run the multivariate random sensitivity analysis algorithm.
+	
+		Parameters
+		----------
+		sigma : float > 0.0
+			Kinetic parameters mutation size.
+		nb_iterations : int > 0
+			Number of iterations of the multivariate random analysis.
+	
+		Returns
+		-------
+		None
+		"""
+		assert sigma > 0.0, "The mutation size sigma must be positive. Exit."
+		assert nb_iterations > 0, "The number of iterations must be positive. Exit."
+		self.initialize_random_analysis(sigma, nb_iterations)
+		stop_sa    = False
+		start_time = time.time()
+		while not stop_sa:
+			stop_sa        = self.next_iteration()
+			ongoing_time   = time.time()
+			estimated_time = (ongoing_time-start_time)*float(self.nb_iterations-self.iteration)/float(self.iteration+1)
+			print("   Estimated remaining time "+str((round(estimated_time/60,2)))+" min.")

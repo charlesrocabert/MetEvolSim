@@ -13,7 +13,7 @@
 
 <p align="justify">
 MetEvolSim is a Python package providing numerical tools to study the long-term evolution of metabolic concentrations.
-MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as kinetic parameters and initial metabolic concentrations are specified, and a stable steady-state exists. Steady-state concentrations are computed thanks to <a href="http://copasi.org/">Copasi</a> software.
+MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as the kinetic model is fully specified, and a stable steady-state exists. Steady-state concentrations are computed thanks to <a href="http://copasi.org/">Copasi</a> software.
 </p>
 
 <p align="justify">
@@ -57,7 +57,7 @@ python3 setup.py install
 ```
 
 ## First usage <a name="first_usage"></a>
-MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as kinetic parameters and initial metabolic concentrations are specified, and a stable steady-state exists. MetEvolSim provides a class to manipulate SBML models: the class <code>Model</code>. It is also necessary to define an objective function (a list of reaction names and coefficients), and to provide the path of CopasiSE software.
+MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as kinetic parameters and initial metabolic concentrations are specified, and a stable steady-state exists. MetEvolSim automatically rebuild species SBML meta-identifiers, however species names must be unique. MetEvolSim provides a class to manipulate SBML models: the class <code>Model</code>. It is also necessary to define an objective function (a list of reaction names and coefficients), and to provide the path of CopasiSE software.
 
 ```python
 # Import MetEvolSim package
@@ -97,7 +97,7 @@ model.save_shortest_paths(filename="glycolysis_shortest_paths.txt")
 
 MetEvolSim offers two specific numerical approaches to analyze the evolution of metabolic abundances:
 - <strong>Evolution experiments</strong>, based on a Markov Chain Monte Carlo (MCMC) algorithm,
-- <strong>Sensitivity analysis</strong>, by exploring every kinetic parameters in a given range and recording associated fluxes and metabolic abundances changes.
+- <strong>Sensitivity analysis</strong>, either by exploring every kinetic parameters in a given range and recording associated fluxes and metabolic abundances changes (One-At-a-Time sensitivity analysis), or by exploring the kinetic parameters space at random, by mutating a single kinetic parameter at random many times (random sensitivity analysis).
 
 All numerical analyses output files are saved in a subfolder <code>output</code>.
 
@@ -133,20 +133,26 @@ while not stop_MCMC:
     mcmc.write_statistics()
 ```
 
-### Sensitivity analysis:
+### One-At-a-Time (OAT) sensitivity analysis:
 For each kinetic parameter p, each metabolic abundance [X<sub>i</sub>] and each flux &nu;<sub>j</sub>, the algorithm numerically computes relative derivatives and control coefficients.
 
 ```python
 # Load a sensitivity analysis instance
-sa = metevolsim.SensitivityAnalysis(sbml_filename='glycolysis.xml', factor_range=1.0, factor_step=0.01, copasi_path='/Applications/COPASI/CopasiSE')
+sa = metevolsim.SensitivityAnalysis(sbml_filename='glycolysis.xml', copasi_path='/Applications/COPASI/CopasiSE')
 
-# Initialize the sensitivity analysis instance 
-sa.initialize()
+# Run the full OAT sensitivity analysis
+sa.run_OAT_analysis(factor_range=1.0, factor_step=0.01)
+```
 
-# Perform the sensitivity analysis for each kinetic parameter
-stop_SA = False
-while not stop_SA:
-    stop_SA = sa.explore_next_parameter()
+### Random sensitivity analysis:
+At each iteration, a single kinetic parameter p is mutated at random in a log10-normal distribution of size &sigma;, and relative derivatives and control coefficients are computed.
+
+```python
+# Load a sensitivity analysis instance
+sa = metevolsim.SensitivityAnalysis(sbml_filename='glycolysis.xml', copasi_path='/Applications/COPASI/CopasiSE')
+
+# Run the full OAT sensitivity analysis
+sa.run_random_analysis(sigma=0.01, nb_iterations=1000)
 ```
 
 ## Help <a name="help"></a>
@@ -176,7 +182,7 @@ set_species_initial_value(self, species_id, value)
 ```
 
 ## Copyright <a name="copyright"></a>
-Copyright &copy; 2018-2019 Charles Rocabert, Gábor Boross and Balázs Papp.
+Copyright &copy; 2018-2020 Charles Rocabert, Gábor Boross and Balázs Papp.
 All rights reserved.
 
 ## License <a name="license"></a>

@@ -7,7 +7,7 @@
 # MetEvolSim is a numerical framework dedicated to the study of metabolic
 # abundances evolution.
 #
-# Copyright (c) 2018-2019 Charles Rocabert, Gábor Boross, Balázs Papp
+# Copyright (c) 2018-2020 Charles Rocabert, Gábor Boross, Balázs Papp
 # Web: https://github.com/charlesrocabert/MetEvolSim
 #
 # This program is free software: you can redistribute it and/or modify
@@ -47,21 +47,21 @@ def readArgs( argv ):
 	"""
 	arguments                  = {}
 	arguments["sbml-filename"] = ""
+	arguments["copasi-path"]   = ""
 	arguments["factor-range"]  = 0.0
 	arguments["factor-step"]   = 0.0
-	arguments["copasi-path"]   = ""
 	for i in range(len(argv)):
 		if argv[i] == "-h" or argv[i] == "--help":
 			printHelp()
 			exit_thread()
 		if argv[i] == "-sbml-filename" or argv[i] == "--sbml-filename":
 			arguments["sbml-filename"] = argv[i+1]
+		if argv[i] == "-copasi-path" or argv[i] == "--copasi-path":
+			arguments["copasi-path"] = argv[i+1]
 		if argv[i] == "-factor-range" or argv[i] == "--factor-range":
 			arguments["factor-range"] = float(argv[i+1])
 		if argv[i] == "-factor-step" or argv[i] == "--factor-step":
 			arguments["factor-step"] = float(argv[i+1])
-		if argv[i] == "-copasi-path" or argv[i] == "--copasi-path":
-			arguments["copasi-path"] = argv[i+1]
 	return arguments
 
 ### Assert arguments consistency ###
@@ -81,6 +81,9 @@ def assertArgs( arguments ):
 	if not os.path.isfile(arguments["sbml-filename"]):
 		print("The SBML file \""+arguments["sbml-filename"]+"\" does not exist. Exit.")
 		exit_thread()
+	if not os.path.isfile(arguments["copasi-path"]):
+		print("The executable \""+arguments["copasi-path"]+"\" does not exist. Exit.")
+		exit_thread()
 	if arguments["factor-range"] <= 0:
 		print("Error: argument '-factor-range' only admits positive decimal values (factor_range > 0.0).")
 		print("(current value: "+str(arguments["factor-range"])+")")
@@ -88,9 +91,6 @@ def assertArgs( arguments ):
 	if arguments["factor-step"] <= 0:
 		print("Error: argument '-factor-step' only admits positive decimal values (factor_step > 0.0).")
 		print("(current value: "+str(arguments["factor-step"])+")")
-		exit_thread()
-	if not os.path.isfile(arguments["copasi-path"]):
-		print("The executable \""+arguments["copasi-path"]+"\" does not exist. Exit.")
 		exit_thread()
 		
 ### Print help ###
@@ -113,7 +113,7 @@ def printHelp():
 	print("# MetEvolSim is a numerical framework dedicated to the study of metabolic")
 	print("# abundances evolution.")
 	print("#")
-	print("# Copyright (c) 2018-2019 Charles Rocabert, Gábor Boross, Balázs Papp")
+	print("# Copyright (c) 2018-2020 Charles Rocabert, Gábor Boross, Balázs Papp")
 	print("# Web: https://github.com/charlesrocabert/MetEvolSim")
 	print("#")
 	print("# This program is free software: you can redistribute it and/or modify")
@@ -136,14 +136,14 @@ def printHelp():
 	print("        print this help, then exit")
 	print("  -sbml-filename, --sbml-filename <SBML_filename> (mandatory)")
 	print("        Specify the SBML model filename")
+	print("  -copasi-path, --copasi-path <copasi_path> (mandatory)")
+	print("        Specify the location of copasiSE executable.")
 	print("  -factor-range, --factor-range <factor_range> (mandatory)")
 	print("        Specify the half-range of the parameter exploration factor (float > 0.0)")
 	print("        (full exploration range of parameter x is [x*10^(-range), x*10^(range)])")
 	print("  -factor-step, --factor-step <factor_step> (mandatory)")
 	print("        Specify the step of the parameter exploration factor (float > 0.0)")
 	print("        (factor' = factor -+ step)")
-	print("  -copasi-path, --copasi-path <copasi_path> (mandatory)")
-	print("        Specify the location of copasiSE executable.")
 	print("")
 
 ### Print header ###
@@ -167,7 +167,7 @@ def printHeader( arguments ):
 	print("# MetEvolSim is a numerical framework dedicated to the study of metabolic")
 	print("# abundances evolution.")
 	print("#")
-	print("# Copyright (c) 2018-2019 Charles Rocabert, Gábor Boross, Balázs Papp")
+	print("# Copyright (c) 2018-2020 Charles Rocabert, Gábor Boross, Balázs Papp")
 	print("# Web: https://github.com/charlesrocabert/MetEvolSim")
 	print("#")
 	print("# This program is free software: you can redistribute it and/or modify")
@@ -255,25 +255,19 @@ if __name__ == '__main__':
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	arguments = readArgs(sys.argv)
 	
-	arguments["sbml-filename"] = "resources/holzhutter2004.xml"
+	arguments["sbml-filename"] = "../example/model/holzhutter2004.xml"
+	arguments["copasi-path"]   = "/Applications/COPASI/CopasiSE"
 	arguments["factor-range"]  = 0.01
 	arguments["factor-step"]   = 0.001
-	arguments["copasi-path"]   = "/Applications/COPASI/CopasiSE"
+	
 	assertArgs(arguments)
 	printHeader(arguments)
 	
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	# 3) Run the sensitivity analysis    #
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-	sa         = MetEvolSim.SensitivityAnalysis(arguments["sbml-filename"], arguments["factor-range"], arguments["factor-step"], arguments["copasi-path"])
-	stop_sa    = False
-	start_time = time.time()
-	sa.initialize()
-	while not stop_sa:
-		stop_sa        = sa.explore_next_parameter()
-		ongoing_time   = time.time()
-		estimated_time = (ongoing_time-start_time)*float(sa.model.get_number_of_parameters()-sa.param_index-1)/float(sa.param_index+1)
-		print("   Estimated remaining time "+str(int(round(estimated_time/60)))+" min.")
+	sa = metevolsim.SensitivityAnalysis(arguments["sbml-filename"], arguments["copasi-path"])
+	sa.run_OAT_analysis(factor_range=arguments["factor-range"], factor_step=arguments["factor-step"])
 		
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	# 4) Exit the thread                 #

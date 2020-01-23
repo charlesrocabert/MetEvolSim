@@ -7,7 +7,7 @@
 # MetEvolSim is a numerical framework dedicated to the study of metabolic
 # abundances evolution.
 #
-# Copyright (c) 2018-2019 Charles Rocabert, Gábor Boross, Balázs Papp
+# Copyright (c) 2018-2020 Charles Rocabert, Gábor Boross, Balázs Papp
 # Web: https://github.com/charlesrocabert/MetEvolSim
 #
 # This program is free software: you can redistribute it and/or modify
@@ -137,7 +137,7 @@ def printHelp():
 	print("# MetEvolSim is a numerical framework dedicated to the study of metabolic")
 	print("# abundances evolution.")
 	print("#")
-	print("# Copyright (c) 2018-2019 Charles Rocabert, Gábor Boross, Balázs Papp")
+	print("# Copyright (c) 2018-2020 Charles Rocabert, Gábor Boross, Balázs Papp")
 	print("# Web: https://github.com/charlesrocabert/MetEvolSim")
 	print("#")
 	print("# This program is free software: you can redistribute it and/or modify")
@@ -198,7 +198,7 @@ def printHeader( arguments ):
 	print("# MetEvolSim is a numerical framework dedicated to the study of metabolic")
 	print("# abundances evolution.")
 	print("#")
-	print("# Copyright (c) 2018-2019 Charles Rocabert, Gábor Boross, Balázs Papp")
+	print("# Copyright (c) 2018-2020 Charles Rocabert, Gábor Boross, Balázs Papp")
 	print("# Web: https://github.com/charlesrocabert/MetEvolSim")
 	print("#")
 	print("# This program is free software: you can redistribute it and/or modify")
@@ -309,13 +309,13 @@ if __name__ == '__main__':
 	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 	arguments = readArgs(sys.argv)
 	
-	arguments["sbml-filename"]       = "models/holzhutter2004.xml"
-	arguments["objective-function"]  = "models/holzhutter2004_objective_function.txt"
+	arguments["sbml-filename"]       = "../example/model/holzhutter2004.xml"
+	arguments["objective-function"]  = "../example/model/holzhutter2004_objective_function.txt"
 	arguments["nb-iterations"]       = 10000
 	arguments["selection-sigma"]     = 0.01
 	arguments["selection-scheme"]    = "RELATIVE_TARGET_FLUXES_SELECTION"
 	arguments["selection-threshold"] = 1e-4
-	arguments["seed"]                = 123
+	arguments["seed"]                = 1234
 	arguments["copasi-path"]         = "/Applications/COPASI/CopasiSE"
 	
 	assertArgs(arguments)

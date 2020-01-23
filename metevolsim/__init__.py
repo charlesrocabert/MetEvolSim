@@ -7,7 +7,7 @@
 # MetEvolSim is a numerical framework dedicated to the study of metabolic
 # abundances evolution.
 #
-# Copyright (c) 2018-2019 Charles Rocabert, Gábor Boross, Balázs Papp
+# Copyright (c) 2018-2020 Charles Rocabert, Gábor Boross, Balázs Papp
 # Web: https://github.com/charlesrocabert/MetEvolSim
 #
 # This program is free software: you can redistribute it and/or modify
