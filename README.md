@@ -57,7 +57,7 @@ python3 setup.py install
 ```
 
 ## First usage <a name="first_usage"></a>
-MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as kinetic parameters and initial metabolic concentrations are specified, and a stable steady-state exists. MetEvolSim automatically rebuild species SBML meta-identifiers, however species names must be unique. MetEvolSim provides a class to manipulate SBML models: the class <code>Model</code>. It is also necessary to define an objective function (a list of reaction names and coefficients), and to provide the path of CopasiSE software.
+MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as kinetic parameters and initial metabolic concentrations are specified, and a stable steady-state exists. The package provides a class to manipulate SBML models: the class <code>Model</code>. It is also necessary to define an objective function (a list of reactions and their coefficients), and to provide the path of <a href="http://copasi.org/">CopasiSE</a> software.
 
 ```python
 # Import MetEvolSim package
@@ -71,7 +71,7 @@ model = metevolsim.Model(sbml_filename='glycolysis.xml', objective_function=targ
 
 # Print some informations on the metabolic model
 print(model.get_number_of_species())
-print(model.get_WT_species_value('Glc'))
+print(model.get_wild_type_species_value('Glc'))
 
 # Get a kinetic parameter at random
 param = model.get_random_parameter()
@@ -81,14 +81,14 @@ print(param)
 model.random_parameter_mutation(param, sigma=0.01)
 
 # Compute wild-type and mutant steady-states
-model.compute_WT_steady_state()
+model.compute_wild_type_steady_state()
 model.compute_mutant_steady_state()
 
 # Run a metabolic control analysis on the wild-type
-model.compute_WT_metabolic_control_analysis()
+model.compute_wild_type_metabolic_control_analysis()
 # This function will output two datasets:
-# - output/WT_MCA_unscaled.txt containing unscaled control coefficients,
-# - output/WT_MCA_scaled.txt containing scaled control coefficients.
+# - output/wild_type_MCA_unscaled.txt containing unscaled control coefficients,
+# - output/wild_type_MCA_scaled.txt containing scaled control coefficients.
 
 # Compute all pairwise metabolite shortest paths
 model.build_species_graph()

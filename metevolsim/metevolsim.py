@@ -1204,7 +1204,7 @@ class Model:
 		
 		Returns
 		-------
-		Boolean
+		None
 		"""
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Compute the steady-state with Copasi #
@@ -1218,8 +1218,7 @@ class Model:
 		# 2) Extract steady-state                 #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		success, concentrations, fluxes = self.parse_copasi_output("./output/wild_type_output.txt", "STEADY_STATE")
-		if not success:
-			return False
+		assert success, "The model is unstable. Exit."
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Update model and lists               #
@@ -1241,7 +1240,6 @@ class Model:
 			assert reaction_id in self.reactions
 			self.reactions[reaction_id]["wild_type_value"] = reaction_value
 			self.reactions[reaction_id]["mutant_value"]    = reaction_value
-		return True
 		
 	### Compute mutant steady-state ###
 	def compute_mutant_steady_state( self ):
@@ -1254,7 +1252,7 @@ class Model:
 		
 		Returns
 		-------
-		Boolean
+		None
 		"""
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Compute the steady-state with Copasi #
@@ -1268,8 +1266,7 @@ class Model:
 		# 2) Extract steady-state                 #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		success, concentrations, fluxes = self.parse_copasi_output("./output/mutant_output.txt", "STEADY_STATE")
-		if not success:
-			return False
+		assert success, "The model is unstable. Exit."
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Update model and lists               #
@@ -1289,7 +1286,6 @@ class Model:
 			reaction_value = float(elmt[1])
 			assert reaction_id in self.reactions
 			self.reactions[reaction_id]["mutant_value"] = reaction_value
-		return True
 	
 	### Update species initial concentrations ###	
 	def update_initial_concentrations( self ):
@@ -1863,19 +1859,15 @@ class MCMC:
 		None
 		"""
 		###########
-		self.sum_abund      += self.mutant_abund
-		self.sqsum_abund    += self.mutant_abund*self.mutant_abund
-		#self.relsum_abund   += (self.mutant_abund/self.wild_type_abund)
-		#self.relsqsum_abund += (self.mutant_abund/self.wild_type_abund)*(self.mutant_abund/self.wild_type_abund)
+		self.sum_abund   += self.mutant_abund
+		self.sqsum_abund += self.mutant_abund*self.mutant_abund
 		for i in range(self.N_abund):
 			if self.wild_type_abund[i] > 0.0:
 				self.relsum_abund[i]   += (self.mutant_abund[i]/self.wild_type_abund[i])
 				self.relsqsum_abund[i] += (self.mutant_abund[i]/self.wild_type_abund[i])*(self.mutant_abund[i]/self.wild_type_abund[i])
 		###########
-		self.sum_flux      += self.mutant_flux
-		self.sqsum_flux    += self.mutant_flux*self.mutant_flux
-		#self.relsum_flux   += (self.mutant_flux/self.wild_type_flux)
-		#self.relsqsum_flux += (self.mutant_flux/self.wild_type_flux)*(self.mutant_flux/self.wild_type_flux)
+		self.sum_flux   += self.mutant_flux
+		self.sqsum_flux += self.mutant_flux*self.mutant_flux
 		for i in range(self.N_flux):
 			if self.wild_type_flux[i] > 0.0:
 				self.relsum_flux[i]   += (self.mutant_flux[i]/self.wild_type_flux[i])
@@ -1920,7 +1912,6 @@ class MCMC:
 		self.CV_abund  = np.copy(self.sqsum_abund)
 		self.CV_abund /= float(self.nb_iterations)
 		self.CV_abund -= self.mean_abund*self.mean_abund
-		#self.CV_abund  = np.sqrt(self.CV_abund)/self.mean_abund
 		for i in range(self.N_abund):
 			if self.mean_abund[i] > 0.0:
 				self.CV_abund[i] = np.sqrt(self.CV_abund[i])/self.mean_abund[i]
@@ -1931,7 +1922,6 @@ class MCMC:
 		self.CV_flux  = np.copy(self.sqsum_flux)
 		self.CV_flux /= float(self.nb_iterations)
 		self.CV_flux -= self.mean_flux*self.mean_flux
-		#self.CV_flux  = np.sqrt(self.CV_flux)/self.mean_flux
 		for i in range(self.N_flux):
 			if self.mean_flux[i] > 0.0:
 				self.CV_flux[i] = np.sqrt(self.CV_flux[i])/self.mean_flux[i]
@@ -2039,7 +2029,7 @@ class MCMC:
 		self.model.set_mutant_parameter_value(self.param_metaid, self.param_previous)
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		# 2) Copy back previous values     #
+		# 2) Retrieve previous values      #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.mutant_abund = np.copy(self.previous_abund)
 		self.mutant_flux  = np.copy(self.previous_flux)
@@ -2651,7 +2641,6 @@ class SensitivityAnalysis:
 			self.model.set_mutant_parameter_value(self.param_metaid, self.param_val)
 			self.model.compute_mutant_steady_state()
 			self.write_OAT_output_file()
-			#self.model.update_initial_concentrations()
 			factor += self.factor_step
 		self.reload_wild_type_state()
 		
@@ -2664,7 +2653,6 @@ class SensitivityAnalysis:
 			self.model.set_mutant_parameter_value(self.param_metaid, self.param_val)
 			self.model.compute_mutant_steady_state()
 			self.write_OAT_output_file()
-			#self.model.update_initial_concentrations()
 			factor -= self.factor_step
 		self.reload_wild_type_state()
 		
@@ -2696,13 +2684,10 @@ class SensitivityAnalysis:
 		# 1) Mutate each parameter at random with mutation size "sigma" #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		print("> Current iteration: "+str(self.iteration+1)+"/"+str(self.nb_iterations))
-		#for param_metaid in self.model.parameters.keys():
-		#	self.model.random_parameter_mutation(param_metaid, self.sigma)
 		param_metaid = self.model.get_random_parameter()
 		self.model.random_parameter_mutation(param_metaid, self.sigma)
-		success = self.model.compute_mutant_steady_state()
-		if success:
-			self.write_random_output_file()
+		self.model.compute_mutant_steady_state()
+		self.write_random_output_file()
 		self.reload_wild_type_state()
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
