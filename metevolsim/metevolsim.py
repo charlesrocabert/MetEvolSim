@@ -32,6 +32,9 @@ import libsbml
 import numpy as np
 import networkx as nx
 
+
+MAX_UNSTABLE_INTERATIONS = 10
+
 #********************************************************************
 # Model class
 # -----------
@@ -1204,7 +1207,7 @@ class Model:
 		
 		Returns
 		-------
-		None
+		Boolean
 		"""
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Compute the steady-state with Copasi #
@@ -1218,7 +1221,9 @@ class Model:
 		# 2) Extract steady-state                 #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		success, concentrations, fluxes = self.parse_copasi_output("./output/wild_type_output.txt", "STEADY_STATE")
-		assert success, "The model is unstable. Exit."
+		if not success:
+			return False
+		#assert success, "The model is unstable. Exit."
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Update model and lists               #
@@ -1240,7 +1245,8 @@ class Model:
 			assert reaction_id in self.reactions
 			self.reactions[reaction_id]["wild_type_value"] = reaction_value
 			self.reactions[reaction_id]["mutant_value"]    = reaction_value
-		
+		return True
+	
 	### Compute mutant steady-state ###
 	def compute_mutant_steady_state( self ):
 		"""
@@ -1252,7 +1258,7 @@ class Model:
 		
 		Returns
 		-------
-		None
+		Boolean
 		"""
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Compute the steady-state with Copasi #
@@ -1266,7 +1272,9 @@ class Model:
 		# 2) Extract steady-state                 #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		success, concentrations, fluxes = self.parse_copasi_output("./output/mutant_output.txt", "STEADY_STATE")
-		assert success, "The model is unstable. Exit."
+		if not success:
+			return False
+		#assert success, "The model is unstable. Exit."
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Update model and lists               #
@@ -1286,6 +1294,7 @@ class Model:
 			reaction_value = float(elmt[1])
 			assert reaction_id in self.reactions
 			self.reactions[reaction_id]["mutant_value"] = reaction_value
+		return True
 	
 	### Update species initial concentrations ###	
 	def update_initial_concentrations( self ):
@@ -1576,7 +1585,7 @@ class MCMC:
 	> selection_scheme : str
 		Selection scheme ('MUTATION_ACCUMULATION'/'ABSOLUTE_METABOLIC_SUM_SELECTION'/
 		                  'RELATIVE_METABOLIC_SUM_SELECTION'/'ABSOLUTE_TARGET_FLUXES_SELECTION'/
-						  'RELATIVE_TARGET_FLUXES_SELECTION').
+		                  'RELATIVE_TARGET_FLUXES_SELECTION').
 	> selection_threshold : str
 		Selection threshold applied on the MOMA distance.
 	> copasi_path : str
@@ -1686,7 +1695,7 @@ class MCMC:
 		selection_scheme : str
 			Selection scheme ('MUTATION_ACCUMULATION'/'ABSOLUTE_METABOLIC_SUM_SELECTION'/
 			                  'RELATIVE_METABOLIC_SUM_SELECTION'/'ABSOLUTE_TARGET_FLUXES_SELECTION'/
-							  'RELATIVE_TARGET_FLUXES_SELECTION').
+			                  'RELATIVE_TARGET_FLUXES_SELECTION').
 		selection_threshold : float > 0.0
 			Selection threshold applied on the MOMA distance.
 		copasi_path : str
@@ -1724,6 +1733,7 @@ class MCMC:
 		self.nb_iterations  = 0
 		self.nb_accepted    = 0
 		self.nb_rejected    = 0
+		self.nb_unstable    = 0
 		self.param_metaid   = "_"
 		self.param_id       = "wild_type"
 		self.param_value    = 0.0
@@ -2000,8 +2010,10 @@ class MCMC:
 		-------
 		None
 		"""
-		self.model.compute_wild_type_steady_state()
-		self.model.compute_mutant_steady_state()
+		success = self.model.compute_wild_type_steady_state()
+		assert success, "Wild-type model is not stable. Exit."
+		success = self.model.compute_mutant_steady_state()
+		assert success, "Wild-type model is not stable. Exit."
 		self.model.compute_sum_distance()
 		self.model.compute_moma_distance()
 		self.initialize_output_file()
@@ -2057,166 +2069,175 @@ class MCMC:
 		None
 		"""
 		
-		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		# 1) Save previous state             #
-		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 1) Save previous state                                         #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.previous_abund = np.copy(self.mutant_abund)
 		self.previous_flux  = np.copy(self.mutant_flux)
 		
-		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		# 2) Introduce a new random mutation #
-		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 2) Introduce a new random mutation                             #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.param_metaid                     = self.model.get_random_parameter()
 		self.param_id                         = self.model.parameters[self.param_metaid]["id"]
 		self.param_previous, self.param_value = self.model.random_parameter_mutation(self.param_metaid, self.sigma)
 		
-		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		# 3) Compute the new steady-state    #
-		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		self.model.compute_mutant_steady_state()
-		self.model.compute_sum_distance()
-		self.model.compute_moma_distance()
-		self.mutant_abund = self.model.get_mutant_species_array()
-		self.mutant_flux  = self.model.get_mutant_reaction_array()
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 3) Compute the new steady-state                                #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		success = self.model.compute_mutant_steady_state()
 		
-		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		# 4) Select the new iteration event  #
-		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 4) Evaluate model stability and select the new iteration event #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		if not success:
+			self.reload_previous_state()
+			self.nb_unstable    += 1
+			self.param_metaid    = "_"
+			self.param_id        = "_"
+			self.param_value     = 0.0
+			self.param_previous  = 0.0
+		else:
+			self.nb_unstable = 0
+			self.model.compute_sum_distance()
+			self.model.compute_moma_distance()
+			self.mutant_abund = self.model.get_mutant_species_array()
+			self.mutant_flux  = self.model.get_mutant_reaction_array()
+			#-----------------------------------------------------------------#
+			# 4.1) If the simulation is a mutation accumulation experiment,   #
+			#      keep all the mutational events.                            #
+			#-----------------------------------------------------------------#
+			if self.selection_scheme == "MUTATION_ACCUMULATION":
+				self.nb_iterations += 1
+				self.nb_accepted   += 1
+				self.update_statistics()
+				self.compute_statistics()
+			#-----------------------------------------------------------------#
+			# 4.2) If the simulation is a absolute metabolic sum selection    #
+			#      experiment, keep only mutations for which the SUM distance #
+			#      is lower than a given selection threshold.                 #
+			#-----------------------------------------------------------------#
+			elif self.selection_scheme == "ABSOLUTE_METABOLIC_SUM_SELECTION" and self.model.absolute_sum_distance < self.selection_threshold:
+				self.nb_iterations += 1
+				self.nb_accepted   += 1
+				self.update_statistics()
+				self.compute_statistics()
+			elif self.selection_scheme == "ABSOLUTE_METABOLIC_SUM_SELECTION" and self.model.absolute_sum_distance >= self.selection_threshold:
+				self.nb_iterations += 1
+				self.nb_rejected   += 1
+				self.reload_previous_state()
+				self.update_statistics()
+				self.compute_statistics()
+				self.param_metaid   = "_"
+				self.param_id       = "_"
+				self.param_value    = 0.0
+				self.param_previous = 0.0
+			#-----------------------------------------------------------------#
+			# 4.3) If the simulation is a relative metabolic sum selection    #
+			#      experiment, keep only mutations for which the SUM distance #
+			#      is lower than a given selection threshold.                 #
+			#-----------------------------------------------------------------#
+			elif self.selection_scheme == "RELATIVE_METABOLIC_SUM_SELECTION" and self.model.relative_sum_distance < self.selection_threshold:
+				self.nb_iterations += 1
+				self.nb_accepted   += 1
+				self.update_statistics()
+				self.compute_statistics()
+			elif self.selection_scheme == "RELATIVE_METABOLIC_SUM_SELECTION" and self.model.relative_sum_distance >= self.selection_threshold:
+				self.nb_iterations += 1
+				self.nb_rejected   += 1
+				self.reload_previous_state()
+				self.update_statistics()
+				self.compute_statistics()
+				self.param_metaid   = "_"
+				self.param_id       = "_"
+				self.param_value    = 0.0
+				self.param_previous = 0.0
+			#-----------------------------------------------------------------#
+			# 4.4) If the simulation is a absolute target fluxes selection    #
+			#      experiment, keep only mutations for which the MOMA         #
+			#      distance is lower than a given selection threshold.        #
+			#-----------------------------------------------------------------#
+			elif self.selection_scheme == "ABSOLUTE_TARGET_FLUXES_SELECTION" and self.model.absolute_moma_distance < self.selection_threshold:
+				self.nb_iterations += 1
+				self.nb_accepted   += 1
+				self.update_statistics()
+				self.compute_statistics()
+			elif self.selection_scheme == "ABSOLUTE_TARGET_FLUXES_SELECTION" and self.model.absolute_moma_distance >= self.selection_threshold:
+				self.nb_iterations += 1
+				self.nb_rejected   += 1
+				self.reload_previous_state()
+				self.update_statistics()
+				self.compute_statistics()
+				self.param_metaid   = "_"
+				self.param_id       = "_"
+				self.param_value    = 0.0
+				self.param_previous = 0.0
+			#-----------------------------------------------------------------#
+			# 4.5) If the simulation is a relative target fluxes selection    #
+			#      experiment, keep only mutations for which the MOMA         #
+			#      distance is lower than a given selection threshold.        #
+			#-----------------------------------------------------------------#
+			elif self.selection_scheme == "RELATIVE_TARGET_FLUXES_SELECTION" and self.model.relative_moma_distance < self.selection_threshold:
+				self.nb_iterations += 1
+				self.nb_accepted   += 1
+				self.update_statistics()
+				self.compute_statistics()
+			elif self.selection_scheme == "RELATIVE_TARGET_FLUXES_SELECTION" and self.model.relative_moma_distance >= self.selection_threshold:
+				self.nb_iterations += 1
+				self.nb_rejected   += 1
+				self.reload_previous_state()
+				self.update_statistics()
+				self.compute_statistics()
+				self.param_metaid   = "_"
+				self.param_id       = "_"
+				self.param_value    = 0.0
+				self.param_previous = 0.0
+			#-----------------------------------------------------------------#
+			# 4.6) If the simulation is a absolute ALL fluxes selection       #
+			#      experiment, keep only mutations for which the MOMA         #
+			#      distance is lower than a given selection threshold.        #
+			#-----------------------------------------------------------------#
+			elif self.selection_scheme == "ABSOLUTE_ALL_FLUXES_SELECTION" and self.model.absolute_moma_all_distance < self.selection_threshold:
+				self.nb_iterations += 1
+				self.nb_accepted   += 1
+				self.update_statistics()
+				self.compute_statistics()
+			elif self.selection_scheme == "ABSOLUTE_ALL_FLUXES_SELECTION" and self.model.absolute_moma_all_distance >= self.selection_threshold:
+				self.nb_iterations += 1
+				self.nb_rejected   += 1
+				self.reload_previous_state()
+				self.update_statistics()
+				self.compute_statistics()
+				self.param_metaid   = "_"
+				self.param_id       = "_"
+				self.param_value    = 0.0
+				self.param_previous = 0.0
+			#-----------------------------------------------------------------#
+			# 4.7) If the simulation is a relative ALL fluxes selection       #
+			#      experiment, keep only mutations for which the MOMA         #
+			#      distance is lower than a given selection threshold.        #
+			#-----------------------------------------------------------------#
+			elif self.selection_scheme == "RELATIVE_ALL_FLUXES_SELECTION" and self.model.relative_moma_all_distance < self.selection_threshold:
+				self.nb_iterations += 1
+				self.nb_accepted   += 1
+				self.update_statistics()
+				self.compute_statistics()
+			elif self.selection_scheme == "RELATIVE_ALL_FLUXES_SELECTION" and self.model.relative_moma_all_distance >= self.selection_threshold:
+				self.nb_iterations += 1
+				self.nb_rejected   += 1
+				self.reload_previous_state()
+				self.update_statistics()
+				self.compute_statistics()
+				self.param_metaid   = "_"
+				self.param_id       = "_"
+				self.param_value    = 0.0
+				self.param_previous = 0.0
 		
-		#-----------------------------------------------------------------#
-		# 4.1) If the simulation is a mutation accumulation experiment,   #
-		#      keep all the mutational events.                            #
-		#-----------------------------------------------------------------#
-		if self.selection_scheme == "MUTATION_ACCUMULATION":
-			self.nb_iterations += 1
-			self.nb_accepted   += 1
-			self.update_statistics()
-			self.compute_statistics()
-		#-----------------------------------------------------------------#
-		# 4.2) If the simulation is a absolute metabolic sum selection    #
-		#      experiment, keep only mutations for which the SUM distance #
-		#      is lower than a given selection threshold.                 #
-		#-----------------------------------------------------------------#
-		elif self.selection_scheme == "ABSOLUTE_METABOLIC_SUM_SELECTION" and self.model.absolute_sum_distance < self.selection_threshold:
-			self.nb_iterations += 1
-			self.nb_accepted   += 1
-			self.update_statistics()
-			self.compute_statistics()
-		elif self.selection_scheme == "ABSOLUTE_METABOLIC_SUM_SELECTION" and self.model.absolute_sum_distance >= self.selection_threshold:
-			self.nb_iterations += 1
-			self.nb_rejected   += 1
-			self.reload_previous_state()
-			self.update_statistics()
-			self.compute_statistics()
-			self.param_metaid   = "_"
-			self.param_id       = "_"
-			self.param_value    = 0.0
-			self.param_previous = 0.0
-		#-----------------------------------------------------------------#
-		# 4.3) If the simulation is a relative metabolic sum selection    #
-		#      experiment, keep only mutations for which the SUM distance #
-		#      is lower than a given selection threshold.                 #
-		#-----------------------------------------------------------------#
-		elif self.selection_scheme == "RELATIVE_METABOLIC_SUM_SELECTION" and self.model.relative_sum_distance < self.selection_threshold:
-			self.nb_iterations += 1
-			self.nb_accepted   += 1
-			self.update_statistics()
-			self.compute_statistics()
-		elif self.selection_scheme == "RELATIVE_METABOLIC_SUM_SELECTION" and self.model.relative_sum_distance >= self.selection_threshold:
-			self.nb_iterations += 1
-			self.nb_rejected   += 1
-			self.reload_previous_state()
-			self.update_statistics()
-			self.compute_statistics()
-			self.param_metaid   = "_"
-			self.param_id       = "_"
-			self.param_value    = 0.0
-			self.param_previous = 0.0
-		#-----------------------------------------------------------------#
-		# 4.4) If the simulation is a absolute target fluxes selection    #
-		#      experiment, keep only mutations for which the MOMA         #
-		#      distance is lower than a given selection threshold.        #
-		#-----------------------------------------------------------------#
-		elif self.selection_scheme == "ABSOLUTE_TARGET_FLUXES_SELECTION" and self.model.absolute_moma_distance < self.selection_threshold:
-			self.nb_iterations += 1
-			self.nb_accepted   += 1
-			self.update_statistics()
-			self.compute_statistics()
-		elif self.selection_scheme == "ABSOLUTE_TARGET_FLUXES_SELECTION" and self.model.absolute_moma_distance >= self.selection_threshold:
-			self.nb_iterations += 1
-			self.nb_rejected   += 1
-			self.reload_previous_state()
-			self.update_statistics()
-			self.compute_statistics()
-			self.param_metaid   = "_"
-			self.param_id       = "_"
-			self.param_value    = 0.0
-			self.param_previous = 0.0
-		#-----------------------------------------------------------------#
-		# 4.5) If the simulation is a relative target fluxes selection    #
-		#      experiment, keep only mutations for which the MOMA         #
-		#      distance is lower than a given selection threshold.        #
-		#-----------------------------------------------------------------#
-		elif self.selection_scheme == "RELATIVE_TARGET_FLUXES_SELECTION" and self.model.relative_moma_distance < self.selection_threshold:
-			self.nb_iterations += 1
-			self.nb_accepted   += 1
-			self.update_statistics()
-			self.compute_statistics()
-		elif self.selection_scheme == "RELATIVE_TARGET_FLUXES_SELECTION" and self.model.relative_moma_distance >= self.selection_threshold:
-			self.nb_iterations += 1
-			self.nb_rejected   += 1
-			self.reload_previous_state()
-			self.update_statistics()
-			self.compute_statistics()
-			self.param_metaid   = "_"
-			self.param_id       = "_"
-			self.param_value    = 0.0
-			self.param_previous = 0.0
-		#-----------------------------------------------------------------#
-		# 4.6) If the simulation is a absolute ALL fluxes selection       #
-		#      experiment, keep only mutations for which the MOMA         #
-		#      distance is lower than a given selection threshold.        #
-		#-----------------------------------------------------------------#
-		elif self.selection_scheme == "ABSOLUTE_ALL_FLUXES_SELECTION" and self.model.absolute_moma_all_distance < self.selection_threshold:
-			self.nb_iterations += 1
-			self.nb_accepted   += 1
-			self.update_statistics()
-			self.compute_statistics()
-		elif self.selection_scheme == "ABSOLUTE_ALL_FLUXES_SELECTION" and self.model.absolute_moma_all_distance >= self.selection_threshold:
-			self.nb_iterations += 1
-			self.nb_rejected   += 1
-			self.reload_previous_state()
-			self.update_statistics()
-			self.compute_statistics()
-			self.param_metaid   = "_"
-			self.param_id       = "_"
-			self.param_value    = 0.0
-			self.param_previous = 0.0
-		#-----------------------------------------------------------------#
-		# 4.7) If the simulation is a relative ALL fluxes selection       #
-		#      experiment, keep only mutations for which the MOMA         #
-		#      distance is lower than a given selection threshold.        #
-		#-----------------------------------------------------------------#
-		elif self.selection_scheme == "RELATIVE_ALL_FLUXES_SELECTION" and self.model.relative_moma_all_distance < self.selection_threshold:
-			self.nb_iterations += 1
-			self.nb_accepted   += 1
-			self.update_statistics()
-			self.compute_statistics()
-		elif self.selection_scheme == "RELATIVE_ALL_FLUXES_SELECTION" and self.model.relative_moma_all_distance >= self.selection_threshold:
-			self.nb_iterations += 1
-			self.nb_rejected   += 1
-			self.reload_previous_state()
-			self.update_statistics()
-			self.compute_statistics()
-			self.param_metaid   = "_"
-			self.param_id       = "_"
-			self.param_value    = 0.0
-			self.param_previous = 0.0
-		
-		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		# 5) Check the number of iterations  #
-		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		print("> Current iteration = "+str(self.nb_iterations)+" (accepted = "+str(self.nb_accepted)+", rejected = "+str(self.nb_rejected)+")")
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 5) Check the number of iterations                              #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		print("> Current iteration = "+str(self.nb_iterations)+" (accepted = "+str(self.nb_accepted)+", rejected = "+str(self.nb_rejected)+", unstable = "+str(self.nb_unstable)+")")
+		assert self.nb_unstable <= MAX_UNSTABLE_INTERATIONS, "Too many unstable trials. Exit."
 		if self.nb_iterations == self.total_iterations:
 			return True
 		return False
