@@ -240,6 +240,7 @@ class Model:
 		self.build_species_list()
 		self.build_parameter_list()
 		self.build_reaction_list()
+		self.replace_variable_names()
 		self.write_list_of_variables()
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -424,6 +425,42 @@ class Model:
 			self.reactions[reaction_id]["name"]   = reaction_name
 			assert reaction_name not in self.reaction_name_to_id
 			self.reaction_name_to_id[reaction_name] = {"id":reaction_id, "compartment":compartment}
+	
+	### Replace variable names by their identifiers to avoid collisions ###
+	def replace_variable_names( self ):
+		"""
+		Replace variable names by their identifiers to avoid collisions.
+		
+		Parameters
+		----------
+		None
+			
+		Returns
+		-------
+		None
+		"""
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 1) Replace variables names by identifiers in wild-type #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		for species in self.wild_type_model.getListOfSpecies():
+			species_id = species.getId()
+			assert species_id in self.species
+			species.setName(species_id)
+		for reaction in self.wild_type_model.getListOfReactions():
+			reaction_id = reaction.getId()
+			assert reaction_id in self.reactions
+			reaction.setName(reaction_id)
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 2) Replace species names by identifiers in mutant    #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		for species in self.mutant_model.getListOfSpecies():
+			species_id = species.getId()
+			assert species_id in self.species
+			species.setName(species_id)
+		for reaction in self.mutant_model.getListOfReactions():
+			reaction_id = reaction.getId()
+			assert reaction_id in self.reactions
+			reaction.setName(reaction_id)
 	
 	### Get the number of species ###
 	def get_number_of_species( self ):
