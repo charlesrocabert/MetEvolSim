@@ -57,7 +57,7 @@ python3 setup.py install
 ```
 
 ## First usage <a name="first_usage"></a>
-MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as kinetic parameters and initial metabolic concentrations are specified, and a stable steady-state exists. The package provides a class to manipulate SBML models: the class <code>Model</code>. It is also necessary to define an objective function (a list of reactions and their coefficients), and to provide the path of <a href="http://copasi.org/">CopasiSE</a> software.
+MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as kinetic parameters and initial metabolic concentrations are specified, and a stable steady-state exists. The package provides a class to manipulate SBML models: the class <code>Model</code>. It is also necessary to define an objective function (a list of reactions and their coefficients), and to provide the path of <a href="http://copasi.org/">CopasiSE</a> software. Please note that coefficients are not functional in the current version of MetEvolSim.
 
 ```python
 # Import MetEvolSim package
