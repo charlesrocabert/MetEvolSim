@@ -12,7 +12,7 @@
 -----------------
 
 <p align="justify">
-MetEvolSim is a Python package providing numerical tools to study the long-term evolution of metabolic concentrations.
+MetEvolSim is a Python package providing numerical tools to simulate the long-term evolution of metabolic abundances in a metabolic network.
 MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as the kinetic model is fully specified, and a stable steady-state exists. Steady-state concentrations are computed thanks to <a href="http://copasi.org/">Copasi</a> software.
 </p>
 
@@ -40,9 +40,9 @@ MetEvolSim is being developed by <a href="https://github.com/charlesrocabert">Ch
 - pip &ge; 19.1 (optional).
 
 ## Installation <a name="installation"></a>
-&bullet; To install Copasi software, visit http://copasi.org/.
+&bullet; To install Copasi software, visit http://copasi.org/. You will need the command line version named CopasiSE.
 
-&bullet; To install the current release of MetEvolSim:
+&bullet; To install the latest release of MetEvolSim:
 ```shell
 pip install MetEvolSim
 ```
