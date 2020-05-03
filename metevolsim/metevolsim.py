@@ -38,10 +38,11 @@ MAX_UNSTABLE_INTERATIONS = 10
 #********************************************************************
 # Model class
 # -----------
-# This class loads, saves and manipulates SBML models with specified
-# kinetic parameters and initial metabolic concentrations.
-# Manipulations include kinetic parameter mutations and steady-state
-# computing with Copasi software.
+# The class "Model" allows to load, manipulate and save SBML models
+# as soon as kinetic equations, parameters and initial metabolic
+# concentrations are specified. Manipulations include kinetic
+# parameter mutations, steady-state computing, metabolic control
+# analysis (MCA) and species shortest paths analysis.
 #********************************************************************
 class Model:
 	"""
@@ -52,8 +53,8 @@ class Model:
 	- Species and reactions identifiers must be specified and unique.
 	- Kinetic parameters must be specified (globally, and/or for each reaction).
 	  All kinetic parameters will be mutable.
-	- The Model class rebuilds the list of metaids, even if metaids are not
-	  defined in the original model.
+	- The meta-identifiers are rebuilt automatically by MetEvolSim to avoid
+	  collisions.
 	
 	Attributes
 	----------
@@ -72,15 +73,11 @@ class Model:
 	> copasi_path: str
 		Location of Copasi executable.
 	> species : dict
-		List of model species.
+		List of species.
 	> parameters : dict
-		List of model kinetic parameters.
+		List of kinetic parameters.
 	> reactions : dict
-		List of model reactions.
-	> species_name_to_id : dict
-		Map of species identifiers from species names.
-	> reaction_name_to_id : dict
-		Map of reaction identifiers from reaction names.
+		List of reactions.
 	> species_graph: networkx.Graph
 		A networkx Graph describing the metabolite-to-metabolite network.
 	> objective_function : list of [str, float]
@@ -231,11 +228,9 @@ class Model:
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) List of model variables (species, reactions, parameters) #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		self.species             = {}
-		self.parameters          = {}
-		self.reactions           = {}
-		self.species_name_to_id  = {}
-		self.reaction_name_to_id = {}
+		self.species    = {}
+		self.parameters = {}
+		self.reactions  = {}
 		self.rebuild_metaids()
 		self.build_species_list()
 		self.build_parameter_list()
@@ -330,28 +325,18 @@ class Model:
 		-------
 		None
 		"""
-		self.species            = {}
-		self.species_name_to_id = {}
+		self.species = {}
 		for species in self.wild_type_model.getListOfSpecies():
-			species_metaid = species.getMetaId()
-			species_id     = species.getId()
-			species_name   = species.getName()
-			isConstant     = species.getBoundaryCondition()
-			compartment    = species.getCompartment()
-			if species_name == "":
-				species_name = species_id
-			species.setName(species_id)
-			assert species_id not in list(self.species)
-			self.species[species_id]                    = {"metaid":"", "id":"", "name":"", "constant":False, "initial_value":0.0, "wild_type_value":0.0, "mutant_value":0.0}
-			self.species[species_id]["metaid"]          = species_metaid
-			self.species[species_id]["id"]              = species_id
-			self.species[species_id]["name"]            = species_name
-			self.species[species_id]["constant"]        = isConstant
-			self.species[species_id]["initial_value"]   = species.getInitialConcentration()
-			self.species[species_id]["wild_type_value"] = species.getInitialConcentration()
-			self.species[species_id]["mutant_value"]    = species.getInitialConcentration()
-			assert species_name not in self.species_name_to_id
-			self.species_name_to_id[species_name] = {"id":species_id, "compartment":compartment}
+			assert species.getId() not in list(self.species)
+			self.species[species.getId()]                    = {}
+			self.species[species.getId()]["metaid"]          = species.getMetaId()
+			self.species[species.getId()]["id"]              = species.getId()
+			self.species[species.getId()]["name"]            = species.getName()
+			self.species[species.getId()]["compartment"]     = species.getCompartment()
+			self.species[species.getId()]["constant"]        = species.getConstant()
+			self.species[species.getId()]["initial_value"]   = species.getInitialConcentration()
+			self.species[species.getId()]["wild_type_value"] = species.getInitialConcentration()
+			self.species[species.getId()]["mutant_value"]    = species.getInitialConcentration()
 	
 	### Build the list of parameters ###
 	def build_parameter_list( self ):
@@ -371,29 +356,26 @@ class Model:
 		# 1) Parse main parameters              #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		for parameter in self.wild_type_model.getListOfParameters():
-			parameter_metaid = parameter.getMetaId()
-			parameter_id     = parameter.getId()
-			if parameter.getValue() != 0.0:
-				self.parameters[parameter_metaid]                    = {"metaid":"", "id":"", "wild_type_value":0.0, "mutant_value":0.0}
-				self.parameters[parameter_metaid]["metaid"]          = parameter_metaid
-				self.parameters[parameter_metaid]["id"]              = parameter_id
-				self.parameters[parameter_metaid]["wild_type_value"] = parameter.getValue()
-				self.parameters[parameter_metaid]["mutant_value"]    = parameter.getValue()
+			if parameter.getValue() != 0.0 and str(parameter.getValue()) != "nan":
+				assert parameter.getMetaId() not in list(self.parameters)
+				self.parameters[parameter.getMetaId()]                    = {}
+				self.parameters[parameter.getMetaId()]["metaid"]          = parameter.getMetaId()
+				self.parameters[parameter.getMetaId()]["id"]              = parameter.getId()
+				self.parameters[parameter.getMetaId()]["wild_type_value"] = parameter.getValue()
+				self.parameters[parameter.getMetaId()]["mutant_value"]    = parameter.getValue()
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Parse parameters for each reaction #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		for reaction in self.wild_type_model.getListOfReactions():
 			for elmt in reaction.getListOfAllElements():
 				if elmt.getElementName() == "parameter" or elmt.getElementName() == "localParameter":
-					parameter        = elmt
-					parameter_metaid = parameter.getMetaId()
-					parameter_id     = parameter.getId()
-					if parameter.getValue() != 0.0:
-						self.parameters[parameter_metaid]                    = {"metaid":"", "id":"", "wild_type_value":0.0, "mutant_value":0.0}
-						self.parameters[parameter_metaid]["metaid"]          = parameter_metaid
-						self.parameters[parameter_metaid]["id"]              = parameter_id
-						self.parameters[parameter_metaid]["wild_type_value"] = parameter.getValue()
-						self.parameters[parameter_metaid]["mutant_value"]    = parameter.getValue()
+					if elmt.getValue() != 0.0 and str(elmt.getValue()) != "nan":
+						assert elmt.getMetaId() not in list(self.parameters)
+						self.parameters[elmt.getMetaId()]                    = {}
+						self.parameters[elmt.getMetaId()]["metaid"]          = elmt.getMetaId()
+						self.parameters[elmt.getMetaId()]["id"]              = elmt.getId()
+						self.parameters[elmt.getMetaId()]["wild_type_value"] = elmt.getValue()
+						self.parameters[elmt.getMetaId()]["mutant_value"]    = elmt.getValue()
 	
 	### Build the list of reactions ###
 	def build_reaction_list( self ):
@@ -408,23 +390,14 @@ class Model:
 		-------
 		None
 		"""
-		self.reactions           = {}
-		self.reaction_name_to_id = {}
+		self.reactions = {}
 		for reaction in self.wild_type_model.getListOfReactions():
-			reaction_metaid = reaction.getMetaId()
-			reaction_id     = reaction.getId()
-			reaction_name   = reaction.getName()
-			compartment     = reaction.getCompartment()
-			if reaction_name == "":
-				reaction_name = reaction_id
-			reaction.setName(reaction_id)
-			assert reaction_id not in list(self.reactions)
-			self.reactions[reaction_id]           = {"metaid":"", "id":"", "name":"", "wild_type_value":0.0, "mutant_value":0.0}
-			self.reactions[reaction_id]["metaid"] = reaction_metaid
-			self.reactions[reaction_id]["id"]     = reaction_id
-			self.reactions[reaction_id]["name"]   = reaction_name
-			assert reaction_name not in self.reaction_name_to_id
-			self.reaction_name_to_id[reaction_name] = {"id":reaction_id, "compartment":compartment}
+			assert reaction.getId() not in list(self.reactions)
+			self.reactions[reaction.getId()]                = {"wild_type_value":0.0, "mutant_value":0.0}
+			self.reactions[reaction.getId()]["metaid"]      = reaction.getMetaId()
+			self.reactions[reaction.getId()]["id"]          = reaction.getId()
+			self.reactions[reaction.getId()]["name"]        = reaction.getName()
+			self.reactions[reaction.getId()]["compartment"] = reaction.getCompartment()
 	
 	### Replace variable names by their identifiers to avoid collisions ###
 	def replace_variable_names( self ):
@@ -595,6 +568,40 @@ class Model:
 		assert param_metaid in list(self.parameters)
 		assert self.parameters[param_metaid]["mutant_value"] == self.mutant_model.getElementByMetaId(param_metaid).getValue()
 		return self.parameters[param_metaid]["mutant_value"]
+	
+	### Get wild-type reaction value ###
+	def get_wild_type_reaction_value( self, reaction_id ):
+		"""
+		Get the wild-type value of the reaction 'reaction_id'.
+		
+		Parameters
+		----------
+		reaction_id: str
+			The identifier of the reaction (as defined in the SBML model).
+			
+		Returns
+		-------
+		float
+		"""
+		assert reaction_id in list(self.reactions)
+		return self.reactions[reaction_id]["wild_type_value"]
+	
+	### Get mutant reaction value ###
+	def get_mutant_reaction_value( self, reaction_id ):
+		"""
+		Get the wild-type value of the reaction 'reaction_id'.
+		
+		Parameters
+		----------
+		reaction_id: str
+			The identifier of the reaction (as defined in the SBML model).
+			
+		Returns
+		-------
+		float
+		"""
+		assert reaction_id in list(self.reactions)
+		return self.reactions[reaction_id]["mutant_value"]
 	
 	### Get wild-type species values array ###
 	def get_wild_type_species_array( self ):
@@ -802,13 +809,31 @@ class Model:
 		self.set_mutant_parameter_value(param_metaid, mutant_value)
 		return wild_type_value, mutant_value
 	
-	### Write the list of variable names, identifiers and compartment in the ###
-	### file "output/species.txt"                                            ###
+	### Write the list of variables in various files ###
 	def write_list_of_variables( self ):
-		f = open("output/variables.txt", "w")
-		f.write("name identifier compartment\n")
-		for species_name in self.species_name_to_id.keys():
-			f.write(species_name+" "+self.species_name_to_id[species_name]["id"]+" "+self.species_name_to_id[species_name]["compartment"]+"\n")
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 1) Write the list of species  #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		f = open("output/list_of_species.txt", "w")
+		f.write("id metaid name compartment\n")
+		for species_id in self.species.keys():
+			f.write(species_id+" "+self.species[species_id]["metaid"]+" "+self.species[species_id]["name"]+" "+self.species[species_id]["compartment"]+"\n")
+		f.close()
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 2) Write the list of parameters #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		f = open("output/list_of_parameters.txt", "w")
+		f.write("id metaid\n")
+		for parameter_metaid in self.parameters.keys():
+			f.write(self.parameters[parameter_metaid]["id"]+" "+parameter_metaid+"\n")
+		f.close()
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		# 3) Write the list of reactions  #
+		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+		f = open("output/list_of_reactions.txt", "w")
+		f.write("id metaid name compartment\n")
+		for reaction_id in self.reactions.keys():
+			f.write(reaction_id+" "+self.reactions[reaction_id]["metaid"]+" "+self.reactions[reaction_id]["name"]+" "+self.reactions[reaction_id]["compartment"]+"\n")
 		f.close()
 			
 	### Write wild-type SBML file ###
