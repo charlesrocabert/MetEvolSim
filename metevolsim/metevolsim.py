@@ -86,14 +86,8 @@ class Model:
 		Sum of evolvable metabolic absolute abundances in wild-type.
 	> mutant_absolute_sum : float
 		Sum of evolvable metabolic abundances in mutant.
-	> wild_type_relative_sum : float
-		Sum of evolvable metabolic relative abundances in wild-type.
-	> mutant_relative_sum : float
-		Sum of evolvable metabolic relative in mutant.
 	> absolute_sum_distance : float
 		Distance between wild-type and mutant absolute metabolic sums.
-	> relative_sum_distance : float
-		Distance between wild-type and mutant relative metabolic sums.
 	> absolute_moma_distance : float
 		Distance between the wild-type and the mutant, based on the
 		Minimization Of Metabolic Adjustment on absolute target fluxes.
@@ -249,10 +243,7 @@ class Model:
 		self.objective_function         = objective_function
 		self.wild_type_absolute_sum     = 0.0
 		self.mutant_absolute_sum        = 0.0
-		self.wild_type_relative_sum     = 0.0
-		self.mutant_relative_sum        = 0.0
 		self.absolute_sum_distance      = 0.0
-		self.relative_sum_distance      = 0.0
 		self.absolute_moma_distance     = 0.0
 		self.relative_moma_distance     = 0.0
 		self.absolute_moma_all_distance = 0.0
@@ -328,15 +319,16 @@ class Model:
 		self.species = {}
 		for species in self.wild_type_model.getListOfSpecies():
 			assert species.getId() not in list(self.species)
-			self.species[species.getId()]                    = {}
-			self.species[species.getId()]["metaid"]          = species.getMetaId()
-			self.species[species.getId()]["id"]              = species.getId()
-			self.species[species.getId()]["name"]            = species.getName()
-			self.species[species.getId()]["compartment"]     = species.getCompartment()
-			self.species[species.getId()]["constant"]        = species.getConstant()
-			self.species[species.getId()]["initial_value"]   = species.getInitialConcentration()
-			self.species[species.getId()]["wild_type_value"] = species.getInitialConcentration()
-			self.species[species.getId()]["mutant_value"]    = species.getInitialConcentration()
+			self.species[species.getId()]                       = {}
+			self.species[species.getId()]["metaid"]             = species.getMetaId()
+			self.species[species.getId()]["id"]                 = species.getId()
+			self.species[species.getId()]["name"]               = species.getName()
+			self.species[species.getId()]["compartment"]        = species.getCompartment()
+			self.species[species.getId()]["constant"]           = species.getConstant()
+			self.species[species.getId()]["boundary_condition"] = species.getBoundaryCondition()
+			self.species[species.getId()]["initial_value"]      = species.getInitialConcentration()
+			self.species[species.getId()]["wild_type_value"]    = species.getInitialConcentration()
+			self.species[species.getId()]["mutant_value"]       = species.getInitialConcentration()
 	
 	### Build the list of parameters ###
 	def build_parameter_list( self ):
@@ -1291,7 +1283,6 @@ class Model:
 		# 3) Update model and lists               #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.wild_type_absolute_sum = 0.0
-		self.wild_type_relative_sum = 0.0
 		for elmt in concentrations:
 			species_id    = elmt[0]
 			species_value = float(elmt[1])
@@ -1300,7 +1291,6 @@ class Model:
 				self.species[species_id]["wild_type_value"]  = species_value
 				self.species[species_id]["mutant_value"]     = species_value
 				self.wild_type_absolute_sum                 += species_value
-				self.wild_type_relative_sum                 += 1.0
 		for elmt in fluxes:
 			reaction_id    = elmt[0]
 			reaction_value = float(elmt[1])
@@ -1342,7 +1332,6 @@ class Model:
 		# 3) Update model and lists               #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.mutant_absolute_sum = 0.0
-		self.mutant_relative_sum = 0.0
 		for elmt in concentrations:
 			species_id    = elmt[0]
 			species_value = float(elmt[1])
@@ -1350,7 +1339,6 @@ class Model:
 			if not self.species[species_id]["constant"]:
 				self.species[species_id]["mutant_value"]  = species_value
 				self.mutant_absolute_sum                 += species_value
-				self.mutant_relative_sum                 += species_value/self.species[species_id]["wild_type_value"]
 		for elmt in fluxes:
 			reaction_id    = elmt[0]
 			reaction_value = float(elmt[1])
@@ -1390,7 +1378,6 @@ class Model:
 		None
 		"""
 		self.absolute_sum_distance = abs(self.wild_type_absolute_sum-self.mutant_absolute_sum)
-		self.relative_sum_distance = abs(self.wild_type_relative_sum-self.mutant_relative_sum)
 	
 	### Compute the MOMA distance between the wild-type and the mutant ###
 	def compute_moma_distance( self ):
@@ -1646,8 +1633,7 @@ class MCMC:
 		Standard deviation of the Log10-normal mutational distribution.
 	> selection_scheme : str
 		Selection scheme ('MUTATION_ACCUMULATION'/'ABSOLUTE_METABOLIC_SUM_SELECTION'/
-		                  'RELATIVE_METABOLIC_SUM_SELECTION'/'ABSOLUTE_TARGET_FLUXES_SELECTION'/
-		                  'RELATIVE_TARGET_FLUXES_SELECTION').
+		                  'ABSOLUTE_TARGET_FLUXES_SELECTION'/'RELATIVE_TARGET_FLUXES_SELECTION').
 	> selection_threshold : str
 		Selection threshold applied on the MOMA distance.
 	> copasi_path : str
@@ -1680,12 +1666,8 @@ class MCMC:
 		Mutant fluxes tracker.
 	> sum_abund : numpy array
 		Sum of abundances tracker.
-	> relsum_abund : numpy array
-		Sum of abundances relatively to the wild-type tracker.
 	> sqsum_abund : numpy array
 		Square sum of abundances tracker.
-	> relsqsum_abund : numpy array
-		Square sum of abundances relatively to the wild-type tracker.
 	> sum_flux : numpy array
 		Sum of fluxes tracker.
 	> relsum_flux : numpy array
@@ -1756,8 +1738,7 @@ class MCMC:
 			Standard deviation of the Log10-normal mutational distribution.
 		selection_scheme : str
 			Selection scheme ('MUTATION_ACCUMULATION'/'ABSOLUTE_METABOLIC_SUM_SELECTION'/
-			                  'RELATIVE_METABOLIC_SUM_SELECTION'/'ABSOLUTE_TARGET_FLUXES_SELECTION'/
-			                  'RELATIVE_TARGET_FLUXES_SELECTION').
+			                  'ABSOLUTE_TARGET_FLUXES_SELECTION'/'RELATIVE_TARGET_FLUXES_SELECTION').
 		selection_threshold : float > 0.0
 			Selection threshold applied on the MOMA distance.
 		copasi_path : str
@@ -1771,7 +1752,7 @@ class MCMC:
 		assert len(objective_function) > 0, "You must provide at least one reaction in the objective function. Exit."
 		assert total_iterations > 0, "The total number of iterations must be a positive nonzero value. Exit."
 		assert sigma > 0.0, "The mutation size 'sigma' must be a positive nonzero value. Exit."
-		assert selection_scheme in ["MUTATION_ACCUMULATION", "ABSOLUTE_METABOLIC_SUM_SELECTION", "RELATIVE_METABOLIC_SUM_SELECTION", "ABSOLUTE_TARGET_FLUXES_SELECTION", "RELATIVE_TARGET_FLUXES_SELECTION", "ABSOLUTE_ALL_FLUXES_SELECTION", "RELATIVE_ALL_FLUXES_SELECTION"], "The selection scheme takes two values only (MUTATION_ACCUMULATION / ABSOLUTE_METABOLIC_SUM_SELECTION / RELATIVE_METABOLIC_SUM_SELECTION / ABSOLUTE_TARGET_FLUXES_SELECTION / RELATIVE_TARGET_FLUXES_SELECTION / ABSOLUTE_ALL_FLUXES_SELECTION / RELATIVE_ALL_FLUXES_SELECTION). Exit."
+		assert selection_scheme in ["MUTATION_ACCUMULATION", "ABSOLUTE_METABOLIC_SUM_SELECTION", "ABSOLUTE_TARGET_FLUXES_SELECTION", "RELATIVE_TARGET_FLUXES_SELECTION", "ABSOLUTE_ALL_FLUXES_SELECTION", "RELATIVE_ALL_FLUXES_SELECTION"], "The selection scheme takes two values only (MUTATION_ACCUMULATION / ABSOLUTE_METABOLIC_SUM_SELECTION / ABSOLUTE_TARGET_FLUXES_SELECTION / RELATIVE_TARGET_FLUXES_SELECTION / ABSOLUTE_ALL_FLUXES_SELECTION / RELATIVE_ALL_FLUXES_SELECTION). Exit."
 		assert os.path.isfile(copasi_path), "The executable \""+copasi_path+"\" does not exist. Exit."
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -1865,7 +1846,7 @@ class MCMC:
 				header += " "+species_id
 		for reaction_id in self.model.reactions:
 			header += " "+reaction_id
-		header += " wild_type_absolute_sum mutant_absolute_sum wild_type_relative_sum mutant_relative_sum absolute_sum_dist relative_sum_dist absolute_moma_dist relative_moma_dist absolute_moma_all_dist relative_moma_all_dist\n"
+		header += " wild_type_absolute_sum mutant_absolute_sum absolute_sum_dist absolute_moma_dist relative_moma_dist absolute_moma_all_dist relative_moma_all_dist\n"
 		self.output_file = open("output/iterations.txt", "a")
 		self.output_file.write(header)
 		self.output_file.close()
@@ -1908,7 +1889,7 @@ class MCMC:
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Write scores             #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		line += " "+str(self.model.wild_type_absolute_sum)+" "+str(self.model.mutant_absolute_sum)+" "+str(self.model.wild_type_relative_sum)+" "+str(self.model.mutant_relative_sum)+" "+str(self.model.absolute_sum_distance)+" "+str(self.model.relative_sum_distance)+" "+str(self.model.absolute_moma_distance)+" "+str(self.model.relative_moma_distance)+" "+str(self.model.absolute_moma_all_distance)+" "+str(self.model.relative_moma_all_distance)
+		line += " "+str(self.model.wild_type_absolute_sum)+" "+str(self.model.mutant_absolute_sum)+" "+str(self.model.absolute_sum_distance)+" "+str(self.model.absolute_moma_distance)+" "+str(self.model.relative_moma_distance)+" "+str(self.model.absolute_moma_all_distance)+" "+str(self.model.relative_moma_all_distance)
 		
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 4) Write in file            #
@@ -2195,27 +2176,7 @@ class MCMC:
 				self.param_value    = 0.0
 				self.param_previous = 0.0
 			#-----------------------------------------------------------------#
-			# 4.3) If the simulation is a relative metabolic sum selection    #
-			#      experiment, keep only mutations for which the SUM distance #
-			#      is lower than a given selection threshold.                 #
-			#-----------------------------------------------------------------#
-			elif self.selection_scheme == "RELATIVE_METABOLIC_SUM_SELECTION" and self.model.relative_sum_distance < self.selection_threshold:
-				self.nb_iterations += 1
-				self.nb_accepted   += 1
-				self.update_statistics()
-				self.compute_statistics()
-			elif self.selection_scheme == "RELATIVE_METABOLIC_SUM_SELECTION" and self.model.relative_sum_distance >= self.selection_threshold:
-				self.nb_iterations += 1
-				self.nb_rejected   += 1
-				self.reload_previous_state()
-				self.update_statistics()
-				self.compute_statistics()
-				self.param_metaid   = "_"
-				self.param_id       = "_"
-				self.param_value    = 0.0
-				self.param_previous = 0.0
-			#-----------------------------------------------------------------#
-			# 4.4) If the simulation is a absolute target fluxes selection    #
+			# 4.3) If the simulation is a absolute target fluxes selection    #
 			#      experiment, keep only mutations for which the MOMA         #
 			#      distance is lower than a given selection threshold.        #
 			#-----------------------------------------------------------------#
@@ -2235,7 +2196,7 @@ class MCMC:
 				self.param_value    = 0.0
 				self.param_previous = 0.0
 			#-----------------------------------------------------------------#
-			# 4.5) If the simulation is a relative target fluxes selection    #
+			# 4.4) If the simulation is a relative target fluxes selection    #
 			#      experiment, keep only mutations for which the MOMA         #
 			#      distance is lower than a given selection threshold.        #
 			#-----------------------------------------------------------------#
@@ -2255,7 +2216,7 @@ class MCMC:
 				self.param_value    = 0.0
 				self.param_previous = 0.0
 			#-----------------------------------------------------------------#
-			# 4.6) If the simulation is a absolute ALL fluxes selection       #
+			# 4.5) If the simulation is a absolute ALL fluxes selection       #
 			#      experiment, keep only mutations for which the MOMA         #
 			#      distance is lower than a given selection threshold.        #
 			#-----------------------------------------------------------------#
@@ -2275,7 +2236,7 @@ class MCMC:
 				self.param_value    = 0.0
 				self.param_previous = 0.0
 			#-----------------------------------------------------------------#
-			# 4.7) If the simulation is a relative ALL fluxes selection       #
+			# 4.6) If the simulation is a relative ALL fluxes selection       #
 			#      experiment, keep only mutations for which the MOMA         #
 			#      distance is lower than a given selection threshold.        #
 			#-----------------------------------------------------------------#

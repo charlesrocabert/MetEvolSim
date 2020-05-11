@@ -114,7 +114,6 @@ Six types of selection are available:
 
 - <code>MUTATION_ACCUMULATION</code>: Run a mutation accumulation experiment by accepting all new mutations without any selection threshold,
 - <code>ABSOLUTE_METABOLIC_SUM_SELECTION</code>: Run an evolution experiment by applying a stabilizing selection on the sum of absolute metabolic abundances,
-- <code>RELATIVE_METABOLIC_SUM_SELECTION</code>: Run an evolution experiment by applying a stabilizing selection on the sum of relative metabolic abundances,
 - <code>ABSOLUTE_TARGET_FLUXES_SELECTION</code>: Run an evolution experiment by applying a stabilizing selection on the MOMA distance of absolute target fluxes,
 - <code>RELATIVE_TARGET_FLUXES_SELECTION</code>: Run an evolution experiment by applying a stabilizing selection on the MOMA distance of relative target fluxes.
 
