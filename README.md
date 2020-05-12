@@ -35,8 +35,9 @@ MetEvolSim is being developed by <a href="https://github.com/charlesrocabert">Ch
 ## Dependencies <a name="dependencies"></a>
 - Python &ge; 3,
 - Numpy &ge; 1.15 (automatically installed when using pip),
-- Python-libsbml &ge; 5.17 (automatically installed when using pip),
 - NetworkX &ge; 2.2 (automatically installed when using pip),
+- Python-libsbml &ge; 5.17 (automatically installed when using pip),
+- CopasiSE &ge; 4.27 (to be installed separately),
 - pip &ge; 19.1 (optional).
 
 ## Installation <a name="installation"></a>
