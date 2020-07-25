@@ -13,7 +13,7 @@
 
 <p align="justify">
 MetEvolSim is a Python package providing numerical tools to simulate the long-term evolution of metabolic abundances in a metabolic network.
-MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as the kinetic model is fully specified, and a stable steady-state exists. Steady-state concentrations are computed thanks to <a href="http://copasi.org/">Copasi</a> software. SBML model manipulations are done thanks to the Python package <a href="http://sbml.org/Software/libSBML">libSBML</a>.
+MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as the kinetic model is fully specified, and a stable steady-state exists. Steady-state concentrations are computed thanks to <a href="http://copasi.org/">Copasi</a> software.
 </p>
 
 <p align="justify">
@@ -35,8 +35,8 @@ MetEvolSim is being developed by <a href="https://github.com/charlesrocabert">Ch
 ## Dependencies <a name="dependencies"></a>
 - Python &ge; 3,
 - Numpy &ge; 1.15 (automatically installed when using pip),
-- NetworkX &ge; 2.2 (automatically installed when using pip),
 - Python-libsbml &ge; 5.17 (automatically installed when using pip),
+- NetworkX &ge; 2.2 (automatically installed when using pip),
 - CopasiSE &ge; 4.27 (to be installed separately),
 - pip &ge; 19.1 (optional).
 
@@ -122,7 +122,7 @@ Six types of selection are available:
 # Load a Markov Chain Monte Carlo (MCMC) instance
 mcmc = metevolsim.MCMC(sbml_filename='glycolysis.xml', objective_function=target_fluxes, total_iterations=10000, sigma=0.01, selection_scheme="MUTATION_ACCUMULATION", selection_threshold=1e-4, copasi_path='/Applications/COPASI/CopasiSE')
 
-# Initialize the MCMC instance 
+# Initialize the MCMC instance
 mcmc.initialize()
 
 # Compute the successive iterations and write output files
@@ -167,14 +167,14 @@ Help on function set_species_initial_value in module metevolsim:
 set_species_initial_value(self, species_id, value)
     Set the initial concentration of the species 'species_id' in the
     mutant model.
-    
+
     Parameters
     ----------
     species_id: str
             Species identifier (as defined in the SBML model).
     value: float >= 0.0
             Species abundance.
-            
+
     Returns
     -------
     None

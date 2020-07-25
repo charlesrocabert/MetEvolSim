@@ -55,7 +55,7 @@ class Model:
 	  All kinetic parameters will be mutable.
 	- The meta-identifiers are rebuilt automatically by MetEvolSim to avoid
 	  collisions.
-	
+
 	Attributes
 	----------
 	> sbml_filename : str
@@ -100,7 +100,7 @@ class Model:
 	> relative_moma_all_distance : float
 		Distance between the wild-type and the mutant, based on the
 		Minimization Of Metabolic Adjustment on ALL relative fluxes.
-	
+
 	Methods
 	-------
 	> __init__(sbml_filename, objective_function, copasi_path)
@@ -167,7 +167,7 @@ class Model:
 	> compute_wild_type_steady_state()
 		Compute wild-type steady-state.
 	> compute_mutant_steady_state()
-		Compute mutant steady-state.	
+		Compute mutant steady-state.
 	> update_initial_concentrations()
 		Update species initial concentrations.
 	> compute_sum_distance()
@@ -186,12 +186,12 @@ class Model:
 		Save the matrix of all pairwise metabolites shortest paths (assuming an
 		undirected graph).
 	"""
-	
+
 	### Constructor ###
 	def __init__( self, sbml_filename, objective_function, copasi_path ):
 		"""
 		Model class constructor.
-		
+
 		Parameters
 		----------
 		sbml_filename : str
@@ -200,14 +200,14 @@ class Model:
 			Objective function (list of reaction identifiers and coefficients).
 		copasi_path : str
 			Location of Copasi executable.
-		
+
 		Returns
 		-------
 		None
 		"""
 		assert os.path.isfile(sbml_filename), "The SBML file \""+sbml_filename+"\" does not exist. Exit."
 		assert os.path.isfile(copasi_path), "The executable \""+copasi_path+"\" does not exist. Exit."
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Main SBML data                                           #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -218,7 +218,7 @@ class Model:
 		self.wild_type_model    = self.wild_type_document.getModel()
 		self.mutant_model       = self.mutant_document.getModel()
 		self.copasi_path        = copasi_path
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) List of model variables (species, reactions, parameters) #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -231,12 +231,13 @@ class Model:
 		self.build_reaction_list()
 		self.replace_variable_names()
 		self.write_list_of_variables()
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Graph analysis                                           #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		self.species_graph = nx.Graph()
-		
+		self.species_graph       = nx.Graph()
+		self.species_to_reaction = {}
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 4) Model evaluation                                         #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -250,16 +251,16 @@ class Model:
 		self.relative_moma_all_distance = 0.0
 		for target_flux in objective_function:
 			assert target_flux[0] in self.reactions
-		
+
 	### Rebuilt the unique metaids for all the model variables ###
 	def rebuild_metaids( self ):
 		"""
 		Rebuild the unique metaids for all model variables.
-		
+
 		Parameters
 		----------
 		None
-		
+
 		Returns
 		-------
 		None
@@ -302,16 +303,16 @@ class Model:
 		for reaction in self.mutant_model.getListOfReactions():
 			reaction.setMetaId("_"+str(metaid))
 			metaid += 1
-			
+
 	### Build the list of metabolites ###
 	def build_species_list( self ):
 		"""
 		Build the species list.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		None
@@ -319,26 +320,38 @@ class Model:
 		self.species = {}
 		for species in self.wild_type_model.getListOfSpecies():
 			assert species.getId() not in list(self.species)
-			self.species[species.getId()]                       = {}
-			self.species[species.getId()]["metaid"]             = species.getMetaId()
-			self.species[species.getId()]["id"]                 = species.getId()
-			self.species[species.getId()]["name"]               = species.getName()
+			self.species[species.getId()]           = {}
+			self.species[species.getId()]["metaid"] = species.getMetaId()
+			self.species[species.getId()]["id"]     = species.getId()
+			self.species[species.getId()]["name"]   = species.getName()
+			if species.getName()=="":
+				self.species[species.getId()]["name"] = "-"
 			self.species[species.getId()]["compartment"]        = species.getCompartment()
 			self.species[species.getId()]["constant"]           = species.getConstant()
 			self.species[species.getId()]["boundary_condition"] = species.getBoundaryCondition()
 			self.species[species.getId()]["initial_value"]      = species.getInitialConcentration()
 			self.species[species.getId()]["wild_type_value"]    = species.getInitialConcentration()
 			self.species[species.getId()]["mutant_value"]       = species.getInitialConcentration()
-	
+			s1 = species.getAnnotationString().split("http://identifiers.org/kegg.compound/")
+			s2 = ""
+			if len(s1) == 1:
+				s1 = species.getAnnotationString().split("https://identifiers.org/kegg.compound/")
+			if len(s1) > 1:
+				s2 = s1[1].split("\"/>\n")[0]
+			if s2 != "":
+				self.species[species.getId()]["kegg_id"] = "https://identifiers.org/kegg.compound/"+s2
+			else:
+				self.species[species.getId()]["kegg_id"] = "-"
+
 	### Build the list of parameters ###
 	def build_parameter_list( self ):
 		"""
 		Build the parameters list.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		None
@@ -368,16 +381,16 @@ class Model:
 						self.parameters[elmt.getMetaId()]["id"]              = elmt.getId()
 						self.parameters[elmt.getMetaId()]["wild_type_value"] = elmt.getValue()
 						self.parameters[elmt.getMetaId()]["mutant_value"]    = elmt.getValue()
-	
+
 	### Build the list of reactions ###
 	def build_reaction_list( self ):
 		"""
 		Build the reaction list.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		None
@@ -390,16 +403,16 @@ class Model:
 			self.reactions[reaction.getId()]["id"]          = reaction.getId()
 			self.reactions[reaction.getId()]["name"]        = reaction.getName()
 			self.reactions[reaction.getId()]["compartment"] = reaction.getCompartment()
-	
+
 	### Replace variable names by their identifiers to avoid collisions ###
 	def replace_variable_names( self ):
 		"""
 		Replace variable names by their identifiers to avoid collisions.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		None
@@ -426,31 +439,31 @@ class Model:
 			reaction_id = reaction.getId()
 			assert reaction_id in self.reactions
 			reaction.setName(reaction_id)
-	
+
 	### Get the number of species ###
 	def get_number_of_species( self ):
 		"""
 		Get the number of species.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		int
 		"""
 		return len(self.species)
-	
+
 	### Get the number of variable species ###
 	def get_number_of_variable_species( self ):
 		"""
 		Get the number of variable species.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		int
@@ -460,81 +473,81 @@ class Model:
 			if not self.species[species_id]["constant"]:
 				count += 1
 		return count
-	
+
 	### Get the number of parameters ###
 	def get_number_of_parameters( self ):
 		"""
 		Get the number of kinetic parameters.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		int
 		"""
 		return len(self.parameters)
-	
+
 	### Get the number of reactions ###
 	def get_number_of_reactions( self ):
 		"""
 		Get the number of reactions.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		int
 		"""
 		return len(self.reactions)
-	
+
 	### Get wild-type species value ###
 	def get_wild_type_species_value( self, species_id ):
 		"""
 		Get the wild-type value of the species 'species_id'.
-		
+
 		Parameters
 		----------
 		species_id: str
 			The identifier of the species (as defined in the SBML model).
-			
+
 		Returns
 		-------
 		float
 		"""
 		assert species_id in list(self.species)
 		return self.species[species_id]["wild_type_value"]
-	
+
 	### Get mutant species value ###
 	def get_mutant_species_value( self, species_id ):
 		"""
 		Get the wild-type value of the species 'species_id'.
-		
+
 		Parameters
 		----------
 		species_id: str
 			The identifier of the species (as defined in the SBML model).
-			
+
 		Returns
 		-------
 		float
 		"""
 		assert species_id in list(self.species)
 		return self.species[species_id]["mutant_value"]
-	
+
 	### Get wild-type parameter value ###
 	def get_wild_type_parameter_value( self, param_metaid ):
 		"""
 		Get the wild-type value of the parameter 'param_metaid'
-		
+
 		Parameters
 		----------
 		param_metaid: str
 			The meta identifier of the parameter (as defined in the SBML model).
-			
+
 		Returns
 		-------
 		float
@@ -542,17 +555,17 @@ class Model:
 		assert param_metaid in list(self.parameters)
 		assert self.parameters[param_metaid]["wild_type_value"] == self.wild_type_model.getElementByMetaId(param_metaid).getValue()
 		return self.parameters[param_metaid]["wild_type_value"]
-	
+
 	### Get mutant parameter value ###
 	def get_mutant_parameter_value( self, param_metaid ):
 		"""
 		Get the mutant value of the parameter 'param_metaid'
-		
+
 		Parameters
 		----------
 		param_metaid: str
 			The meta identifier of the parameter (as defined in the SBML model).
-			
+
 		Returns
 		-------
 		float
@@ -560,50 +573,50 @@ class Model:
 		assert param_metaid in list(self.parameters)
 		assert self.parameters[param_metaid]["mutant_value"] == self.mutant_model.getElementByMetaId(param_metaid).getValue()
 		return self.parameters[param_metaid]["mutant_value"]
-	
+
 	### Get wild-type reaction value ###
 	def get_wild_type_reaction_value( self, reaction_id ):
 		"""
 		Get the wild-type value of the reaction 'reaction_id'.
-		
+
 		Parameters
 		----------
 		reaction_id: str
 			The identifier of the reaction (as defined in the SBML model).
-			
+
 		Returns
 		-------
 		float
 		"""
 		assert reaction_id in list(self.reactions)
 		return self.reactions[reaction_id]["wild_type_value"]
-	
+
 	### Get mutant reaction value ###
 	def get_mutant_reaction_value( self, reaction_id ):
 		"""
 		Get the wild-type value of the reaction 'reaction_id'.
-		
+
 		Parameters
 		----------
 		reaction_id: str
 			The identifier of the reaction (as defined in the SBML model).
-			
+
 		Returns
 		-------
 		float
 		"""
 		assert reaction_id in list(self.reactions)
 		return self.reactions[reaction_id]["mutant_value"]
-	
+
 	### Get wild-type species values array ###
 	def get_wild_type_species_array( self ):
 		"""
 		Get a numpy array of wild-type species abundances.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		numpy array
@@ -613,16 +626,16 @@ class Model:
 			if not self.species[species_id]["constant"]:
 				vec.append(self.species[species_id]["wild_type_value"])
 		return np.array(vec)
-	
+
 	### Get mutant species values array ###
 	def get_mutant_species_array( self ):
 		"""
 		Get a numpy array of mutant species abundances.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		numpy array
@@ -632,16 +645,16 @@ class Model:
 			if not self.species[species_id]["constant"]:
 				vec.append(self.species[species_id]["mutant_value"])
 		return np.array(vec)
-	
+
 	### Get wild-type reaction values array ###
 	def get_wild_type_reaction_array( self ):
 		"""
 		Get a numpy array of wild-type reaction fluxes.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		numpy array
@@ -650,16 +663,16 @@ class Model:
 		for reaction_id in self.reactions:
 			vec.append(self.reactions[reaction_id]["wild_type_value"])
 		return np.array(vec)
-	
+
 	### Get mutant reaction values array ###
 	def get_mutant_reaction_array( self ):
 		"""
 		Get a numpy array of mutant reaction fluxes.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		numpy array
@@ -668,20 +681,20 @@ class Model:
 		for reaction_id in self.reactions:
 			vec.append(self.reactions[reaction_id]["mutant_value"])
 		return np.array(vec)
-	
+
 	### Set a species initial value ###
 	def set_species_initial_value( self, species_id, value ):
 		"""
 		Set the initial concentration of the species 'species_id' in the
 		mutant model.
-		
+
 		Parameters
 		----------
 		species_id: str
 			Species identifier (as defined in the SBML model).
 		value: float >= 0.0
 			Species abundance.
-			
+
 		Returns
 		-------
 		None
@@ -691,19 +704,19 @@ class Model:
 			value = 0.0
 		self.species[species_id]["wild_type_value"] = value
 		self.mutant_model.getListOfSpecies().get(species_id).setInitialConcentration(value)
-	
+
 	### Set wild-type parameter value ###
 	def set_wild_type_parameter_value( self, param_metaid, value ):
 		"""
 		Set the wild-type value of the parameter 'param_metaid'.
-		
+
 		Parameters
 		----------
 		param_metaid: str
 			Parameter meta identifier (as defined in the SBML model).
 		value: float
 			Parameter value.
-		
+
 		Returns
 		-------
 		None
@@ -711,19 +724,19 @@ class Model:
 		assert param_metaid in list(self.parameters)
 		self.parameters[param_metaid]["wild_type_value"] = value
 		self.wild_type_model.getElementByMetaId(param_metaid).setValue(value)
-	
+
 	### Set mutant parameter value ###
 	def set_mutant_parameter_value( self, param_metaid, value ):
 		"""
 		Set the mutant value of the parameter 'param_metaid'.
-		
+
 		Parameters
 		----------
 		param_metaid: str
 			Parameter meta identifier (as defined in the SBML model).
 		value: float
 			Parameter value.
-		
+
 		Returns
 		-------
 		None
@@ -731,16 +744,16 @@ class Model:
 		assert param_metaid in list(self.parameters)
 		self.parameters[param_metaid]["mutant_value"] = value
 		self.mutant_model.getElementByMetaId(param_metaid).setValue(value)
-	
+
 	### Get a random parameter ###
 	def get_random_parameter( self ):
 		"""
 		Get a kinetic parameter at random.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		str
@@ -748,7 +761,7 @@ class Model:
 		param_index  = np.random.randint(0, len(self.parameters))
 		param_metaid = list(self.parameters)[param_index]
 		return param_metaid
-	
+
 	### Make a deterministic parameter mutation by a given log-scale factor, ###
 	### centered on the wild-type value                                      ###
 	def deterministic_parameter_mutation( self, param_metaid, factor ):
@@ -756,14 +769,14 @@ class Model:
 		Mutate a given parameter 'param_metaid' by a given log10-scale factor.
 		The mutation is centered on the wild-type value.
 		x' = x*10^(factor)
-		
+
 		Parameters
 		----------
 		param_metaid: str
 			Parameter meta identifier (as defined in the SBML model).
 		factor: float
 			Log10-scale factor.
-		
+
 		Returns
 		-------
 		int, int
@@ -781,14 +794,14 @@ class Model:
 		Mutate a given parameter 'param_metaid' through a log10-normal law of
 		variance of sigma^2.
 		x' = x*10^(N(0,sigma))
-		
+
 		Parameters
 		----------
 		param_metaid: str
 			Parameter meta identifier (as defined in the SBML model).
 		sigma: float > 0.0
 			Log10-scale standard deviation.
-		
+
 		Returns
 		-------
 		int, int
@@ -800,16 +813,16 @@ class Model:
 		mutant_value    = wild_type_value*10**factor[0]
 		self.set_mutant_parameter_value(param_metaid, mutant_value)
 		return wild_type_value, mutant_value
-	
+
 	### Write the list of variables in various files ###
 	def write_list_of_variables( self ):
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Write the list of species  #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		f = open("output/list_of_species.txt", "w")
-		f.write("id metaid name compartment\n")
+		f.write("id metaid name compartment kegg_id\n")
 		for species_id in self.species.keys():
-			f.write(species_id+" "+self.species[species_id]["metaid"]+" "+self.species[species_id]["name"]+" "+self.species[species_id]["compartment"]+"\n")
+			f.write(species_id+" "+self.species[species_id]["metaid"]+" "+self.species[species_id]["name"]+" "+self.species[species_id]["compartment"]+" "+self.species[species_id]["kegg_id"]+"\n")
 		f.close()
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Write the list of parameters #
@@ -827,16 +840,16 @@ class Model:
 		for reaction_id in self.reactions.keys():
 			f.write(reaction_id+" "+self.reactions[reaction_id]["metaid"]+" "+self.reactions[reaction_id]["name"]+" "+self.reactions[reaction_id]["compartment"]+"\n")
 		f.close()
-			
+
 	### Write wild-type SBML file ###
 	def write_wild_type_SBML_file( self ):
 		"""
 		Write the wild-type model in a SBML file.
-		
+
 		Parameters
 		----------
 		None
-		
+
 		Returns
 		-------
 		None
@@ -847,11 +860,11 @@ class Model:
 	def write_mutant_SBML_file( self ):
 		"""
 		Write the mutant model in a SBML file.
-		
+
 		Parameters
 		----------
 		None
-		
+
 		Returns
 		-------
 		None
@@ -862,11 +875,11 @@ class Model:
 	def create_wild_type_cps_file( self ):
 		"""
 		Create a CPS file from the wild-type SBML file.
-		
+
 		Parameters
 		----------
 		None
-		
+
 		Returns
 		-------
 		None
@@ -878,11 +891,11 @@ class Model:
 	def create_mutant_cps_file( self ):
 		"""
 		Create a CPS file from the mutant SBML file.
-		
+
 		Parameters
 		----------
 		None
-		
+
 		Returns
 		-------
 		None
@@ -894,7 +907,7 @@ class Model:
 	def edit_wild_type_cps_file( self, task ):
 		"""
 		Edit wild-type CPS file to schedule steady-state calculation.
-		
+
 		Parameters
 		----------
 		task: str
@@ -1009,12 +1022,12 @@ class Model:
 	def edit_mutant_cps_file( self, task ):
 		"""
 		Edit mutant CPS file to schedule steady-state calculation.
-		
+
 		Parameters
 		----------
 		task: str
 			Define Copasi task (STEADY_STATE/MCA).
-		
+
 		Returns
 		-------
 		None
@@ -1125,11 +1138,11 @@ class Model:
 	def run_copasi_for_wild_type( self ):
 		"""
 		Run Copasi to compute the wild-type steady-state and update model state.
-		
+
 		Parameters
 		----------
 		None
-		
+
 		Returns
 		-------
 		None
@@ -1143,11 +1156,11 @@ class Model:
 	def run_copasi_for_mutant( self ):
 		"""
 		Run Copasi to compute the mutant steady-state and update model state.
-		
+
 		Parameters
 		----------
 		None
-		
+
 		Returns
 		-------
 		None
@@ -1156,19 +1169,19 @@ class Model:
 			os.system("rm ./output/mutant_output.txt")
 		cmd_line = self.copasi_path+" ./output/mutant.cps"
 		process  = subprocess.call([cmd_line], stdout=subprocess.PIPE, shell=True)
-	
+
 	### Parse Copasi output file ###
 	def parse_copasi_output( self, filename, task ):
 		"""
 		Parse the Copasi output 'filename'.
-		
+
 		Parameters
 		----------
 		filename: str
 			Name of the Copasi output (txt file).
 		task: str
 			Define Copasi task (STEADY_STATE/MCA).
-		
+
 		Returns
 		-------
 		- boolean, list of [str, float] lists, list of [str, float] lists if task == "STEADY_STATE"
@@ -1249,16 +1262,16 @@ class Model:
 				l = f.readline()
 			f.close()
 			return rownames, colnames, unscaled, scaled
-	
+
 	### Compute wild-type steady-state ###
 	def compute_wild_type_steady_state( self ):
 		"""
 		Compute and save the wild-type steady-state.
-		
+
 		Parameters
 		----------
 		None
-		
+
 		Returns
 		-------
 		Boolean
@@ -1270,7 +1283,7 @@ class Model:
 		self.create_wild_type_cps_file()
 		self.edit_wild_type_cps_file("STEADY_STATE")
 		self.run_copasi_for_wild_type()
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Extract steady-state                 #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -1278,7 +1291,7 @@ class Model:
 		if not success:
 			return False
 		#assert success, "The model is unstable. Exit."
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Update model and lists               #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -1298,16 +1311,16 @@ class Model:
 			self.reactions[reaction_id]["wild_type_value"] = reaction_value
 			self.reactions[reaction_id]["mutant_value"]    = reaction_value
 		return True
-	
+
 	### Compute mutant steady-state ###
 	def compute_mutant_steady_state( self ):
 		"""
 		Compute and save the mutant steady-state.
-		
+
 		Parameters
 		----------
 		None
-		
+
 		Returns
 		-------
 		Boolean
@@ -1319,7 +1332,7 @@ class Model:
 		self.create_mutant_cps_file()
 		self.edit_mutant_cps_file("STEADY_STATE")
 		self.run_copasi_for_mutant()
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Extract steady-state                 #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -1327,7 +1340,7 @@ class Model:
 		if not success:
 			return False
 		#assert success, "The model is unstable. Exit."
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Update model and lists               #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -1345,16 +1358,16 @@ class Model:
 			assert reaction_id in self.reactions
 			self.reactions[reaction_id]["mutant_value"] = reaction_value
 		return True
-	
-	### Update species initial concentrations ###	
+
+	### Update species initial concentrations ###
 	def update_initial_concentrations( self ):
 		"""
 		Update initial concentrations in the mutant model.
-		
+
 		Parameters
 		----------
 		None
-		
+
 		Returns
 		-------
 		None
@@ -1363,33 +1376,33 @@ class Model:
 			species_id = species_item[0]
 			if not self.species[species_id]["constant"]:
 				self.set_species_initial_value(species_id, self.species[species_id]["mutant_value"])
-	
+
 	### Compute the metabolic sum distance between the wild-type and the mutant ###
 	def compute_sum_distance( self ):
 		"""
 		Compute the metabolic sum distance between the wild-type and the mutant.
-		
+
 		Parameters
 		----------
 		None
-		
+
 		Returns
 		-------
 		None
 		"""
 		self.absolute_sum_distance = abs(self.wild_type_absolute_sum-self.mutant_absolute_sum)
-	
+
 	### Compute the MOMA distance between the wild-type and the mutant ###
 	def compute_moma_distance( self ):
 		"""
 		Compute the MOMA distance between the wild-type and the mutant, based on
 		target fluxes.
 		(MOMA: Minimization Of Metabolic Adjustment)
-		
+
 		Parameters
 		----------
 		None
-		
+
 		Returns
 		-------
 		None
@@ -1423,16 +1436,16 @@ class Model:
 				self.relative_moma_all_distance += (wild_type_value-mutant_value)/wild_type_value*(wild_type_value-mutant_value)/wild_type_value
 		self.absolute_moma_all_distance = np.sqrt(self.absolute_moma_all_distance)
 		self.relative_moma_all_distance = np.sqrt(self.relative_moma_all_distance)
-	
+
 	### Compute wild-type metabolic control analysis (MCA) ###
 	def compute_wild_type_metabolic_control_analysis( self ):
 		"""
 		Compute and save the wild-type metabolic control analysis (MCA).
-		
+
 		Parameters
 		----------
 		None
-		
+
 		Returns
 		-------
 		None
@@ -1444,12 +1457,12 @@ class Model:
 		self.create_wild_type_cps_file()
 		self.edit_wild_type_cps_file("MCA")
 		self.run_copasi_for_wild_type()
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Extract the MCA result               #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		rownames, colnames, unscaled, scaled = self.parse_copasi_output("./output/wild_type_output.txt", "MCA")
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Write control coefficients data      #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -1475,16 +1488,16 @@ class Model:
 				control_coef  = scaled[i][j]
 				f.write(species_id+" "+str(species_value)+" "+flux_id+" "+str(flux_value)+" "+control_coef+"\n")
 		f.close()
-		
+
 	### Compute mutant metabolic control analysis (MCA) ###
 	def compute_mutant_metabolic_control_analysis( self ):
 		"""
 		Compute and save the mutant metabolic control analysis (MCA).
-		
+
 		Parameters
 		----------
 		None
-		
+
 		Returns
 		-------
 		None
@@ -1496,12 +1509,12 @@ class Model:
 		self.create_mutant_cps_file()
 		self.edit_mutant_cps_file("MCA")
 		self.run_copasi_for_mutant()
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Extract the MCA result               #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		rownames, colnames, unscaled, scaled = self.parse_copasi_output("./output/mutant_output.txt", "MCA")
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Write control coefficients matrices  #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -1525,29 +1538,29 @@ class Model:
 				f.write(" "+elmt)
 			f.write("\n")
 		f.close()
-		
+
 	### Build the graph of species ###
 	def build_species_graph( self ):
 		"""
 		Build the metabolite-to-metabolite graph (mainly to compute shortest
 		paths afterward).
-		
+
 		Parameters
 		----------
 		None
-		
+
 		Returns
 		-------
 		None
 		"""
 		self.species_graph.clear()
-		species_metaid = {}
+		self.species_to_reaction = {}
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		# 1) Create nodes from species names #
+		# 1) Create nodes from species       #
+		#    identifiers                     #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		for species_id in self.species.keys():
-			self.species_graph.add_node(self.species[species_id]["name"])
-			species_metaid[self.species[species_id]["metaid"]] = self.species[species_id]["name"]
+			self.species_graph.add_node(species_id)
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Create edges from reactions     #
 		#   (All the species involved in the #
@@ -1556,27 +1569,38 @@ class Model:
 		for reaction in self.wild_type_model.getListOfReactions():
 			list_of_metabolites = []
 			for reactant in reaction.getListOfReactants():
-				list_of_metabolites.append(reactant.getSpecies())
+				species_id = reactant.getSpecies()
+				if species_id in self.species.keys():
+					list_of_metabolites.append(species_id)
+					if species_id not in self.species_to_reaction.keys():
+						self.species_to_reaction[species_id] = [reaction.getId()]
+					else:
+						self.species_to_reaction[species_id].append(reaction.getId())
 			for product in reaction.getListOfProducts():
-				list_of_metabolites.append(product.getSpecies())
+				species_id = product.getSpecies()
+				if species_id in self.species.keys():
+					list_of_metabolites.append(species_id)
+					if species_id not in self.species_to_reaction.keys():
+						self.species_to_reaction[species_id] = [reaction.getId()]
+					else:
+						self.species_to_reaction[species_id].append(reaction.getId())
 			#for modifier in reaction.getListOfModifiers():
 			#	list_of_metabolites.append(modifier.getSpecies())
 			for i in range(len(list_of_metabolites)):
 				for j in range(i+1, len(list_of_metabolites)):
 					self.species_graph.add_edge(list_of_metabolites[i], list_of_metabolites[j])
-		del species_metaid
-	
+
 	### Save shortest path lengths matrix ###
 	def save_shortest_paths( self, filename ):
 		"""
 		Save the matrix of all pairwise metabolites shortest paths (assuming an
 		undirected graph).
-		
+
 		Parameters
 		----------
 		filename: str
 			Name of the Copasi output (txt file).
-		
+
 		Returns
 		-------
 		None
@@ -1585,7 +1609,7 @@ class Model:
 		# 1) Extract shortest path lengths      #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		sp = nx.shortest_path_length(self.species_graph)
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Build the matrix of shortest paths #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -1601,15 +1625,19 @@ class Model:
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Write the file                     #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-		f = open(filename, "w")
+		written_reactions = []
+		f                 = open(filename, "w")
 		f.write(header.strip(" ")+"\n")
 		for sp1 in list_of_metabolites:
-			line = sp1
-			for sp2 in list_of_metabolites:
-				line += " "+str(sp_dict[sp1][sp2])
-			f.write(line+"\n")
+			for reaction in self.species_to_reaction[sp1]:
+				if reaction not in written_reactions:
+					written_reactions.append(reaction)
+					line = reaction
+					for sp2 in list_of_metabolites:
+						line += " "+str(sp_dict[sp1][sp2])
+					f.write(line+"\n")
 		f.close()
-		
+
 #********************************************************************
 # MCMC class
 # ----------
@@ -1622,7 +1650,7 @@ class MCMC:
 	The MCMC class runs a Monte-Carlo Markov Chain (MCMC) evolution experiment
 	on a SBML model, with cycles of mutations and fixations depending on a given
 	selection threshold.
-	
+
 	Attributes
 	----------
 	> sbml_filename : str
@@ -1698,7 +1726,7 @@ class MCMC:
 		Previous fluxes tracker.
 	> output_file : file
 		Output file tracking each MCMC algorithm iteration.
-	
+
 	Methods
 	-------
 	> __init__(sbml_filename, target_fluxes, total_iterations, sigma, selection_scheme, selection_threshold, copasi_path)
@@ -1720,12 +1748,12 @@ class MCMC:
 	> iterate()
 		Iterate the MCMC algorithm.
 	"""
-	
+
 	### Constructor ###
 	def __init__( self, sbml_filename, objective_function, total_iterations, sigma, selection_scheme, selection_threshold, copasi_path ):
 		"""
 		MCMC class constructor.
-		
+
 		Parameters
 		----------
 		sbml_filename : str
@@ -1743,7 +1771,7 @@ class MCMC:
 			Selection threshold applied on the MOMA distance.
 		copasi_path : str
 			Location of Copasi executable.
-		
+
 		Returns
 		-------
 		None
@@ -1754,7 +1782,7 @@ class MCMC:
 		assert sigma > 0.0, "The mutation size 'sigma' must be a positive nonzero value. Exit."
 		assert selection_scheme in ["MUTATION_ACCUMULATION", "ABSOLUTE_METABOLIC_SUM_SELECTION", "ABSOLUTE_TARGET_FLUXES_SELECTION", "RELATIVE_TARGET_FLUXES_SELECTION", "ABSOLUTE_ALL_FLUXES_SELECTION", "RELATIVE_ALL_FLUXES_SELECTION"], "The selection scheme takes two values only (MUTATION_ACCUMULATION / ABSOLUTE_METABOLIC_SUM_SELECTION / ABSOLUTE_TARGET_FLUXES_SELECTION / RELATIVE_TARGET_FLUXES_SELECTION / ABSOLUTE_ALL_FLUXES_SELECTION / RELATIVE_ALL_FLUXES_SELECTION). Exit."
 		assert os.path.isfile(copasi_path), "The executable \""+copasi_path+"\" does not exist. Exit."
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Main MCMC parameters   #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -1764,12 +1792,12 @@ class MCMC:
 		self.selection_scheme    = selection_scheme
 		self.selection_threshold = selection_threshold
 		self.copasi_path         = copasi_path
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) SBML model             #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.model = Model(sbml_filename, objective_function, copasi_path)
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Current state tracking #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -1781,20 +1809,20 @@ class MCMC:
 		self.param_id       = "wild_type"
 		self.param_value    = 0.0
 		self.param_previous = 0.0
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 4) Statistics             #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		### Array lengths ###
 		self.N_abund = self.model.get_number_of_variable_species()
 		self.N_flux  = self.model.get_number_of_reactions()
-		
+
 		### Arrays ###
 		self.wild_type_abund = np.zeros(self.N_abund)
 		self.mutant_abund    = np.zeros(self.N_abund)
 		self.wild_type_flux  = np.zeros(self.N_flux)
 		self.mutant_flux     = np.zeros(self.N_flux)
-		
+
 		### Sum vectors ###
 		self.sum_abund      = np.zeros(self.N_abund)
 		self.relsum_abund   = np.zeros(self.N_abund)
@@ -1804,7 +1832,7 @@ class MCMC:
 		self.relsum_flux    = np.zeros(self.N_flux)
 		self.sqsum_flux     = np.zeros(self.N_flux)
 		self.relsqsum_flux  = np.zeros(self.N_flux)
-		
+
 		### Final statistics ###
 		self.mean_abund = np.zeros(self.N_abund)
 		self.var_abund  = np.zeros(self.N_abund)
@@ -1814,28 +1842,28 @@ class MCMC:
 		self.var_flux   = np.zeros(self.N_flux)
 		self.CV_flux    = np.zeros(self.N_flux)
 		self.ER_flux    = np.zeros(self.N_flux)
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 5) Previous state         #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.previous_abund = np.copy(self.mutant_abund)
 		self.previous_flux  = np.copy(self.mutant_flux)
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 6) Output file            #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.output_file = open("output/iterations.txt", "w")
 		self.output_file.close()
-		
+
 	### Initialize the output file ###
 	def initialize_output_file( self ):
 		"""
 		Initialize the output file (write the header).
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		None
@@ -1850,22 +1878,22 @@ class MCMC:
 		self.output_file = open("output/iterations.txt", "a")
 		self.output_file.write(header)
 		self.output_file.close()
-	
+
 	### Write the current MCMC state in the output file ###
 	def write_output_file( self ):
 		"""
 		Write the current MCMC state in the output file.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		None
 		"""
 		line = ""
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Write current MCMC state #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -1876,7 +1904,7 @@ class MCMC:
 		line += str(self.param_id)+" "
 		line += str(self.param_previous)+" "
 		line += str(self.param_value)
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Write steady-state       #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -1885,28 +1913,28 @@ class MCMC:
 				line += " "+str(self.model.species[species_id]["mutant_value"])
 		for reaction_id in self.model.reactions:
 			line += " "+str(self.model.reactions[reaction_id]["mutant_value"])
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Write scores             #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		line += " "+str(self.model.wild_type_absolute_sum)+" "+str(self.model.mutant_absolute_sum)+" "+str(self.model.absolute_sum_distance)+" "+str(self.model.absolute_moma_distance)+" "+str(self.model.relative_moma_distance)+" "+str(self.model.absolute_moma_all_distance)+" "+str(self.model.relative_moma_all_distance)
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 4) Write in file            #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.output_file = open("output/iterations.txt", "a")
 		self.output_file.write(line+"\n")
 		self.output_file.close()
-	
+
 	### Update statistics ###
 	def update_statistics( self ):
 		"""
 		Update statistics trackers for the current state.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		None
@@ -1925,16 +1953,16 @@ class MCMC:
 			if self.wild_type_flux[i] > 0.0:
 				self.relsum_flux[i]   += (self.mutant_flux[i]/self.wild_type_flux[i])
 				self.relsqsum_flux[i] += (self.mutant_flux[i]/self.wild_type_flux[i])*(self.mutant_flux[i]/self.wild_type_flux[i])
-		
+
 	### Compute statistics for the current iteration ###
 	def compute_statistics( self ):
 		"""
 		Compute final statistics.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		None
@@ -1947,7 +1975,7 @@ class MCMC:
 		###########
 		self.mean_flux  = np.copy(self.sum_flux)
 		self.mean_flux /= float(self.nb_iterations)
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Compute variance                 #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -1958,7 +1986,7 @@ class MCMC:
 		self.var_flux  = np.copy(self.sqsum_flux)
 		self.var_flux /= float(self.nb_iterations)
 		self.var_flux -= self.mean_flux*self.mean_flux
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Compute coefficient of variation #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -1970,7 +1998,7 @@ class MCMC:
 				self.CV_abund[i] = np.sqrt(self.CV_abund[i])/self.mean_abund[i]
 			else:
 				self.CV_abund[i] = 0.0
-		
+
 		###########
 		self.CV_flux  = np.copy(self.sqsum_flux)
 		self.CV_flux /= float(self.nb_iterations)
@@ -1980,7 +2008,7 @@ class MCMC:
 				self.CV_flux[i] = np.sqrt(self.CV_flux[i])/self.mean_flux[i]
 			else:
 				self.CV_flux[i] = 0.0
-				
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 4) Compute evolution rate           #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -1998,18 +2026,18 @@ class MCMC:
 	def write_statistics( self ):
 		"""
 		Write final statistics in an output file (output/statistics.txt).
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		None
 		"""
 		f = open("output/statistics.txt", "w")
 		f.write("species_id wild_type mean var CV ER\n")
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Write species statistics #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2024,7 +2052,7 @@ class MCMC:
 				line  += str(self.ER_abund[index])+"\n"
 				index += 1
 				f.write(line)
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Write fluxes statistics  #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2039,16 +2067,16 @@ class MCMC:
 			index += 1
 			f.write(line)
 		f.close()
-	
+
 	### Initialize MCMC algorithm ###
 	def initialize( self ):
 		"""
 		Initialize the MCMC algorithm.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		None
@@ -2064,16 +2092,16 @@ class MCMC:
 		self.mutant_abund    = self.model.get_mutant_species_array()
 		self.wild_type_flux  = self.model.get_wild_type_reaction_array()
 		self.mutant_flux     = self.model.get_mutant_reaction_array()
-		
+
 	### Reload the previous MCMC state ###
 	def reload_previous_state( self ):
 		"""
 		Reload the previous MCMC state.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		None
@@ -2082,7 +2110,7 @@ class MCMC:
 		# 1) Restore the mutated parameter #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.model.set_mutant_parameter_value(self.param_metaid, self.param_previous)
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Retrieve previous values      #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2097,39 +2125,39 @@ class MCMC:
 		for reaction_id in self.model.reactions:
 			self.model.reactions[reaction_id]["mutant_value"] = self.mutant_flux[index]
 			index += 1
-		
+
 	### Iterate MCMC algorithm ###
 	def iterate( self ):
 		"""
 		Iterate the MCMC algorithm.
-		
+
 		Parameters
 		----------
 		None
-			
+
 		Returns
 		-------
 		None
 		"""
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Save previous state                                         #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.previous_abund = np.copy(self.mutant_abund)
 		self.previous_flux  = np.copy(self.mutant_flux)
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Introduce a new random mutation                             #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.param_metaid                     = self.model.get_random_parameter()
 		self.param_id                         = self.model.parameters[self.param_metaid]["id"]
 		self.param_previous, self.param_value = self.model.random_parameter_mutation(self.param_metaid, self.sigma)
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Compute the new steady-state                                #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		success = self.model.compute_mutant_steady_state()
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 4) Evaluate model stability and select the new iteration event #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2255,7 +2283,7 @@ class MCMC:
 				self.param_id       = "_"
 				self.param_value    = 0.0
 				self.param_previous = 0.0
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 5) Check the number of iterations                              #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2281,7 +2309,7 @@ class SensitivityAnalysis:
 	The SensitivityAnalysis class runs a sensitivity analysis by exploring a
 	range of values for each kinetic parameter and tracking the change for all
 	fluxes and species.
-	
+
 	Attributes
 	----------
 	> sbml_filename : str
@@ -2314,8 +2342,8 @@ class SensitivityAnalysis:
 	> OAT_output_file : file
 		Output file for the One-at-a-time analysis.
 	> random_output_file : file
-		Output file for the multivariate random analysis.	
-	
+		Output file for the multivariate random analysis.
+
 	Methods
 	-------
 	> __init__(sbml_filename, copasi_path)
@@ -2343,37 +2371,37 @@ class SensitivityAnalysis:
 	> run_random_analysis(sigma, nb_iterations)
 		Run the complete random sensitivity analysis.
 	"""
-	
+
 	### Constructor ###
 	def __init__( self, sbml_filename, copasi_path ):
 		"""
 		SensitivityAnalysis class constructor.
-		
+
 		Parameters
 		----------
 		sbml_filename : str
 			Path of the SBML model file. The SBML model is automatically loaded.
 		copasi_path : str
 			Location of Copasi executable.
-		
+
 		Returns
 		-------
 		None
 		"""
 		assert os.path.isfile(sbml_filename), "The SBML file \""+sbml_filename+"\" does not exist. Exit."
 		assert os.path.isfile(copasi_path), "The executable \""+copasi_path+"\" does not exist. Exit."
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Main sensitivity analysis parameters #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.sbml_filename = sbml_filename
 		self.copasi_path   = copasi_path
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) SBML model                           #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.model = Model(sbml_filename, [], copasi_path)
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) One-at-a-time analysis               #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2384,14 +2412,14 @@ class SensitivityAnalysis:
 		self.param_id        = "wild_type"
 		self.param_wild_type = 0.0
 		self.param_val       = 0.0
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 4) Multivariate random analysis         #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.sigma         = 0.0
 		self.nb_iterations = 0.0
 		self.iteration     = 0
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 5) Output files                         #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2399,21 +2427,21 @@ class SensitivityAnalysis:
 		self.OAT_output_file.close()
 		self.random_output_file = open("output/random_sensitivity_analysis.txt", "w")
 		self.random_output_file.close()
-		
+
 	### Initialize the OAT output file ###
 	def initialize_OAT_output_file( self ):
 		"""
 		Initialize the OAT output file (write the header).
-	
+
 		Parameters
 		----------
 		None
-	
+
 		Returns
 		-------
 		None
 		"""
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Write the header                 #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2423,7 +2451,7 @@ class SensitivityAnalysis:
 				header += " "+species_id
 		for reaction_id in self.model.reactions:
 			header += " "+reaction_id
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Write the wild-type steady-state #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2433,28 +2461,28 @@ class SensitivityAnalysis:
 				first_line += " "+str(self.model.species[species_id]["wild_type_value"])
 		for reaction_id in self.model.reactions:
 			first_line += " "+str(self.model.reactions[reaction_id]["wild_type_value"])
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Save in output file              #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.OAT_output_file = open("output/OAT_sensitivity_analysis.txt", "a")
 		self.OAT_output_file.write(header+"\n"+first_line+"\n")
 		self.OAT_output_file.close()
-	
+
 	### Initialize the multivariate random output file ###
 	def initialize_random_output_file( self ):
 		"""
 		Initialize the multivariate random output file (write the header).
-	
+
 		Parameters
 		----------
 		None
-	
+
 		Returns
 		-------
 		None
 		"""
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Write the header                 #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2464,7 +2492,7 @@ class SensitivityAnalysis:
 				header += " "+species_id
 		for reaction_id in self.model.reactions:
 			header += " "+reaction_id
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Write the wild-type steady-state #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2474,29 +2502,29 @@ class SensitivityAnalysis:
 				first_line += " "+str(self.model.species[species_id]["wild_type_value"])
 		for reaction_id in self.model.reactions:
 			first_line += " "+str(self.model.reactions[reaction_id]["wild_type_value"])
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Save in output file              #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.output_file = open("output/random_sensitivity_analysis.txt", "a")
 		self.output_file.write(header+"\n"+first_line+"\n")
 		self.output_file.close()
-	
+
 	### Write the sensitivity analysis state in the OAT output file ###
 	def write_OAT_output_file( self ):
 		"""
 		Write the current OAT sensitivity analysis state in the output file.
-	
+
 		Parameters
 		----------
 		None
-	
+
 		Returns
 		-------
 		None
 		"""
 		line = ""
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Write current OAT state #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2505,7 +2533,7 @@ class SensitivityAnalysis:
 		line += str(self.param_wild_type)+" "
 		line += str(self.param_val)+" "
 		line += str((self.param_val-self.param_wild_type)/self.param_wild_type)
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Write steady-state      #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2524,34 +2552,34 @@ class SensitivityAnalysis:
 			if wild_type_val != 0.0:
 				dln_val = (mutant_val-wild_type_val)/wild_type_val
 			line   += " "+str(dln_val)
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Write in file           #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.OAT_output_file = open("output/OAT_sensitivity_analysis.txt", "a")
 		self.OAT_output_file.write(line+"\n")
 		self.OAT_output_file.close()
-	
+
 	### Write the sensitivity analysis state in the random output file ###
 	def write_random_output_file( self ):
 		"""
 		Write the current multivariate random sensitivity analysis state in the output file.
-	
+
 		Parameters
 		----------
 		None
-	
+
 		Returns
 		-------
 		None
 		"""
 		line = ""
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Write current multivariate random state #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		line += str(self.iteration)
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Write steady-state                      #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2570,19 +2598,19 @@ class SensitivityAnalysis:
 			if wild_type_val != 0.0:
 				dln_val = (mutant_val-wild_type_val)/wild_type_val
 			line   += " "+str(dln_val)
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Write in file                           #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		self.random_output_file = open("output/random_sensitivity_analysis.txt", "a")
 		self.random_output_file.write(line+"\n")
 		self.random_output_file.close()
-	
+
 	### Initialize OAT sensitivity analysis algorithm ###
 	def initialize_OAT_analysis( self, factor_range, factor_step ):
 		"""
 		Initialize the OAT sensitivity analysis algorithm.
-	
+
 		Parameters
 		----------
 		factor_range : float > 0.0
@@ -2590,7 +2618,7 @@ class SensitivityAnalysis:
 		factor_step : float > 0.0
 			Exploration step of the log10-scaling factor.
 			x' = x*10^(factor)
-	
+
 		Returns
 		-------
 		None
@@ -2603,12 +2631,12 @@ class SensitivityAnalysis:
 		self.model.compute_mutant_steady_state()
 		self.initialize_OAT_output_file()
 		self.param_index = 0
-	
+
 	### Initialize multivariate random sensitivity analysis algorithm ###
 	def initialize_random_analysis( self, sigma, nb_iterations ):
 		"""
 		Initialize the multivariate random sensitivity analysis algorithm.
-	
+
 		Parameters
 		----------
 		sigma : float > 0.0
@@ -2627,16 +2655,16 @@ class SensitivityAnalysis:
 		self.model.compute_mutant_steady_state()
 		self.initialize_random_output_file()
 		self.iterations = 0
-	
+
 	### Reload the wild-type state into the mutant model ###
 	def reload_wild_type_state( self ):
 		"""
 		Reload the wild-type state into the mutant model.
-	
+
 		Parameters
 		----------
 		None
-	
+
 		Returns
 		-------
 		None
@@ -2650,23 +2678,23 @@ class SensitivityAnalysis:
 			self.model.set_mutant_parameter_value(parameter_metaid, self.model.get_wild_type_parameter_value(parameter_metaid))
 		for reaction_id in self.model.reactions:
 			self.model.reactions[reaction_id]["mutant_value"] = self.model.reactions[reaction_id]["wild_type_value"]
-	
+
 	### Explore the next parameter (OAT analysis) ###
 	def next_parameter( self ):
 		"""
 		Run a full parameter exploration for the next kinetic parameter.
-		
+
 		Parameters
 		----------
 		None
-		
+
 		Returns
 		-------
 		bool
 			Returns True if the last parameter has been explored. Returns False
 			else.
 		"""
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Get the next parameter        #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2675,7 +2703,7 @@ class SensitivityAnalysis:
 		self.param_wild_type = self.model.parameters[self.param_metaid]["wild_type_value"]
 		self.param_val       = 0.0
 		print("> Current parameter: "+str(self.param_id))
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Explore the upper range       #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2687,7 +2715,7 @@ class SensitivityAnalysis:
 			self.write_OAT_output_file()
 			factor += self.factor_step
 		self.reload_wild_type_state()
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 3) Explore the lower range       #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2699,7 +2727,7 @@ class SensitivityAnalysis:
 			self.write_OAT_output_file()
 			factor -= self.factor_step
 		self.reload_wild_type_state()
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 4) Increment the parameter index #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2707,23 +2735,23 @@ class SensitivityAnalysis:
 		if self.param_index == len(self.model.parameters):
 			return True
 		return False
-	
+
 	### Run the next iteration (multivariate random analysis) ###
 	def next_iteration( self ):
 		"""
 		Run the next multivariate random iteration
-		
+
 		Parameters
 		----------
 		None
-		
+
 		Returns
 		-------
 		bool
 			Returns True if the last iteration has been done. Returns False
 			else.
 		"""
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 1) Mutate each parameter at random with mutation size "sigma" #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2733,7 +2761,7 @@ class SensitivityAnalysis:
 		self.model.compute_mutant_steady_state()
 		self.write_random_output_file()
 		self.reload_wild_type_state()
-		
+
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 		# 2) Increment the current iteration                            #
 		#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -2741,12 +2769,12 @@ class SensitivityAnalysis:
 		if self.iteration == self.nb_iterations:
 			return True
 		return False
-	
+
 	### Run the OAT sensitivity analysis ###
 	def run_OAT_analysis( self, factor_range, factor_step ):
 		"""
 		Run the OAT sensitivity analysis algorithm.
-	
+
 		Parameters
 		----------
 		factor_range : float > 0.0
@@ -2754,7 +2782,7 @@ class SensitivityAnalysis:
 		factor_step : float > 0.0
 			Exploration step of the log10-scaling factor.
 			x' = x*10^(factor)
-	
+
 		Returns
 		-------
 		None
@@ -2769,19 +2797,19 @@ class SensitivityAnalysis:
 			ongoing_time   = time.time()
 			estimated_time = (ongoing_time-start_time)*float(self.model.get_number_of_parameters()-self.param_index-1)/float(self.param_index+1)
 			print("   Estimated remaining time "+str(int(round(estimated_time/60)))+" min.")
-	
+
 	### Run the multivariate random sensitivity analysis ###
 	def run_random_analysis( self, sigma, nb_iterations ):
 		"""
 		Run the multivariate random sensitivity analysis algorithm.
-	
+
 		Parameters
 		----------
 		sigma : float > 0.0
 			Kinetic parameters mutation size.
 		nb_iterations : int > 0
 			Number of iterations of the multivariate random analysis.
-	
+
 		Returns
 		-------
 		None
