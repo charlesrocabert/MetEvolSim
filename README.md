@@ -12,7 +12,7 @@
 -----------------
 
 <p align="justify">
-MetEvolSim is a Python package providing numerical tools to simulate the long-term evolution of metabolic abundances in a metabolic network.
+MetEvolSim is a Python package providing numerical tools to simulate the long-term evolution of metabolic abundances.
 MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as the kinetic model is fully specified, and a stable steady-state exists. Steady-state concentrations are computed thanks to <a href="http://copasi.org/">Copasi</a> software.
 </p>
 
