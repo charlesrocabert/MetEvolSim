@@ -104,7 +104,7 @@ All numerical analyses output files are saved in a subfolder <code>output</code>
 
 ### Evolution experiments:
 <p align="center">
-<img src="https://github.com/charlesrocabert/MetEvolSim/raw/master/pic/mcmc_algorithm.png" height="200px">
+<img src="https://github.com/charlesrocabert/MetEvolSim/raw/master/pic/mcmc_algorithm.png" height="300px">
 </p>
 <p align="justify">
 <strong>Algorithm overview:</strong> <strong>A.</strong> The model of interest is loaded as a wild-type from a SBML file (kinetic equations, kinetic parameter values and initial metabolic concentrations must be specified). <strong>B.</strong> At each iteration <em>t</em>, a single kinetic parameter is selected at random and mutated through a log10-normal distribution of standard deviation &sigma;. <strong>C.</strong> The new steady-state is computed using Copasi software, and the MOMA distance <em>z</em> between the mutant and the wild-type target fluxes is computed. <strong>D.</strong> If <em>z</em> is under a given selection threshold &omega;, the mutation is accepted. Else, the mutation is discarded. <strong>E.</strong> A new iteration <em>t+1</em> is computed.
