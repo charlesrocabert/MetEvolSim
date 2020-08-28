@@ -17,7 +17,7 @@ MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> me
 </p>
 
 <p align="justify">
-MetEvolSim is being developed by <a href="https://github.com/charlesrocabert">Charles Rocabert</a>, <a href="https://scholar.google.com/citations?user=8ZmiMp4AAAAJ&hl=da">Gábor Boross</a> and <a href="group.szbk.u-szeged.hu › papp-balazs-lab-index">Balázs Papp</a>.
+MetEvolSim is being developed by <a href="https://github.com/charlesrocabert">Charles Rocabert</a>, <a href="https://scholar.google.com/citations?user=8ZmiMp4AAAAJ&hl=da">Gábor Boross</a> and <a href="https://scholar.google.com/citations?user=3YzdqwwAAAAJ&hl=fr">Balázs Papp</a>.
 </p>
 
 <p align="center">
