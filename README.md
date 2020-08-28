@@ -1,6 +1,6 @@
 <h1 align="center">MetEvolSim</h1>
 <p align="center">
-    A Python package to simulate the evolution of metabolic abundances.
+    A Python package to simulate the long-term evolution of metabolic levels.
     <br/><br/>
     <a href="https://pypi.python.org/pypi/MetEvolSim/"><img src="https://badge.fury.io/py/MetEvolSim.svg" /></a>
     <a href="https://action-badges.now.sh/charlesrocabert/MetEvolSim"><img src="https://action-badges.now.sh/charlesrocabert/MetEvolSim" /></a>
