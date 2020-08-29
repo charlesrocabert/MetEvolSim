@@ -30,6 +30,7 @@ MetEvolSim is being developed by <a href="https://github.com/charlesrocabert">Ch
 - [Installation](#installation)
 - [First usage](#first_usage)
 - [Help](#help)
+- [Ready-to-use examples](#examples)
 - [Copyright](#copyright)
 - [License](#license)
 
@@ -184,6 +185,10 @@ set_species_initial_value(self, species_id, value)
     None
 (END)
 ```
+
+## Ready-to-use examples <a name="examples"></a>
+Ready-to-use examples are included in the Python package.
+They can also be downloaded here: https://github.com/charlesrocabert/MetEvolSim/blob/master/example/example.zip.
 
 ## Copyright <a name="copyright"></a>
 Copyright &copy; 2018-2020 Charles Rocabert, Gábor Boross and Balázs Papp.
