@@ -34,7 +34,7 @@ MetEvolSim is being developed by <a href="https://github.com/charlesrocabert">Ch
 - [License](#license)
 
 ## Publications <a name="publications"></a>
-Project cited in O’Shea & Misra (2019) (https://doi.org/10.1007/s11306-020-01657-3).
+Project cited in O’Shea & Misra (2020) (https://doi.org/10.1007/s11306-020-01657-3).
 
 ## Dependencies <a name="dependencies"></a>
 - Python &ge; 3,
