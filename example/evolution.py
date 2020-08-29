@@ -26,21 +26,33 @@
 
 import os
 import sys
-sys.path.append("/Users/charlesrocabert/git/MetEvolSim-development/metevolsim/")
 import metevolsim
+
 
 ##################
 #      MAIN      #
 ##################
 
-sbml    = "model/holzhutter2004.xml"
-copasi  = "/Applications/COPASI/CopasiSE"
+################################################################################
+# This Python script runs a MCMC instance on the erythrocyte metabolism model
+# from Holzhutter et al. (2004). The objective function is defined following
+# Holzhutter et al. (2004), and the metabolic network is evolved for 10,000
+# iterations, with a mutation size of 0.01 and a selection threshold of 1e-4.
+#
+# Prior to the usage of this script, the user must intall MetEvolSim python
+# package using the following commande line:
+#     > pip install MetEvolSim
+# and also download CopasiSE define the path to CopasiSE below.
+################################################################################
+
+sbml    = "./model/erythrocyte_metabolism.xml"
+copasi  = "Path to CopasiSE" # Define here the path to CopasiSE
 targets = [["v_9", 1.0], ["v_16", 1.0], ["v_21", 1.0], ["v_26", 1.0]]
 
 # Load a Markov Chain Monte Carlo (MCMC) instance
 mcmc = metevolsim.MCMC(sbml_filename=sbml, objective_function=targets, total_iterations=10000, sigma=0.01, selection_scheme="RELATIVE_TARGET_FLUXES_SELECTION", selection_threshold=1e-4, copasi_path=copasi)
 
-# Initialize the MCMC instance 
+# Initialize the MCMC instance
 mcmc.initialize()
 
 # Compute the successive iterations and write output files

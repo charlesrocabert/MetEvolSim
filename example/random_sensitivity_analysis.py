@@ -26,15 +26,30 @@
 
 import os
 import sys
-sys.path.append("/Users/charlesrocabert/git/MetEvolSim-development/metevolsim/")
 import metevolsim
+
 
 ##################
 #      MAIN      #
 ##################
-sbml   = "model/holzhutter2004.xml"
-copasi = "/Applications/COPASI/CopasiSE"
-model  = metevolsim.Model(sbml, [], copasi)
 
+################################################################################
+# This Python script computes a random sensitivity analysis on the erythrocyte
+# metabolism model from Holzhutter et al. (2004).
+# See https://github.com/charlesrocabert/MetEvolSim/blob/master/README.md
+# for a detailed explanation of the random sensitivity analysis approach.
+#
+# Prior to the usage of this script, the user must intall MetEvolSim python
+# package using the following commande line:
+#     > pip install MetEvolSim
+# and also download CopasiSE define the path to CopasiSE below.
+################################################################################
+
+sbml   = "./model/erythrocyte_metabolism.xml"
+copasi = "Path to CopasiSE" # Define here the path to CopasiSE
+
+# Load a sensitivity analysis instance
 sa = metevolsim.SensitivityAnalysis(sbml, copasi)
+
+# Run the random sensitivity analysis
 sa.run_random_analysis(sigma=0.01, nb_iterations=1000)

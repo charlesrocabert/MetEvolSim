@@ -26,20 +26,34 @@
 
 import os
 import sys
-sys.path.append("/Users/charlesrocabert/git/MetEvolSim-development/metevolsim/")
 import metevolsim
+
 
 ##################
 #      MAIN      #
 ##################
 
-sbml   = "model/holzhutter2004.xml"
-copasi = "/Applications/COPASI/CopasiSE"
+################################################################################
+# This Python script simply computes the steady-state of the erythrocyte
+# metabolism model from Holzhutter et al. (2004).
+#
+# Prior to the usage of this script, the user must intall MetEvolSim python
+# package using the following commande line:
+#     > pip install MetEvolSim
+# and also download CopasiSE define the path to CopasiSE below.
+################################################################################
+
+sbml   = "./model/erythrocyte_metabolism.xml"
+copasi = "Path to CopasiSE" # Define here the path to CopasiSE
+
+# Load the SBML model
 model  = metevolsim.Model(sbml, [], copasi)
 
+# Show some informations about the model
 print("> Number of species: "+str(model.get_number_of_species()))
 print("> Number of variable species: "+str(model.get_number_of_variable_species()))
 print("> Number of reactions: "+str(model.get_number_of_reactions()))
 print("> Number of kinetic parameters: "+str(model.get_number_of_parameters()))
 
+# Compute the steady-state of the original (wild-type) model
 model.compute_wild_type_steady_state()
