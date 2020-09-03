@@ -1,12 +1,12 @@
-<h1 align="center">MetEvolSim</h1>
+<p align="center">
+    <img src="https://github.com/charlesrocabert/MetEvolSim/raw/master/pic/metevolsim_logo.png" width=300>
+</p>
 <p align="center">
     A Python package to simulate the long-term evolution of metabolic levels.
     <br/><br/>
     <a href="https://pypi.python.org/pypi/MetEvolSim/"><img src="https://badge.fury.io/py/MetEvolSim.svg" /></a>
     <a href="https://action-badges.now.sh/charlesrocabert/MetEvolSim"><img src="https://action-badges.now.sh/charlesrocabert/MetEvolSim" /></a>
     <a href="https://github.com/charlesrocabert/MetEvolSim/LICENSE.html"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" /></a>
-    <br/>
-    <img src="https://github.com/charlesrocabert/MetEvolSim/raw/master/pic/metevolsim_logo.png" width=150>
 </p>
 
 -----------------
