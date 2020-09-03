@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="https://github.com/charlesrocabert/MetEvolSim/raw/master/pic/metevolsim_logo.png" width=300>
+    <img src="https://github.com/charlesrocabert/MetEvolSim/raw/master/pic/metevolsim_logo.png" width=500>
 </p>
 <p align="center">
     A Python package to simulate the long-term evolution of metabolic levels.
