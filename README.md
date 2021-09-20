@@ -5,7 +5,7 @@
     A Python package to simulate the long-term evolution of metabolic levels.
     <br/><br/>
     <a href="https://pypi.python.org/pypi/MetEvolSim/"><img src="https://badge.fury.io/py/MetEvolSim.svg" /></a>
-    <a href="https://action-badges.now.sh/charlesrocabert/MetEvolSim"><img src="https://action-badges.now.sh/charlesrocabert/MetEvolSim" /></a>
+    <a href="https://github.com/charlesrocabert/MetEvolSim/actions"><img src="https://github.com/charlesrocabert/MetEvolSim/workflows/Upload Python Package/badge.svg" /></a>&nbsp;
     <a href="https://github.com/charlesrocabert/MetEvolSim/LICENSE.html"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" /></a>
 </p>
 
