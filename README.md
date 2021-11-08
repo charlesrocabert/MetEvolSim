@@ -1,7 +1,9 @@
 <p align="center">
-    <img src="https://github.com/charlesrocabert/MetEvolSim/raw/master/pic/metevolsim_logo.png" width=500>
+    <img src="https://github.com/charlesrocabert/MetEvolSim/raw/master/pic/metevolsim_logo.png" width=300>
 </p>
 <p align="center">
+    <em>Metabolome Evolution Simulator</em>
+    <br/><br/>
     A Python package to simulate the long-term evolution of metabolic levels.
     <br/><br/>
     <a href="https://pypi.python.org/pypi/MetEvolSim/"><img src="https://badge.fury.io/py/metevolsim.svg" /></a>
@@ -12,12 +14,12 @@
 -----------------
 
 <p align="justify">
-MetEvolSim is a Python package providing numerical tools to simulate the long-term evolution of metabolic abundances.
-MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as the kinetic model is fully specified, and a stable steady-state exists. Steady-state concentrations are computed thanks to <a href="http://copasi.org/">Copasi</a> software.
+MetEvolSim (<em>Metabolome Evolution Simulator</em>) is a Python package providing numerical tools to simulate the long-term evolution of all metabolic abundances in a metabolic network.
+MetEvolSim takes as an input a <a href="http://sbml.org/Main_Page" target="_blank">SBML-formatted</a> metabolic network model. Kinetic parameters and initial metabolic concentrations must be specified, and the model must reach a stable steady-state. Steady-state concentrations are computed thanks to <a href="http://copasi.org/" target="_blank">Copasi</a> software.
 </p>
 
 <p align="justify">
-MetEvolSim is being developed by <a href="https://github.com/charlesrocabert">Charles Rocabert</a>, <a href="https://scholar.google.com/citations?user=8ZmiMp4AAAAJ&hl=da">Gábor Boross</a> and <a href="https://scholar.google.com/citations?user=3YzdqwwAAAAJ&hl=fr">Balázs Papp</a>.
+MetEvolSim is being developed by Charles Rocabert, Gábor Boross and Balázs Papp.
 </p>
 
 <p align="center">
@@ -31,19 +33,20 @@ MetEvolSim is being developed by <a href="https://github.com/charlesrocabert">Ch
 - [First usage](#first_usage)
 - [Help](#help)
 - [Ready-to-use examples](#examples)
+- [List of tested metabolic models](#tested_models)
 - [Copyright](#copyright)
 - [License](#license)
 
 ## Publications <a name="publications"></a>
-Project cited in O’Shea & Misra (2020) (https://doi.org/10.1007/s11306-020-01657-3).
+• Project cited in O’Shea & Misra (2020) (https://doi.org/10.1007/s11306-020-01657-3).
 
 ## Dependencies <a name="dependencies"></a>
 - Python &ge; 3,
-- Numpy &ge; 1.15 (automatically installed when using pip),
-- Python-libsbml &ge; 5.17 (automatically installed when using pip),
-- NetworkX &ge; 2.2 (automatically installed when using pip),
+- Numpy &ge; 1.21 (automatically installed when using pip),
+- Python-libsbml &ge; 5.19 (automatically installed when using pip),
+- NetworkX &ge; 2.6 (automatically installed when using pip),
 - CopasiSE &ge; 4.27 (to be installed separately),
-- pip &ge; 19.1 (optional).
+- pip &ge; 21.3.1 (optional).
 
 ## Installation <a name="installation"></a>
 &bullet; To install Copasi software, visit http://copasi.org/. You will need the command line version named CopasiSE.
@@ -63,7 +66,8 @@ python3 setup.py install
 ```
 
 ## First usage <a name="first_usage"></a>
-MetEvolSim takes as an input any <a href="http://sbml.org/Main_Page">SBML</a> metabolic network model, as soon as kinetic parameters and initial metabolic concentrations are specified, and a stable steady-state exists. The package provides a class to manipulate SBML models: the class <code>Model</code>. It is also necessary to define an objective function (a list of reactions and their coefficients), and to provide the path of <a href="http://copasi.org/">CopasiSE</a> software. Please note that coefficients are not functional in the current version of MetEvolSim.
+MetEvolSim has been tested with tens of publicly available metabolic networks, but we cannot guarantee it will work with any model (see the <a href="">list of tested metabolic models</a>).
+The package provides a class to manipulate SBML models: the class <code>Model</code>. It is also necessary to define an objective function (a list of target reactions and their coefficients), and to provide the path of <a href="http://copasi.org/">CopasiSE</a> software. Please note that coefficients are not functional in the current version of MetEvolSim.
 
 ```python
 # Import MetEvolSim package
@@ -99,6 +103,10 @@ model.compute_wild_type_metabolic_control_analysis()
 # Compute all pairwise metabolite shortest paths
 model.build_species_graph()
 model.save_shortest_paths(filename="glycolysis_shortest_paths.txt")
+
+# Compute a flux drop analysis to measure the contribution of each flux to the fitness
+# (in this example, each flux is dropped at 1% of its original value)
+model.flux_drop_analysis(drop_coefficient=0.01, filename="flux_drop_analysis.txt", owerwrite=True)
 ```
 
 MetEvolSim offers two specific numerical approaches to analyze the evolution of metabolic abundances:
@@ -109,7 +117,7 @@ All numerical analyses output files are saved in a subfolder <code>output</code>
 
 ### Evolution experiments:
 <p align="center">
-<img src="https://github.com/charlesrocabert/MetEvolSim/raw/master/pic/mcmc_algorithm.png" height="300px">
+<img src="https://github.com/charlesrocabert/MetEvolSim/raw/master/pic/mcmc_algorithm.png">
 </p>
 <p align="justify">
 <strong>Algorithm overview:</strong> <strong>A.</strong> The model of interest is loaded as a wild-type from a SBML file (kinetic equations, kinetic parameter values and initial metabolic concentrations must be specified). <strong>B.</strong> At each iteration <em>t</em>, a single kinetic parameter is selected at random and mutated through a log10-normal distribution of standard deviation &sigma;. <strong>C.</strong> The new steady-state is computed using Copasi software, and the MOMA distance <em>z</em> between the mutant and the wild-type target fluxes is computed. <strong>D.</strong> If <em>z</em> is under a given selection threshold &omega;, the mutation is accepted. Else, the mutation is discarded. <strong>E.</strong> A new iteration <em>t+1</em> is computed.
@@ -189,6 +197,36 @@ set_species_initial_value(self, species_id, value)
 ## Ready-to-use examples <a name="examples"></a>
 Ready-to-use examples are included in the Python package.
 They can also be downloaded here: https://github.com/charlesrocabert/MetEvolSim/raw/master/example/example.zip.
+
+## List of tested metabolic models <a name="tested_models"></a>
+
+| **Reference**           | **Model**                            | **Running with MetEvolSim** |
+|-------------------------|--------------------------------------|-----------------------------|
+| Bakker et al. (1997)    | _Trypanosoma brucei_ glycolysis      | :x:                         |
+| Curto et al. (1998)     | Human purine metabolism              | :x:                         |
+| Mulquiney et al. (1999) | Human erythrocyte                    | :white_check_mark:          |
+| Jamshidi et al. (2001)  | Red blood cell                       | :x:                         |
+| Bali et al. (2001)      | Red blood cell glycolysis            | :white_check_mark:          |
+| Lambeth et al. (2002)   | Skeletal muscle glycogenolysis       | :white_check_mark:          |
+| Holzhutter et al. (2004)| Human erythrocyte                    | :white_check_mark:          |
+| Beard et al. (2005)     | Mitochondrial respiration            | :x:                         |
+| Banaji et al. (2005)    | Cerebral blood flood control         | :white_check_mark:          |
+| Bertram et al. (2006)   | Mitochondrial ATP production         | :x:                         |
+| Bruck et al. (2008)     | Yeast glycolysis                     | :white_check_mark:          |
+| Reed et al. (2008)      | Glutathione metabolism               | :x:                         |
+| Curien et al. (2009)    | Aspartame metabolism                 | :x:                         |
+| Jerby et al. (2010)     | Human liver metabolism               | :x:                         |
+| Li et al. (2010)        | Yeast glycolysis                     | :x:                         |
+| Bekaert et al. (2010)   | Mouse metabolism reconstruction      | :x:                         |
+| Bordbar et al. (2011)   | Human multi-tissues                  | :x:                         |
+| Koenig et al. (2012)    | Hepatocyte glucose metabolism        | :white_check_mark:          |
+| Messiha et al. (2013)   | Yeast glycolysis + pentose phosphate | :white_check_mark:          |
+| Mitchell et al. (2013)  | Liver iron metabolism                | :x:                         |
+| Stanford et al. (2013)  | Yeast whole cell model               | :x:                         |
+| Bordbar et al. (2015)   | Red blood cell                       | :x:                         |
+| Costa et al. (2016)     | E. coli core metabolism              | :white_check_mark:          |
+| Millard et al. (2016)   | E. coli core metabolism              | :white_check_mark:          |
+| Bulik et al. (2016)     | Hepatic glucose metabolism           | :white_check_mark:          |
 
 ## Copyright <a name="copyright"></a>
 Copyright &copy; 2018-2021 Charles Rocabert, Gábor Boross and Balázs Papp.
