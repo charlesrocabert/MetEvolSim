@@ -70,7 +70,7 @@ python3 setup.py install
 ```
 
 ## First usage <a name="first_usage"></a>
-MetEvolSim has been tested with tens of publicly available metabolic networks, but we cannot guarantee it will work with any model (see the <a href="">list of tested metabolic models</a>).
+MetEvolSim has been tested with tens of publicly available metabolic networks, but we cannot guarantee it will work with any model (see the [list of tested metabolic models](#tested_models)).
 The package provides a class to manipulate SBML models: the class <code>Model</code>. It is also necessary to define an objective function (a list of target reactions and their coefficients), and to provide the path of <a href="http://copasi.org/">CopasiSE</a> software. Please note that coefficients are not functional in the current version of MetEvolSim.
 
 ```python
