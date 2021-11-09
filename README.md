@@ -22,6 +22,10 @@ MetEvolSim takes as an input a <a href="http://sbml.org/Main_Page" target="_blan
 MetEvolSim is being developed by Charles Rocabert, Gábor Boross and Balázs Papp.
 </p>
 
+<p align="justify">
+Do you plan to use MetEvolSim for research purpose? Do you encounter issues with the software? Do not hesitate to contact <a href="mailto:charles[DOT]rocabert[AT]helsinki[DOT]fi">Charles Rocabert</a>.
+</p>
+
 <p align="center">
 <img src="https://github.com/charlesrocabert/MetEvolSim/raw/master/pic/BRC_logo.png" height="100px"></a>&nbsp;&nbsp;&nbsp;<img src="https://github.com/charlesrocabert/MetEvolSim/raw/master/pic/MTA_logo.png" height="100px"></a>
 </p>
