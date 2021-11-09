@@ -240,8 +240,8 @@ They can also be downloaded here: https://github.com/charlesrocabert/MetEvolSim/
 | Mitchell et al. (2013)  | Liver iron metabolism                | :x:                         |
 | Stanford et al. (2013)  | Yeast whole cell model               | :x:                         |
 | Bordbar et al. (2015)   | Red blood cell                       | :x:                         |
-| Costa et al. (2016)     | E. coli core metabolism              | :white_check_mark:          |
-| Millard et al. (2016)   | E. coli core metabolism              | :white_check_mark:          |
+| Costa et al. (2016)     | _E. coli_ core metabolism            | :white_check_mark:          |
+| Millard et al. (2016)   | _E. coli_ core metabolism            | :white_check_mark:          |
 | Bulik et al. (2016)     | Hepatic glucose metabolism           | :white_check_mark:          |
 
 ## Copyright <a name="copyright"></a>
