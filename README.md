@@ -165,7 +165,8 @@ For each kinetic parameter p, each metabolic abundance [X<sub>i</sub>] and each 
 
 ```python
 # Load a sensitivity analysis instance
-sa = metevolsim.SensitivityAnalysis(sbml_filename='glycolysis.xml', copasi_path='/Applications/COPASI/CopasiSE')
+sa = metevolsim.SensitivityAnalysis(sbml_filename='glycolysis.xml',
+                                    copasi_path='/Applications/COPASI/CopasiSE')
 
 # Run the full OAT sensitivity analysis
 sa.run_OAT_analysis(factor_range=1.0, factor_step=0.01)
