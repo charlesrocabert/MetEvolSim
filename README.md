@@ -81,7 +81,9 @@ import metevolsim
 target_fluxes = [['ATPase', 1.0], ['PDC', 1.0]]
 
 # Load the SBML metabolic model
-model = metevolsim.Model(sbml_filename='glycolysis.xml', objective_function=target_fluxes, copasi_path='/Applications/COPASI/CopasiSE')
+model = metevolsim.Model(sbml_filename='glycolysis.xml',
+                         objective_function=target_fluxes,
+                         copasi_path='/Applications/COPASI/CopasiSE')
 
 # Print some informations on the metabolic model
 print(model.get_number_of_species())
@@ -110,7 +112,9 @@ model.save_shortest_paths(filename="glycolysis_shortest_paths.txt")
 
 # Compute a flux drop analysis to measure the contribution of each flux to the fitness
 # (in this example, each flux is dropped at 1% of its original value)
-model.flux_drop_analysis(drop_coefficient=0.01, filename="flux_drop_analysis.txt", owerwrite=True)
+model.flux_drop_analysis(drop_coefficient=0.01,
+                         filename="flux_drop_analysis.txt",
+                         owerwrite=True)
 ```
 
 MetEvolSim offers two specific numerical approaches to analyze the evolution of metabolic abundances:
@@ -137,7 +141,13 @@ Six types of selection are available:
 
 ```python
 # Load a Markov Chain Monte Carlo (MCMC) instance
-mcmc = metevolsim.MCMC(sbml_filename='glycolysis.xml', objective_function=target_fluxes, total_iterations=10000, sigma=0.01, selection_scheme="MUTATION_ACCUMULATION", selection_threshold=1e-4, copasi_path='/Applications/COPASI/CopasiSE')
+mcmc = metevolsim.MCMC(sbml_filename='glycolysis.xml',
+                       objective_function=target_fluxes,
+                       total_iterations=10000,
+                       sigma=0.01,
+                       selection_scheme="MUTATION_ACCUMULATION",
+                       selection_threshold=1e-4,
+                       copasi_path='/Applications/COPASI/CopasiSE')
 
 # Initialize the MCMC instance
 mcmc.initialize()
@@ -166,7 +176,8 @@ At each iteration, a single kinetic parameter p is mutated at random in a log10-
 
 ```python
 # Load a sensitivity analysis instance
-sa = metevolsim.SensitivityAnalysis(sbml_filename='glycolysis.xml', copasi_path='/Applications/COPASI/CopasiSE')
+sa = metevolsim.SensitivityAnalysis(sbml_filename='glycolysis.xml',
+                                    copasi_path='/Applications/COPASI/CopasiSE')
 
 # Run the full OAT sensitivity analysis
 sa.run_random_analysis(sigma=0.01, nb_iterations=1000)
