@@ -245,7 +245,7 @@ They can also be downloaded here: https://github.com/charlesrocabert/MetEvolSim/
 | Bulik et al. (2016)     | Hepatic glucose metabolism           | :white_check_mark:          |
 
 ## Copyright <a name="copyright"></a>
-Copyright &copy; 2018-2021 Charles Rocabert, Gábor Boross and Balázs Papp.
+Copyright &copy; 2018-2022 Charles Rocabert, Gábor Boross and Balázs Papp.
 All rights reserved.
 
 ## License <a name="license"></a>

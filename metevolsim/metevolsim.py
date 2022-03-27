@@ -7,7 +7,7 @@
 # MetEvolSim is a numerical framework dedicated to the study of metabolic
 # abundances evolution.
 #
-# Copyright (c) 2018-2021 Charles Rocabert, Gábor Boross, Balázs Papp
+# Copyright (c) 2018-2022 Charles Rocabert, Gábor Boross, Balázs Papp
 # Web: https://github.com/charlesrocabert/MetEvolSim
 #
 # This program is free software: you can redistribute it and/or modify
@@ -873,7 +873,7 @@ class Model:
             for i in range(nb_products):
                 f.write(reaction_id+" product "+reaction.getProduct(i).getSpecies()+"\n")
         f.close()
-    
+
     ### Write wild-type SBML file ###
     def write_wild_type_SBML_file( self ):
         """
