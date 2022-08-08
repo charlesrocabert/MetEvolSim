@@ -1,0 +1,5 @@
+reaction coefficient
+GS 1.0
+GP 1.0
+PC 1.0
+PDH 1.0

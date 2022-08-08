@@ -1,0 +1,4 @@
+reaction coefficient
+vatpase 1.0
+vox 1.0
+vbpgsp7 1.0

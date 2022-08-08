@@ -1,0 +1,37 @@
+id metaid name compartment
+GLUT2 _306 GLUT2 glucose transporter pm
+GK _307 Glucokinase cyto
+G6PASE _308 D-Glucose-6-phosphate Phosphatase cyto
+GPI _309 D-Glucose-6-phosphate Isomerase cyto
+G16PI _310 Glucose 1-phosphate 1,6-phosphomutase cyto
+UPGASE _311 UTP:Glucose-1-phosphate uridylyltransferase cyto
+PPASE _312 Pyrophosphate phosphohydrolase cyto
+GS _313 Glycogen synthase cyto
+GP _314 Glycogen-Phosphorylase cyto
+NDKGTP _315 Nucleoside-diphosphate kinase (ATP, GTP) cyto
+NDKUTP _316 Nucleoside-diphosphate kinase (ATP, UTP) cyto
+AK _317 ATP:AMP phosphotransferase (Adenylatkinase) cyto
+PFK2 _318 ATP:D-fructose-6-phosphate 2-phosphotransferase cyto
+FBP2 _319 D-Fructose-2,6-bisphosphate 2-phosphohydrolase cyto
+PFK1 _320 ATP:D-fructose-6-phosphate 1-phosphotransferase cyto
+FBP1 _321 D-Fructose-1,6-bisphosphate 1-phosphohydrolase cyto
+ALD _322 Aldolase cyto
+TPI _323 Triosephosphate Isomerase cyto
+GAPDH _324 D-Glyceraldehyde-3-phosphate:NAD+ oxidoreductase cyto
+PGK _325 Phosphoglycerate Kinase cyto
+PGM _326 2-Phospho-D-glycerate 2,3-phosphomutase cyto
+EN _327 2-Phospho-D-glycerate hydro-lyase (enolase) cyto
+PK _328 Pyruvatkinase cyto
+PEPCK _329 PEPCK cyto cyto
+PEPCKM _330 PEPCK mito mito
+PC _331 Pyruvate Carboxylase mito
+LDH _332 Lactate Dehydrogenase cyto
+LACT _333 Lactate transport (import) pm
+PYRTM _334 Pyruvate transport (mito) mm
+PEPTM _335 PEP Transport (export mito) mm
+PDH _336 Pyruvate Dehydrogenase mito
+CS _337 Citrate Synthase mito
+NDKGTPM _338 Nucleoside-diphosphate kinase (ATP, GTP) mito mito
+OAAFLX _339 oxalacetate influx mito
+ACOAFLX _340 acetyl-coa efflux mito
+CITFLX _341 citrate efflux mito
