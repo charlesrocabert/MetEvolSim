@@ -17,6 +17,7 @@ library("corrplot")
 library("ppcor")
 library("ggpubr")
 library("MASS")
+library("patchwork")
 
 ### Build the enzyme essentiality score dataset, given the drop coefficient and the dist threshold ###
 build_enzyme_essentiality_score_dataset <- function( drop_coefficient, dist_threshold )
@@ -131,96 +132,94 @@ build_enzyme_essentiality_score_dataset <- function( drop_coefficient, dist_thre
 }
 
 ### Plot the abundance/CS figure  ###
-plot_abund_CS <- function( D, title, y_range, stat_line_x, stat_line_y )
-{
-  cort      = cor.test(D$wild_type_X, D$mean_CS, method="spearman")
-  cor_pval  = formatC(cort$p.value, format="e", digits=2)
-  cor_rho   = round(cort$estimate[[1]],2)
-  stat_line = paste("Spearman ρ = ", cor_rho, "\n(p-value = ", cor_pval, ")", sep="")
-  p = ggplot(D, aes(x=wild_type_X, y=mean_CS)) +
-    geom_smooth(color="#3497a9", fill="#3497a9", span=0.9) +
-    geom_point() +
-    geom_errorbar(aes(ymin=mean_CS-sd_CS, ymax=mean_CS+sd_CS), width=.2) +
-    annotate(geom="text", x=stat_line_x, y=stat_line_y, label=stat_line, hjust=0, size=3.5) +
-    ylim(y_range[1], y_range[2]) +
+plot_abund_CS_both <- function(D){
+
+  D$D_sd_pl <- D$sd_CS
+  
+  p = ggplot(D, aes(x=wild_type_X, y=mean_CS, color = dataset, fill = dataset)) +
+    geom_smooth(span=0.9, color = 'black', size = 0.5) +
+    geom_errorbar(aes(ymin=mean_CS-sd_CS, ymax=mean_CS+sd_CS),
+                  width=.2, color = 'black') +
+    geom_point(shape = 21, color = 'black') +
+    scale_color_manual(values = c('tan1', "#3497a9")) +
+    scale_fill_manual(values = c('tan1', "#3497a9")) +
     xlab("Metabolite abundance (log-scale)") +
-    ylab("Metabolite conservation score\n(log-scale)") +
-    ggtitle(title) +
-    theme_minimal()
+    ylab("MCS (1log-scale)") +
+    theme_minimal() +
+    theme(legend.position = 'top',
+          legend.title = element_blank(),
+          legend.text = element_text(size = 10),
+          plot.margin = unit(c(0.3,0,0,0.1), units = 'in'))
   return(p)
 }
 
 ### Plot the Essentiality/CS figure  ###
-plot_ES_CS <- function( D, title, y_range, selection )
+plot_ES_CS_both <- function(D)
 {
-  my_comp = list(c("0", "1"))
-  my_samp = table(D$Essential)
-  my_samp = as.data.frame(cbind(c("0","1"),c(my_samp[[1]],my_samp[[2]])))
-  names(my_samp) = c("Essential", "n")
-  if (selection == "Selection")
-  {
-    p = ggplot(D, aes(Essential, CS_selection, group=Essential)) +
-      geom_boxplot(fill=rgb(81,149,167,max=255)) +
+  
+  D_pl <- D %>% 
+    rename("Stabilizing selection" = CS_selection,
+           "Genetic drift" = CS_drift) %>% 
+    gather(key = dataset, value = CS, -Metabolite, -Essential, -Abundance) %>% 
+    mutate(Essential_f = ifelse(Essential=='1',
+                                'Essential\nreaction',
+                                'Non-essential\nreaction'))
+  
+  
+    p = ggplot(D_pl, aes(x=Essential_f, y=CS)) +
+      facet_wrap(.~dataset) +
+      geom_boxplot(aes(fill = dataset)) +
       geom_jitter(width=0.2) +
+      scale_fill_manual(values = c('tan1', "#3497a9")) +
       xlab("") +
-      ylab("Metabolite conservation score\n(log-scale)") +
-      ggtitle("Stabilizing selection") +
-      scale_x_discrete(labels=c("Non essential\nreaction","Essential\nreaction")) +
-      scale_y_continuous(expand=expansion()) +
-      geom_text(data=my_samp, aes(label = sprintf('n = %s', n), y=-4), vjust=1.5) +
-      stat_compare_means(comparisons=my_comp, method="wilcox.test", vjust=-0.5) +
-      ylim(y_range[1], y_range[2]+1.5) +
+      ylab("MCS (log-scale)") +
+      ggsignif::geom_signif(comparisons=list(c('Essential\nreaction',
+                                               'Non-essential\nreaction')),
+                            test="wilcox.test",
+                            y_position = 13) +
       theme_minimal() +
-      theme(axis.text=element_text(size=10))
+      theme(axis.text=element_text(size=10),
+            legend.position = 'top',
+            legend.title = element_blank(),
+            legend.text = element_text(size = 10),
+            strip.text = element_blank(),
+            plot.margin = unit(c(0.3,0,0,0.1), units = 'in'))
     return(p)
-  }
-  if (selection == "Drift")
-  {
-    p = ggplot(D, aes(Essential, CS_drift, group=Essential)) +
-      geom_boxplot(fill=rgb(81,149,167,max=255)) +
-      geom_jitter(width=0.2) +
-      xlab("") +
-      ylab("Metabolite conservation score\n(log-scale)") +
-      ggtitle("Genetic drift") +
-      scale_x_discrete(labels=c("Non essential\nreaction","Essential\nreaction")) +
-      #scale_y_continuous(expand=expansion()) +
-      geom_text(data=my_samp, aes(label = sprintf('n = %s', n), y=-3.5), vjust=1.5) +
-      stat_compare_means(comparisons=my_comp, method="wilcox.test", vjust=-0.5) +
-      ylim(y_range[1], y_range[2]+1.5) +
-      theme_minimal() +
-      theme(axis.text=element_text(size=10))
-    return(p)
-  }
 }
 
 ### Plot the fitness coupling ###
-plot_fitness_coupling <- function( D )
+plot_fitness_coupling <- function(D)
 {
-  reg         = lm(D$Fitness_coupling~D$Abundance)
-  cort        = cor.test(D$Abundance, D$Fitness_coupling, method="spearman")
-  reg_pval    = formatC(summary(reg)$coefficients[2,4], format="e", digits=2)
-  reg_rsquare = round(summary(reg)$r.squared,2)
-  cor_pval    = formatC(cort$p.value, format="e", digits=2)
-  cor_rho     = round(cort$estimate[[1]],2)
-  stat_line   = paste("Spearman ρ = ", cor_rho, "\n(p-value = ", cor_pval, ")", sep="")
   p = ggplot(D, aes(x=Abundance, y=Fitness_coupling)) +
-    geom_smooth(color="tan1", fill="tan1", span=0.9) +
-    geom_point() +
-    annotate(geom="text", x=-5, y=0.43, label=stat_line, hjust=0, size=3.5) +
-    xlab("Metabolite abundance (log-scale)") +
+    geom_smooth(color="black", fill="#B9B8BA", span=0.9, size = 0.5) +
+    geom_point(color="black") +
+    xlab("Metabolite abundance (log-sclae)") +
     ylab("Fitness coupling") +
-    ggtitle("Metabolite fitness coupling") +
-    theme_minimal()
+    theme_minimal() +
+    theme(plot.margin = unit(c(0.3,0,0,0.1), units = 'in'))
   return(p)
 }
 
-### Plot the correlation matrix ###
-plot_correlation_matrix <- function( C, pC )
-{
-  p = ggcorrplot(as.matrix(C[,2]), lab=T, p.mat=as.matrix(pC[,2]), sig.level=0.05, insig="pch", pch.cex=15, pch.col="tomato", colors=c("#3497a9", "white", "tan1"), legend.title="Spearman\ncorrelation") +
-    theme(panel.grid=element_blank(), axis.text.y=element_blank()) +
-    ggtitle("    Metabolite fitness coupling\n    correlation with:")
+### Plot MCS vs. fitness couling for both datasets ###
+plot_fitnessCoupling_CS_both <- function(D){
+
+  p = ggplot(D, aes(y=mean_CS, x=Fitness_coupling,
+                       color=dataset, fill=dataset)) +
+    geom_smooth(span=0.9, color = 'black', size = 0.5) +
+    geom_errorbar(aes(ymin=mean_CS-sd_CS, ymax=mean_CS+sd_CS),
+                  width=.01, color = 'black') +
+    geom_point(shape = 21, color = 'black') +
+    scale_color_manual(values = c('tan1', "#3497a9")) +
+    scale_fill_manual(values = c('tan1', "#3497a9")) +
+    ylab("MCS (log-scale)") +
+    xlab("Fitness coupling") +
+    theme_minimal() +
+    theme(legend.position = 'top',
+          legend.title = element_blank(),
+          plot.margin = unit(c(0.3,0,0,0.1), units = 'in'))
+  return(p)
 }
+
 
 
 ##################
@@ -228,7 +227,7 @@ plot_correlation_matrix <- function( C, pC )
 ##################
 
 # Indicate here the location of the folder DataS3 on your computer.
-setwd(Path to DataS3)
+setwd()
 
 #-----------------------------#
 # 1) Load simulation data     #
@@ -246,7 +245,8 @@ coupling      = cor(abs(sens[,c(metabolites,target_fluxes)]), method="spearman")
 coupling      = rowMeans(coupling[metabolites,target_fluxes])
 drift         = drift[drift$species_id%in%metabolites,]
 select        = select[select$species_id%in%metabolites,]
-y_range1      = range(c(drift$mean_CS-drift$sd_CS, drift$mean_CS+drift$sd_CS, select$mean_CS-select$sd_CS, select$mean_CS+select$sd_CS))
+y_range1      = range(c(drift$mean_CS-drift$sd_CS, drift$mean_CS+drift$sd_CS,
+                        select$mean_CS-select$sd_CS, select$mean_CS+select$sd_CS))
 y_range1[1]   = y_range1[1]-1
 y_range1[2]   = y_range1[2]#+0.5
 
@@ -254,24 +254,29 @@ y_range1[2]   = y_range1[2]#+0.5
 # 2) Build the dataset        #
 #-----------------------------#
 dataset1 = c()
-for(met in metabolites)
-{
+for(met in metabolites){
   CS_drift     = drift[drift$species_id==met,"mean_CS"]
   CS_selection = select[select$species_id==met,"mean_CS"]
   Abundance    = drift[drift$species_id==met,"wild_type_X"]
   Coupling     = coupling[met][[1]]
-  dataset1     = rbind(dataset1, c(CS_drift, CS_selection, Abundance, Coupling))
+  dataset1     = rbind(dataset1, c(met, CS_drift, CS_selection, Abundance, Coupling))
 }
+
 dataset1        = as.data.frame(dataset1)
-names(dataset1) = c("CS_drift", "CS_selection", "Abundance", "Fitness_coupling")
-C               = cor(dataset1, method="spearman")
-pC              = cor_pmat(dataset1, method="spearman")
-C               = C[c(2,1), c(3,4)]
-pC              = pC[c(2,1), c(3,4)]
-rownames(C)     = c("MCS under\nselection", "MCS under\ngenetic drift")
-colnames(C)     = c("Metabolite\nabundance", "Fitness\ncoupling")
-rownames(pC)    = c("MCS under\nselection", "MCS under\ngenetic drift")
-colnames(pC)    = c("Metabolite\nabundance", "Fitness\ncoupling")
+names(dataset1) = c("species_id", "CS_drift", "CS_selection", "Abundance", "Fitness_coupling")
+
+dataset1 <- tibble(dataset1) %>% 
+  mutate_at(.vars = c('CS_drift','CS_selection','Abundance','Fitness_coupling'),
+            .funs = as.numeric)
+
+# C               = cor(dataset1[,2:ncol(dataset1)], method="spearman")
+# pC              = cor_pmat(dataset1, method="spearman")
+# C               = C[c(2,1), c(3,4)]
+# pC              = pC[c(2,1), c(3,4)]
+# rownames(C)     = c("MCS under\nselection", "MCS under\ngenetic drift")
+# colnames(C)     = c("Metabolite\nabundance", "Fitness\ncoupling")
+# rownames(pC)    = c("MCS under\nselection", "MCS under\ngenetic drift")
+# colnames(pC)    = c("Metabolite\nabundance", "Fitness\ncoupling")
 
 #-----------------------------#
 # 3) Build the flux drop data #
@@ -284,16 +289,30 @@ y_range2          = c(4, 13)
 #-----------------------------#
 # 4) Create the figure        #
 #-----------------------------#
-p1 = plot_abund_CS(select, "Stabilizing selection", y_range1, -1.5, 4.5)
-p2 = plot_abund_CS(drift, "Genetic drift", y_range1, -1.5, 11)
-p3 = plot_ES_CS(dataset2, "Stabilizing selection", y_range2, "Selection")
-p4 = plot_ES_CS(dataset2, "Genetic drift", y_range2, "Drift")
-p5 = plot_fitness_coupling(dataset1)
-p6 = plot_correlation_matrix(C, pC)
 
-p = plot_grid(p1, p2, p3, p4, p5, p6, ncol=2, labels="AUTO")
+select1 <- mutate(select, dataset = 'Stabilizing selection')
+drift1 <- mutate(drift, dataset = 'Genetic drift')
 
-ggsave("Holzhutter2004_main_figure.png", p, dpi=600, bg="white", scale=0.8)
+cs_abund_all_tbl <- bind_rows(select1, drift1)
+cs_essential_all_tbl <- dataset2
+
+
+p1 = plot_abund_CS_both(cs_abund_all_tbl)
+p2 = plot_ES_CS_both(cs_essential_all_tbl)
+p3 = plot_fitness_coupling(dataset1)
+
+
+MCS_fitnessCoupling_tbl <- cs_abund_all_tbl %>% 
+  dplyr::select(species_id, dataset, mean_CS , sd_CS) %>% 
+  left_join(dplyr::select(dataset1, species_id, Fitness_coupling), by = "species_id") %>% 
+  mutate(Fitness_coupling = as.numeric(Fitness_coupling))
+
+p4 = plot_fitnessCoupling_CS_both(MCS_fitnessCoupling_tbl)
+
+p = p1 + p2 + p3 + p4 + plot_annotation(tag_levels = 'A')
+
+# ggsave("Holzhutter2004_main_figure.png", p, dpi=600, bg="white", scale=0.8,
+#        width = 11, height = 11)
 
 #-----------------------------#
 # 5) Additional analyses      #

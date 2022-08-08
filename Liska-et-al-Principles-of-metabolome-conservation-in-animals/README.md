@@ -5,4 +5,8 @@
 
 -----------------
 
-You can download the material here : https://github.com/charlesrocabert/MetEvolSim-development/raw/master/Liska-et-al-Principles-of-metabolome-conservation-in-animals/Liska-et-al-Principles-of-metabolome-conservation-in-animals.zip
+All the supplementary material associated to the modelling section will be found here.
+
+For the authors,
+
+Charles Rocabert

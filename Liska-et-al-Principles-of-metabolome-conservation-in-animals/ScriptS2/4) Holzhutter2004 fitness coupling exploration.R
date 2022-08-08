@@ -13,8 +13,10 @@
 library("tidyverse")
 library("cowplot")
 
+
+
 ### Plot the fitness coupling distribution ###
-plot_fitness_coupling_distribution <- function( filename, title )
+plot_fitness_coupling_distribution <- function(filename, title)
 {
   coupling = read.table(filename, sep=" ", h=T)
   ratio    = length(coupling[coupling[,1]<coupling$Rho[[1]],"Rho"])/length(coupling$Rho)
@@ -93,7 +95,7 @@ plot_simulation_dataset <- function( exploration, nb_evals, index_max, outliers,
     geom_smooth(method="lm", color="#3497a9", fill="#3497a9") +
     geom_point(aes(x=dataset$Rho[1], y=dataset$EvoRho[1]), size=3, color="tan1") +
     xlab("Abundance/Fitness coupling\nSpearman correlation estimate") +
-    ylab("Abundance/Metabolite evolutionary score\nSpearman correlation estimate (1 simulation)") +
+    ylab("Abundance/MCS\nSpearman correlation estimate (1 simulation)") +
     ggtitle(title) +
     theme_minimal() +
     theme(legend.position="none")
@@ -106,7 +108,7 @@ plot_simulation_dataset <- function( exploration, nb_evals, index_max, outliers,
 ##################
 
 # Indicate here the location of the folder DataS3 on your computer.
-setwd(Path to DataS3)
+setwd()
 
 #--------------------------------------#
 # 1) Plot the first panel              #
@@ -131,5 +133,5 @@ p2 = plot_simulation_dataset(exploration, nb_evals, index_max, outliers, sens, "
 #--------------------------------------#
 p = plot_grid(p1, p2, labels="AUTO")
 
-ggsave("Holzhutter2004_fitness_coupling_exploration.png", p, dpi=600, bg="white", scale=2, width=6, height=2.7)
+#ggsave("Holzhutter2004_fitness_coupling_exploration.png", p, dpi=600, bg="white", scale=2, width=6, height=2.7)
 

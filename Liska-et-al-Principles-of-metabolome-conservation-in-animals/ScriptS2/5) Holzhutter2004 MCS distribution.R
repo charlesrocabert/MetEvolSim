@@ -24,7 +24,7 @@ library("ggpubr")
 ##################
 
 # Indicate here the location of the folder DataS3 on your computer.
-setwd(Path to DataS3)
+setwd('charles/Liska-et-al-Principles-of-metabolome-conservation-in-animals/Liska-et-al-Principles-of-metabolome-conservation-in-animals/DataS3/')
 
 #-------------------------------------------------------#
 # 1) Load simulation data                               #
@@ -76,17 +76,21 @@ my_comp        = list(c("Genetic drift", "Stabilizing selection"))
 pvalue_size    = 2.5
 ##################################
 p = ggplot(D, aes(x=Experiment, y=MCS))+
-  geom_boxplot(fill=rgb(81,149,167,max=255))+
+  geom_boxplot()+
   geom_jitter(width=0.2) +
   theme_minimal()+
+  scale_fill_manual(values = c('tan1', "#3497a9")) +
   xlab("")+
-  ylab("Metabolite conservation score")+
+  ylab("MCS")+
   ggtitle("Metabolite conservation score distributions under genetic drift and stabilizing selection")+
   stat_compare_means(comparisons=my_comp, method="t.test")+
   geom_text(data=my_samp, aes(label = sprintf('n = %s', n), y=13.5), vjust=1.5) +
-  theme(axis.text.x=element_text(size=11), axis.text.y=element_text(size=11))
+  theme(axis.text.x=element_text(size=12),
+        axis.text.y=element_text(size=12),
+        legend.position = 'None')
 
-ggsave("Holzhutter2004_MCS_distribution.png", p, dpi=600, bg="white")
+# ggsave("Holzhutter2004_MCS_distribution.png", p, dpi=600, bg="white",
+#        width = 9, height = 8)
 
 #-------------------------------------------------------#
 # 4) Show Welch two-sample t-test with unequal variance #
