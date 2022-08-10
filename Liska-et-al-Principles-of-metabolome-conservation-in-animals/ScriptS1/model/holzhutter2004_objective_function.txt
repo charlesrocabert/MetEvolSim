@@ -1,5 +1,0 @@
-reaction coefficient
-v_9 1.0
-v_16 1.0
-v_21 1.0
-v_26 1.0

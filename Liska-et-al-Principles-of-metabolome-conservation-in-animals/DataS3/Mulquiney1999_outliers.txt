@@ -1,5 +1,0 @@
-GSH
-NAD
-NADPH
-Phos
-Pyr

@@ -1,5 +1,0 @@
-GSH
-NAD
-P1NADPH
-Lac
-Pyr
