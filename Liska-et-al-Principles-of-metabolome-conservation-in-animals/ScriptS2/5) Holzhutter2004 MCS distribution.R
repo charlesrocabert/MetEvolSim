@@ -24,7 +24,7 @@ library("ggpubr")
 ##################
 
 # Indicate here the location of the folder DataS3 on your computer.
-setwd('charles/Liska-et-al-Principles-of-metabolome-conservation-in-animals/Liska-et-al-Principles-of-metabolome-conservation-in-animals/DataS3/')
+setwd(Path to DataS3)
 
 #-------------------------------------------------------#
 # 1) Load simulation data                               #
@@ -89,12 +89,10 @@ p = ggplot(D, aes(x=Experiment, y=MCS))+
         axis.text.y=element_text(size=12),
         legend.position = 'None')
 
-# ggsave("Holzhutter2004_MCS_distribution.png", p, dpi=600, bg="white",
-#        width = 9, height = 8)
+ggsave("Holzhutter2004_MCS_distribution.png", p, dpi=600, bg="white", width = 9, height = 8)
 
 #-------------------------------------------------------#
 # 4) Show Welch two-sample t-test with unequal variance #
 #-------------------------------------------------------#
 t.test(D[D$Experiment=="Genetic drift","MCS"], D[D$Experiment=="Stabilizing selection","MCS"])
-
 

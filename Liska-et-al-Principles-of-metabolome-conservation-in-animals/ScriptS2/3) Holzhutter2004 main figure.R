@@ -157,34 +157,38 @@ plot_abund_CS_both <- function(D){
 plot_ES_CS_both <- function(D)
 {
   
-  D_pl <- D %>% 
+  D_pl <- D %>%
     rename("Stabilizing selection" = CS_selection,
-           "Genetic drift" = CS_drift) %>% 
-    gather(key = dataset, value = CS, -Metabolite, -Essential, -Abundance) %>% 
+           "Genetic drift" = CS_drift) %>%
+    gather(key = dataset, value = CS, -Metabolite, -Essential, -Abundance) %>%
     mutate(Essential_f = ifelse(Essential=='1',
                                 'Essential\nreaction',
                                 'Non-essential\nreaction'))
   
+  D_pl_groupNums <- group_by(D_pl, dataset, Essential_f) %>%
+    summarise(n = n()) %>%
+    ungroup()
   
-    p = ggplot(D_pl, aes(x=Essential_f, y=CS)) +
-      facet_wrap(.~dataset) +
-      geom_boxplot(aes(fill = dataset)) +
-      geom_jitter(width=0.2) +
-      scale_fill_manual(values = c('tan1', "#3497a9")) +
-      xlab("") +
-      ylab("MCS (log-scale)") +
-      ggsignif::geom_signif(comparisons=list(c('Essential\nreaction',
-                                               'Non-essential\nreaction')),
-                            test="wilcox.test",
-                            y_position = 13) +
-      theme_minimal() +
-      theme(axis.text=element_text(size=10),
-            legend.position = 'top',
-            legend.title = element_blank(),
-            legend.text = element_text(size = 10),
-            strip.text = element_blank(),
-            plot.margin = unit(c(0.3,0,0,0.1), units = 'in'))
-    return(p)
+  p = ggplot(D_pl, aes(x=Essential_f, y=CS)) +
+    facet_wrap(.~dataset) +
+    geom_boxplot(aes(fill = dataset)) +
+    geom_jitter(width=0.2) +
+    geom_text(data = D_pl_groupNums,
+              aes(label = paste0('n = ', n), y = 13.5)) +
+    scale_fill_manual(values = c('tan1', "#3497a9")) +
+    xlab("") +
+    ylab("MCS (log-scale)") +
+    ggsignif::geom_signif(comparisons=list(c('Essential\nreaction', 'Non-essential\nreaction')),
+                          test="wilcox.test",
+                          y_position = 14) +
+    theme_minimal() +
+    theme(axis.text=element_text(size=10),
+          legend.position = 'top',
+          legend.title = element_blank(),
+          legend.text = element_text(size = 10),
+          strip.text = element_blank(),
+          plot.margin = unit(c(0.3,0,0,0.1), units = 'in'))
+  return(p)
 }
 
 ### Plot the fitness coupling ###
@@ -221,13 +225,12 @@ plot_fitnessCoupling_CS_both <- function(D){
 }
 
 
-
 ##################
 #      MAIN      #
 ##################
 
 # Indicate here the location of the folder DataS3 on your computer.
-setwd()
+setwd(Path to DataS3)
 
 #-----------------------------#
 # 1) Load simulation data     #
@@ -289,7 +292,6 @@ y_range2          = c(4, 13)
 #-----------------------------#
 # 4) Create the figure        #
 #-----------------------------#
-
 select1 <- mutate(select, dataset = 'Stabilizing selection')
 drift1 <- mutate(drift, dataset = 'Genetic drift')
 
@@ -301,7 +303,6 @@ p1 = plot_abund_CS_both(cs_abund_all_tbl)
 p2 = plot_ES_CS_both(cs_essential_all_tbl)
 p3 = plot_fitness_coupling(dataset1)
 
-
 MCS_fitnessCoupling_tbl <- cs_abund_all_tbl %>% 
   dplyr::select(species_id, dataset, mean_CS , sd_CS) %>% 
   left_join(dplyr::select(dataset1, species_id, Fitness_coupling), by = "species_id") %>% 
@@ -311,8 +312,7 @@ p4 = plot_fitnessCoupling_CS_both(MCS_fitnessCoupling_tbl)
 
 p = p1 + p2 + p3 + p4 + plot_annotation(tag_levels = 'A')
 
-# ggsave("Holzhutter2004_main_figure.png", p, dpi=600, bg="white", scale=0.8,
-#        width = 11, height = 11)
+ggsave("Holzhutter2004_main_figure.png", p, dpi=600, bg="white", scale=0.8, width = 11, height = 11)
 
 #-----------------------------#
 # 5) Additional analyses      #

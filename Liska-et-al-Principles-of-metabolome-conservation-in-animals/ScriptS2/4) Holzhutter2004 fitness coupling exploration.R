@@ -13,8 +13,6 @@
 library("tidyverse")
 library("cowplot")
 
-
-
 ### Plot the fitness coupling distribution ###
 plot_fitness_coupling_distribution <- function(filename, title)
 {
@@ -108,7 +106,7 @@ plot_simulation_dataset <- function( exploration, nb_evals, index_max, outliers,
 ##################
 
 # Indicate here the location of the folder DataS3 on your computer.
-setwd()
+setwd(Path to DataS3)
 
 #--------------------------------------#
 # 1) Plot the first panel              #
@@ -133,5 +131,5 @@ p2 = plot_simulation_dataset(exploration, nb_evals, index_max, outliers, sens, "
 #--------------------------------------#
 p = plot_grid(p1, p2, labels="AUTO")
 
-#ggsave("Holzhutter2004_fitness_coupling_exploration.png", p, dpi=600, bg="white", scale=2, width=6, height=2.7)
+ggsave("Holzhutter2004_fitness_coupling_exploration.png", p, dpi=600, bg="white", scale=2, width=6, height=2.7)
 
