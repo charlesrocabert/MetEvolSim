@@ -31,7 +31,7 @@ Do you plan to use MetEvolSim for research purpose? Do you encounter issues with
 </p>
 
 ## Table of contents
-- [Publications](#publications)
+- [Citing MetEvolSim](#citing)
 - [Dependencies](#dependencies)
 - [Installation](#installation)
 - [First usage](#first_usage)
@@ -41,9 +41,8 @@ Do you plan to use MetEvolSim for research purpose? Do you encounter issues with
 - [Copyright](#copyright)
 - [License](#license)
 
-## Publications <a name="publications"></a>
+## Citing MetEvolSim <a name="citing"></a>
 - O. Liska, G. Boross, C. Rocabert, B. Szappanos, R. Tengölics, B. Papp. Principles of metabolome conservation in animals. <em>BioRXiv preprint</em> (2022) (https://doi.org/10.1101/2022.08.15.503737).
-- Project cited in O’Shea & Misra (2020) (https://doi.org/10.1007/s11306-020-01657-3).
 
 ## Dependencies <a name="dependencies"></a>
 - Python &ge; 3,
