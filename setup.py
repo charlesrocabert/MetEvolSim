@@ -7,7 +7,7 @@
 # MetEvolSim is a numerical framework dedicated to the study of metabolic
 # abundances evolution.
 #
-# © 2018-2022 Charles Rocabert, Gábor Boross, Orsolya Liska and Balázs Papp
+# © 2018-2023 Charles Rocabert, Gábor Boross, Orsolya Liska and Balázs Papp
 # Web: https://github.com/charlesrocabert/MetEvolSim
 #
 # This program is free software: you can redistribute it and/or modify
@@ -42,7 +42,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
 	name                          = "MetEvolSim",
-	version                       = "0.6.2",
+	version                       = "0.6.3",
 	license                       = "GNU General Public License v3 (GPLv3)",
 	description                   = "MetEvolSim (Metabolome Evolution Simulator) Python Package",
 	long_description              = long_description,
