@@ -117,11 +117,11 @@ model.flux_drop_analysis(drop_coefficient=0.01,
                          owerwrite=True)
 ```
 
-MetEvolSim offers two specific numerical approaches to analyze the evolution of metabolic abundances:
+MetEvolSim offers two independent numerical approaches to analyze the evolution of metabolic levels:
 - <strong>Evolution experiments</strong>, based on a Markov Chain Monte Carlo (MCMC) algorithm,
-- <strong>Sensitivity analysis</strong>, either by exploring every kinetic parameters in a given range and recording associated fluxes and metabolic abundances changes (One-At-a-Time sensitivity analysis), or by exploring the kinetic parameters space at random, by mutating a single kinetic parameter at random many times (random sensitivity analysis).
+- <strong>Sensitivity analysis</strong>, either by exploring every kinetic parameters in a given range and recording associated fluxes and metabolic concentrations changes (One-At-a-Time sensitivity analysis), or by exploring the kinetic parameters space at random, by mutating a single kinetic parameter at random many times (random sensitivity analysis).
 
-All numerical analyses output files are saved in a subfolder <code>output</code>.
+All numerical analyses and simulation output files are saved in the sub-folder <code>output</code>.
 
 ### Evolution experiments:
 <p align="center">
@@ -161,7 +161,7 @@ while not stop_MCMC:
 ```
 
 ### One-At-a-Time (OAT) sensitivity analysis:
-For each kinetic parameter p, each metabolic abundance [X<sub>i</sub>] and each flux &nu;<sub>j</sub>, the algorithm numerically computes relative derivatives and control coefficients.
+For each kinetic parameter $p$, each metabolic abundance $X_i$ and each flux $\nu_j$, the algorithm numerically computes relative derivatives and control coefficients.
 
 ```python
 # Load a sensitivity analysis instance
@@ -173,7 +173,7 @@ sa.run_OAT_analysis(factor_range=1.0, factor_step=0.01)
 ```
 
 ### Random sensitivity analysis:
-At each iteration, a single kinetic parameter p is mutated at random in a log10-normal distribution of size &sigma;, and relative derivatives and control coefficients are computed.
+At each iteration, a single kinetic parameter p is mutated at random in a log10-normal distribution of size $\sigma$, and relative derivatives and control coefficients are computed.
 
 ```python
 # Load a sensitivity analysis instance
