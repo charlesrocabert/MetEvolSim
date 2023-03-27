@@ -14,8 +14,8 @@
 -----------------
 
 <p align="justify">
-MetEvolSim (<em>Metabolome Evolution Simulator</em>) is a Python package providing numerical tools to simulate the long-term evolution of metabolic abundances in kinetic models of metabolic network.
-MetEvolSim takes as an input a <a href="http://sbml.org/Main_Page" target="_blank">SBML-formatted</a> metabolic network model. Kinetic parameters and initial metabolic concentrations must be specified, and the model must reach a stable steady-state. Steady-state concentrations are computed thanks to <a href="http://copasi.org/" target="_blank">Copasi</a> software.
+MetEvolSim (<em>Metabolome Evolution Simulator</em>) is a Python package providing numerical tools to study the long-term evolution of metabolic concentrations in kinetic models of metabolism.
+MetEvolSim takes as an input a <a href="http://sbml.org/Main_Page" target="_blank">SBML-formatted</a> metabolic network model. Kinetic equations and parameters must be fully specified, and the model must reach a stable steady-state. The package relies on <a href="http://copasi.org/" target="_blank">Copasi</a> software to manipulate kinetic models.
 </p>
 
 <p align="justify">
@@ -23,7 +23,7 @@ MetEvolSim is being developed by Charles Rocabert, Gábor Boross, Orsolya Liska 
 </p>
 
 <p align="justify">
-Do you plan to use MetEvolSim for research purpose? Do you encounter issues with the software? Do not hesitate to contact <a href="mailto:charles[DOT]rocabert[AT]helsinki[DOT]fi">Charles Rocabert</a>.
+Do you plan to use MetEvolSim for research purpose? Do you encounter issues with the package? Do not hesitate <a href="mailto:charles[DOT]rocabert[AT]hhu[DOT]de">to contact us</a>.
 </p>
 
 <p align="center">
@@ -53,14 +53,14 @@ Do you plan to use MetEvolSim for research purpose? Do you encounter issues with
 - pip &ge; 21.3.1 (optional).
 
 ## Installation <a name="installation"></a>
-&bullet; To install Copasi software, visit http://copasi.org/. You will need the command line version named CopasiSE.
+&bullet; To install Copasi software, visit http://copasi.org/. You will need the command line version CopasiSE.
 
-&bullet; To install the latest release of MetEvolSim:
+&bullet; To install the latest release of MetEvolSim, run:
 ```shell
 pip install MetEvolSim
 ```
 
-Alternatively, download the <a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest">latest release</a> in the folder of your choice and unzip it. Then follow the instructions below:
+Alternatively, you can download the <a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest">latest release</a> in the folder of your choice and unzip it. Then follow the instructions below:
 ```shell
 # Navigate to the MetEvolSim folder
 cd /path/to/MetEvolSim
@@ -70,8 +70,8 @@ python3 setup.py install
 ```
 
 ## First usage <a name="first_usage"></a>
-MetEvolSim has been tested with tens of publicly available metabolic networks, but we cannot guarantee it will work with any model (see the [list of tested metabolic models](#tested_models)).
-The package provides a class to manipulate SBML models: the class <code>Model</code>. It is also necessary to define an objective function (a list of target reactions and their coefficients), and to provide the path of <a href="http://copasi.org/">CopasiSE</a> software. Please note that coefficients are not functional in the current version of MetEvolSim.
+MetEvolSim has been tested with tens of publicly available kinetic models of metabolism, but we cannot guarantee it will work with all models (see the [list of tested metabolic models](#tested_models)).
+The package provides a class to manipulate SBML models: the class <code>Model</code>. It is also necessary to define the list of key reactions that are essential to cell growth and fitness, and to provide the path of <a href="http://copasi.org/">CopasiSE</a> software. Please note that coefficients are not functional in the current version of MetEvolSim.
 
 ```python
 # Import MetEvolSim package
