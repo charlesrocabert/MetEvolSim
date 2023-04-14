@@ -14,8 +14,9 @@
 -----------------
 
 <p align="justify">
-MetEvolSim (<em>Metabolome Evolution Simulator</em>) is a Python package providing numerical tools to study the long-term evolution of metabolic concentrations in kinetic models of metabolism.
-MetEvolSim takes as an input a <a href="http://sbml.org/Main_Page" target="_blank">SBML-formatted</a> metabolic network model. Kinetic equations and parameters must be fully specified, and the model must reach a stable steady-state. The package relies on <a href="http://copasi.org/" target="_blank">Copasi</a> software to manipulate kinetic models.
+MetEvolSim (<em>Metabolome Evolution Simulator</em>) is a Python package which provides numerical tools to simulate the long-term evolution of metabolic abundances in kinetic models of metabolic network.
+To use MetEvolSim, a <a href="http://sbml.org/Main_Page" target="_blank">SBML-formatted</a> metabolic network model is required, along with kinetic parameters and initial metabolic concentrations.
+Additionally, the model must reach a stable steady-state, which is computed with <a href="http://copasi.org/" target="_blank">Copasi</a> software.
 </p>
 
 <p align="justify">
@@ -23,7 +24,7 @@ MetEvolSim is being developed by Charles Rocabert, Gábor Boross, Orsolya Liska 
 </p>
 
 <p align="justify">
-Do you plan to use MetEvolSim for research purpose? Do you encounter issues with the package? Do not hesitate <a href="mailto:charles[DOT]rocabert[AT]hhu[DOT]de">to contact us</a>.
+If you are planning to use MetEvolSim for research or have encountered any issues with the software, do not hesitate to contact <a href="mailto:charles[DOT]rocabert[AT]helsinki[DOT]fi">Charles Rocabert</a>.
 </p>
 
 <p align="center">
@@ -53,14 +54,14 @@ Do you plan to use MetEvolSim for research purpose? Do you encounter issues with
 - pip &ge; 21.3.1 (optional).
 
 ## Installation <a name="installation"></a>
-&bullet; To install Copasi software, visit http://copasi.org/. You will need the command line version CopasiSE.
+&bullet; To install Copasi software, visit http://copasi.org/ and download the command line version CopasiSE.
 
-&bullet; To install the latest release of MetEvolSim, run:
+&bullet; To install the latest release of MetEvolSim:
 ```shell
 pip install MetEvolSim
 ```
 
-Alternatively, you can download the <a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest">latest release</a> in the folder of your choice and unzip it. Then follow the instructions below:
+Alternatively, download the <a href="https://github.com/charlesrocabert/MetEvolSim/releases/latest">latest release</a> in the folder of your choice and unzip it. Then follow the instructions below:
 ```shell
 # Navigate to the MetEvolSim folder
 cd /path/to/MetEvolSim
@@ -70,8 +71,8 @@ python3 setup.py install
 ```
 
 ## First usage <a name="first_usage"></a>
-MetEvolSim has been tested with tens of publicly available kinetic models of metabolism, but we cannot guarantee it will work with all models (see the [list of tested metabolic models](#tested_models)).
-The package provides a class to manipulate SBML models: the class <code>Model</code>. It is also necessary to define the list of key reactions that are essential to cell growth and fitness, and to provide the path of <a href="http://copasi.org/">CopasiSE</a> software. Please note that coefficients are not functional in the current version of MetEvolSim.
+MetEvolSim has been tested with numerous publicly accessible metabolic networks; however, we cannot guarantee that it will be compatible with any model (please refer to the [list of tested metabolic models](#tested_models)).
+The package includes the class <code>Model</code> to manipulate SBML models. Additionally, it is necessary to set up an objective function (a list of target reactions and their coefficients) and to provide the path of <a href="http://copasi.org/">CopasiSE</a> software. Please note that objective function coefficients are not operational in the current version of MetEvolSim.
 
 ```python
 # Import MetEvolSim package
@@ -117,11 +118,11 @@ model.flux_drop_analysis(drop_coefficient=0.01,
                          owerwrite=True)
 ```
 
-MetEvolSim offers two independent numerical approaches to analyze the evolution of metabolic levels:
+MetEvolSim offers two distinct numerical approaches for assessing the evolution of metabolic abundances:
 - <strong>Evolution experiments</strong>, based on a Markov Chain Monte Carlo (MCMC) algorithm,
-- <strong>Sensitivity analysis</strong>, either by exploring every kinetic parameters in a given range and recording associated fluxes and metabolic concentrations changes (One-At-a-Time sensitivity analysis), or by exploring the kinetic parameters space at random, by mutating a single kinetic parameter at random many times (random sensitivity analysis).
+ <strong>Sensitivity analysis</strong>, that can either explore every kinetic parameter in a given range and record changes in associated fluxes and metabolic abundances (One-At-a-Time sensitivity analysis) or randomly explore the kinetic parameter space by randomly mutating a single kinetic parameter multiple times (random sensitivity analysis).
 
-All numerical analyses and simulation output files are saved in the sub-folder <code>output</code>.
+All numerical analysis output files are saved in the <code>output</code> subfolder.
 
 ### Evolution experiments:
 <p align="center">
@@ -132,7 +133,7 @@ All numerical analyses and simulation output files are saved in the sub-folder <
 </p>
 
 <br/>
-Six types of selection are available:
+There are six types of selection available:
 
 - <code>MUTATION_ACCUMULATION</code>: Run a mutation accumulation experiment by accepting all new mutations without any selection threshold,
 - <code>ABSOLUTE_METABOLIC_SUM_SELECTION</code>: Run an evolution experiment by applying a stabilizing selection on the sum of absolute metabolic abundances,
@@ -161,7 +162,7 @@ while not stop_MCMC:
 ```
 
 ### One-At-a-Time (OAT) sensitivity analysis:
-For each kinetic parameter $p$, each metabolic abundance $X_i$ and each flux $\nu_j$, the algorithm numerically computes relative derivatives and control coefficients.
+For each kinetic parameter p, each metabolic abundance [X<sub>i</sub>] and each flux &nu;<sub>j</sub>, the algorithm numerically computes relative derivatives and control coefficients.
 
 ```python
 # Load a sensitivity analysis instance
@@ -173,7 +174,7 @@ sa.run_OAT_analysis(factor_range=1.0, factor_step=0.01)
 ```
 
 ### Random sensitivity analysis:
-At each iteration, a single kinetic parameter p is mutated at random in a log10-normal distribution of size $\sigma$, and relative derivatives and control coefficients are computed.
+At each iteration, a single kinetic parameter p is mutated at random in a log10-normal distribution of size &sigma;, and relative derivatives and control coefficients are computed.
 
 ```python
 # Load a sensitivity analysis instance
@@ -185,11 +186,11 @@ sa.run_random_analysis(sigma=0.01, nb_iterations=1000)
 ```
 
 ## Help <a name="help"></a>
-To get some help on a MetEvolSim class or method, use the Python help function:
+To get assistance with a MetEvolSim class or method, use the Python help function:
 ```python
 help(metevolsim.Model.set_species_initial_value)
 ```
-to obtain a quick description and the list of parameters and outputs:
+To get a brief overview and a list of parameters and outputs:
 ```
 Help on function set_species_initial_value in module metevolsim:
 
@@ -211,7 +212,7 @@ set_species_initial_value(self, species_id, value)
 ```
 
 ## Ready-to-use examples <a name="examples"></a>
-Ready-to-use examples are included in the Python package.
+Ready-to-use examples come pre-packaged with MetEvolSim package.
 They can also be downloaded here: https://github.com/charlesrocabert/MetEvolSim/raw/master/example/example.zip.
 
 ## List of tested metabolic models <a name="tested_models"></a>
