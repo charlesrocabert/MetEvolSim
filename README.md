@@ -24,7 +24,7 @@ MetEvolSim is being developed by Charles Rocabert, Gábor Boross, Orsolya Liska 
 </p>
 
 <p align="justify">
-If you are planning to use MetEvolSim for research or have encountered any issues with the software, do not hesitate to contact <a href="mailto:charles[DOT]rocabert[AT]helsinki[DOT]fi">Charles Rocabert</a>.
+If you are planning to use MetEvolSim for research or have encountered any issues with the software, do not hesitate to contact <a href="mailto:charles[DOT]rocabert[AT]hhu[DOT]de">Charles Rocabert</a>.
 </p>
 
 <p align="center">
